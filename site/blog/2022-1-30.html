@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="/resources/style.css">
+	</head>
+	<body>
+		<h1>How I made this site</h1>
+		<p>Over the past week I've been writing a <a href="https://github.com/natechoe1/swebs">web server</a>. I'm going to be honest, it's not great, and I wouldn't recommend that you use it, but it's mine, and this blog post is going to detail how it works.</p>
+		<p>When I was designing swebs (a Simple WEB Server) I had a few constraints in mind:</p>
+		<ul>
+			<li>It must work</li>
+			<li>It shouldn't be vulnerable to slowloris attacks</li>
+			<li>It should be at least bearably performant</li>
+		</ul>
+		<p>A slowloris attack is a type of denial of service attack where you open up many many connections to a web server, each one sending data extremely slowly. The web server may then start allocating many resources for each individual connection, eventually hitting a limit so that other users can't view the site. The <a href="https://httpd.apache.org/">Apache web server</a> is particularly vulnerable to this as each new connection spawns a new thread. Not going into too much detail on how operating systems work, threads are really computationally expensive to make and run, so having hundreds of connections to a server could really affect its performance.</p>
+		<p>The solution that <a href="https://www.nginx.com/">nginx</a> (pronounced engine X) uses, and which I decided to steal, is to just keep track of all the connections yourself. Threads are handled by the operating system, and thread creation is very expensive. Structures have to be set up, systems have to be notified, this can all be circumvented by just keeping track of all the current connections in memory. There are several runner threads to utilize all the CPU power available, then a main thread. The main thread's only job is to accept connections. Whenever it accepts a connection, it tells the least busiest thread about it, which handles all requests from that connection.</p>
+
+		<p>In the main thread:</p>
+		<div class="code">
+			<iframe src="/blog/files/oldmain.txt" height="400" width="100%" frameborder="0"></iframe>
+		</div>
+		<p>In the runner threads:</p>
+		<div class="code">
+			<iframe src="/blog/files/oldrunner.txt" height="400" width="100%" frameborder="0"></iframe>
+		</div>
+
+		<p>You can see that the only threads being created are the runner threads. Everything else is handled manually. There is a problem with this code, though, and it has to do with performance.</p>
+		<p>In the main thread, most of the time nothing gets done. When someone creates a new connection to the web server, it "wakes up" with the <a href="https://man7.org/linux/man-pages/man2/accept.2.html">accept()</a> system call, handles it, then goes back to sleep. In the runner threads, however, even when no work is getting done at all, the threads are still constantly checking to see if there's more work to do. This means that whatever CPU the runner thread is running on will be operating at 100% load 100% of the time, even if nothing's happening. The solution to this is to somehow wait until either a new connection is available or until an existing connection has sent data.</p>
+		<p>In UNIX systems, the <a href="https://man7.org/linux/man-pages/man2/poll.2.html">poll()</a> system call will wait until any one of several file descriptors is available for reading. In layman's terms it means that we can wait until any of the connections we have has data to read. This still doesn't solve the problem of waiting for a new connection, but it's a start. In UNIX, it's possible to create a pipe, where writing to one end allows reading from the other end. If we create a pipe from the main thread to each of the runner threads, and for each connection we send the runner a message through that pipe, each of the runners can wait until either one of the connections has data available to read, or until there is a new connection availabe.</p>
+		<p>In the main thread:</p>
+		<div class="code">
+			<iframe src="/blog/files/newmain.txt" height="400" width="100%" frameborder="0"></iframe>
+		</div>
+		<p>In the runner threads:</p>
+		<div class="code">
+			<iframe src="/blog/files/newrunner.txt" height="400" width="100%" frameborder="0"></iframe>
+		</div>
+
+		<p>The code has gotten a lot more complicated since then, so I chose this version of the code for simplicity. This version of the code also had some bugs I noticed while commenting the new runner thread, so those have been fixed.</p>
+		<p>I'd be remiss if i said that getting a working web server was the whole story. This website is being hosted at my house, where my Dad's sites are also being hosted. We only have a single ip address for multiple websites. The http protocol states that the hostname should be sent as part of the request. The only way to differentiate the sites would be by parsing http requests and then proxying them to some other device. Luckily, nginx saves the day again, as <a href="https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/">nginx can be used as a reverse proxy.</a> We have 3 ip addresses:</p>
+		<ul>
+			<li>192.168.50.61 (reverse-proxy, runs nginx)</li>
+			<li>192.168.50.60 (natechoe.dev, receives requests from nginx, runs swebs)</li>
+			<li>192.168.50.57 (my Dad's sites, runs Windows server for some reason idk)</li>
+		</ul>
+		<p>These are all hosted on Hyper-V on Windows server (my Dad's choice not mine, my vm runs debian).<p>
+	</body>
+</html>

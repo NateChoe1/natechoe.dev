@@ -1,0 +1,4 @@
+define transport TCP
+
+read / /site/site/index.html
+read .* /site/site/

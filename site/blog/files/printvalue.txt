@@ -1,0 +1,10 @@
+#include <stdio.h>
+#include <unistd.h>
+
+int main() {
+	int i = 5;
+	for (;;) {
+		printf("Value at %p for process %d: %d\n", &i, getpid(), i);
+		sleep(1);
+	}
+}

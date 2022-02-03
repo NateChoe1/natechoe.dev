@@ -1,0 +1,20 @@
+html {
+	background: LightSkyBlue;
+}
+
+h1 {
+	text-align: center;
+	font-family: Monospace;
+}
+
+.code p {
+	font-family: monospace;
+}
+
+.code {
+	background-color: lightgrey;
+	border-color: lightgrey;
+	border-style: solid;
+	border-width: 5px;
+	border-radius: 5px;
+}
