@@ -1,4 +1,0 @@
-Enter the pid: 25720
-Enter the pointer: 0x7ffeaceef7e4
-Enter the new value: 10
-

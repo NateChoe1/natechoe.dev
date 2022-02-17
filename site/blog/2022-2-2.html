@@ -11,26 +11,69 @@
 		<p>Perhaps the 2 most interesting files in here are <code>/proc/[PID]/maps</code> and <code>/proc/[PID]/mem</code>. <code>/proc/[PID]/maps</code> shows the memory map of that process, including (among other things) the address spaces that each map takes up, and the permissions that the current process has on it. If you <code>cat</code> out one of these files, you may notice that you have quite a few privileges on many processes. This means that you can open <code>/proc/[PID]/mem</code>, the actual memory of that process, and just change a few values in there. To demonstrate this, I wrote 2 programs.</p>
 
 		<p>printvalue.c:</p>
-		<div class="code">
-			<iframe src="/blog/files/printvalue.txt" height="170" width="100%" frameborder="0"></iframe>
-		</div>
+		<code class="block">
+#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+
+int main() {
+	int i = 5;
+	for (;;) {
+		printf("Value at %p for process %d: %d\n", &amp;i, getpid(), i);
+		sleep(1);
+	}
+}
+		</code>
 		<p>changevalue.c:</p>
-		<div class="code">
-			<iframe src="/blog/files/changevalue.txt" height="335" width="100%" frameborder="0"></iframe>
-		</div>
+		<code class="block">
+#include &lt;stdio.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;unistd.h&gt;
+
+int main() {
+	int pid;
+	void *addr;
+	int newval;
+	printf("Enter the pid: ");
+	scanf("%d", &amp;pid);
+	printf("Enter the pointer: ");
+	scanf("%p", &amp;addr);
+	printf("Enter the new value: ");
+	scanf("%d", &amp;newval);
+
+	char path[20];
+	sprintf(path, "/proc/%d/mem", pid);
+
+	int fd = open(path, O_RDWR);
+	lseek(fd, (unsigned long long) addr, SEEK_SET);
+	write(fd, &amp;newval, sizeof(newval));
+}
+		</code>
 
 		<p>After compiling and running printvalue.c, you might get something like this:</p>
-		<div class="code">
-			<iframe src="/blog/files/pvalueout.txt" height="80" width="100%" frameborder="0"></iframe>
-		</div>
+
+		<code class="block">
+Value at 0x7ffeaceef7e4 for process 25720: 5
+Value at 0x7ffeaceef7e4 for process 25720: 5
+Value at 0x7ffeaceef7e4 for process 25720: 5
+...
+		</code>
 		<p>Then after running changevalue.c and putting in input similar to</p>
-		<div class="code">
-			<iframe src="/blog/files/cvalueout.txt" height="80" width="100%" frameborder="0"></iframe>
-		</div>
+		<code class="block">
+Enter the pid: 25720
+Enter the pointer: 0x7ffeaceef7e4
+Enter the new value: 10
+		</code>
 		<p>You'll see that the output of printvalue.c has changed!</p>
-		<div class="code">
-			<iframe src="/blog/files/newpvalueout.txt" height="140" width="100%" frameborder="0"></iframe>
-		</div>
+		<code class="block">
+...
+Value at 0x7ffeaceef7e4 for process 25720: 5
+Value at 0x7ffeaceef7e4 for process 25720: 5
+Value at 0x7ffeaceef7e4 for process 25720: 5
+Value at 0x7ffeaceef7e4 for process 25720: 10
+Value at 0x7ffeaceef7e4 for process 25720: 10
+Value at 0x7ffeaceef7e4 for process 25720: 10
+...
+		</code>
 		<p>That's it, just a neat thing that you can do in Linux.</p>
 	</body>
 </html>
