@@ -1,5 +1,5 @@
 define transport TCP
-define port 8000
+define port 80
 
 read / /site/site/index.html
 read .* /site/site/
