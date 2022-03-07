@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="/resources/style.css">
+	</head>
+	<body>
+		<h1>Bash sucks</h1>
+		<p>I've recently been trying to clean up my home directory. I've switched from xinit to <a href="https://github.com/Earnestly/sx">sx</a>, I've switched from vim to <a href="https://neovim.io/">neovim</a>, and I've set the <code>SSH_CONFIG</code> variable to be XDG compliant.</p>
+		<p>The hardest change I've made (so far, I haven't ported firefox yet), was making bash XDG compliant. Bash puts all of its files into dotfiles in the home directory. I hate that. Going through possible solutions, I realized that the only feasible solution was to modify the bash source code directly.</p>
+		<p>This isn't really as daunting as it sounds, I use Gentoo Linux (I refuse to please Richard Stallman after seeing the code quality of the GNU project), so I have to compile every program I use from scratch. This means that <a href="https://wiki.gentoo.org/wiki//etc/portage/patches">I could just write a patch, and Gentoo would automatically apply it and compile it</a>. I downloaded the bash source code, and the first thing I did was try to find where the path constants were stored.</p>
+		<code class="block">
+Script started on 2022-03-07 16:50:09-06:00 [TERM="st-256color" TTY="/dev/pts/2" COLUMNS="191" LINES="55"]
+nate@nates-gentoo-laptop ~/repos/bash-5.1.16 $ grep --color=none -rn "bashrc"
+
+[83 lines of other files]
+
+shell.c:1984:  /* We have decided that the ~/.bashrc file should not be executed
+shell.c:2010:  bashrc_file = DEFAULT_BASHRC;
+config-top.h:91:#define DEFAULT_BASHRC "~/.bashrc"
+config-top.h:93:/* System-wide .bashrc file for interactive shells. */
+config-top.h:94:/* #define SYS_BASHRC "/etc/bash.bashrc" */
+config-top.h:104:   sshd and source the .bashrc if so (like the rshd behavior).  This checks
+nate@nates-gentoo-laptop ~/repos/bash-5.1.16 $
+exit
+
+Script done on 2022-03-07 16:50:29-06:00 [COMMAND_EXIT_CODE="0"]
+		</code>
+		<p>As it turns out, there's a very convenient <code>config-top.h</code> file that houses the default <code>bashrc</code> location! Good thing that the bash source code is reasonably written and that all other constant paths can be set similarly! Sorry, forgive my role playing. The <code>bashrc</code> file is important, but the <code>~/.bash_history</code> file is created every time you try to close a shell, and not optional.</p>
+		<p>Grepping for <code>.bash_history</code>, you may miss this one line.</p>
+		<code class="block">
+variables.c:600:      name = bash_tilde_expand (posixly_correct ? "~/.sh_history" : "~/.bash_history", 0);
+		</code>
+		<p>The file path is directly embedded into the source code. It can't be configured from an external file, or even a header file containing centralized configuration options, but scattered around in C files. Well if the <code>bashrc</code> file is in this <code>variables.c</code> file, then clearly the <code>bash_logout</code> should also be here as well, right?</p>
+		<code class="block">
+Script started on 2022-03-07 17:14:52-06:00 [TERM="st-256color" TTY="/dev/pts/2" COLUMNS="95" LINES="55"]
+nate@nates-gentoo-laptop ~/repos/bash-5.1.16 $ grep -n bash_logout variables.c
+nate@nates-gentoo-laptop ~/repos/bash-5.1.16 $
+exit
+
+Script done on 2022-03-07 17:15:02-06:00 [COMMAND_EXIT_CODE="1"]
+		</code>
+		<p>Ah. Turns out that the <code>bash_logout</code> constant is stored in <code>builtins/exit.def</code> on line 164.</p>
+		<code class="block">
+void
+bash_logout ()
+{
+  /* Run our `~/.bash_logout' file if it exists, and this is a login shell. */
+  if (login_shell &amp;&amp; sourced_logout++ == 0 &amp;&amp; subshell_environment == 0)
+    {
+      maybe_execute_file ("~/.bash_logout", 1);
+#ifdef SYS_BASH_LOGOUT
+      maybe_execute_file (SYS_BASH_LOGOUT, 1);
+#endif
+    }
+}
+		</code>
+		<p>Your eyes don't deceive you, that's C code written inside a <code>.def</code> file. This file will generate C code in a manner similar to yacc and bison. Why anybody in their right mind would ever add auto-generated code to a shell is beyond me, but the geniuses coding for GNU projects have decided that this is the most practical way to do this.</p>
+		<p>All of this pain and misery could have been avoided had there just been a <code>--bashrc-file=[ARG]</code> option in bash, or at least a header file that contained all these constants in a single place, but the geniuses at GNU have decided on taking the solution with the highest learning difficulty to efficiency ratio known to man.</p>
+	</body>
+</html>
