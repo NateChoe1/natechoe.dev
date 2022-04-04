@@ -1,3 +1,3 @@
 #!/bin/sh
 
-docker build . -t natechoe.dev
+docker build . -t natechoe/natechoe.dev
