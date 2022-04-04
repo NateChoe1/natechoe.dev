@@ -1,4 +1,4 @@
-FROM swebs
+FROM natechoe/swebs
 RUN [ "rm", "-rf", "/site" ]
 COPY ./site /site
 RUN useradd swebs
