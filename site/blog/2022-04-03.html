@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="/resources/style.css">
+		<title>Fixing swebs - natechoe.dev</title>
+	</head>
+	<body>
+		<h1>Fixing swebs</h1>
+		<p>For the past several months natechoe.dev has been experiencing regular outages. The trouble was that swebs, my webserver, was using multithreading rather than multiprocessing. Generally, to do multitasking in UNIX systems, you can either use multithreading, or multiprocessing.</p>
+		<p>To do multithreading, all you have to do is create a new pthread, and assign it to a function, like this:</p>
+		<code class="block">
+#include &lt;pthread.h&gt;
+#define NUM_THREADS 10
+
+void *action(void *arg) {
+	/* Do some stuff */
+}
+
+int main() {
+	pthread_t threads[NUM_THREADS];
+	int i;
+
+	for (i = 0; i &lt; NUM_THREADS; ++i) {
+		void *argument;
+		/* Initialize the argument to some value here */
+		pthread_create(&amp;threads[i], NULL, action, argument);
+	}
+
+	for (i = 0; i &lt; NUM_THREADS; ++i) {
+		void *result;
+		int exit_code;
+		exit_code = pthread_join(threads[i], &amp;result);
+	}
+}
+		</code>
+		<p>This code initializes 10 pthreads (POSIX threads), makes them all run <code>action()</code>, and waits for them all to finish. To do multiprocessing, you use the <code>fork()</code> system call, like this:</p>
+		<code class="block">
+#include &lt;sys/wait.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;stdlib.h&gt;
+#define NUM_PROCESSES 10
+
+int action(void) {
+	/* do some stuff */
+}
+
+int main() {
+	int i;
+	for (i = 0; i &lt; NUM_PROCESSES; ++i) {
+		pid_t pid;
+		pid = fork();
+		if (pid &lt; 0)
+			return 1;
+		if (pid == 0)
+			exit(action());
+	}
+	for (i = 0; i &lt; NUM_PROCESSES; ++i)
+		wait(NULL);
+	return 0;
+}
+		</code>
+		<b>NOTE: This code sucks, don't use it.</b>
+		<p>The <code>fork()</code> system call will clone the current process, and return -1 on error, 0 for the child, and the pid of the child for the parent. You may notice the <code>wait()</code> function in there, that just waits for any of the child processes to finish. We made <code>NUM_PROCESSES</code> children, so we wait <code>NUM_PROCESSES</code> times.</p>
+		<p>Because multiprocessing creates multiple processes, each individual process has its own separate heap memory. In multithreading, however, all the threads share the same 1 heap. This means that with multithreading, you can coordinate individual threads better. Multiprocessing also takes longer to start a new process because the kernel has to give that new process a process id, allocate some resources to it, and do all the things that a process has to do to start. This makes multithreading fantastic for real time applications, like rendering a 3d scene.</p>
+		<p>You may wonder why anyone would ever use multiprocessing, as multithreading seems to be so much more versatile, and multiprocessing just seems less efficient. Well one use for multiprocessing is in a shell, which really just spawns child processes and has them run various programs. In addition to systems level programming, however, multiprocessing also creates more stable child processes.</p>
+		<p>When a child process dies, the parent process of that child gets a <code>SIGCHLD</code> signal. This does not happen with multithreading. This means that if you have several tasks or programs that you want running constantly, you should use multiprocessing and listen for these <code>SIGCHLD</code> events. Init systems like openrc and systemd all have features in them to restart daemons when they die. If there's a bug in some daemon which causes a crash, ideally it would be fixed, but if that's not possible, it's fine to just restart the daemon. This is where swebs comes in. When I first wrote swebs, it used multithreading to share connections. One thread would constantly accept connections, and every other thread would take connections from that master thread and process them. Unfortunately, my code sucks. My threads were constantly dying, and there was no way for me to get notified of that and fix it from another thread without having either extreme CPU usage or extreme thread redundancy. This meant that I pretty much had to switch from a multithreading model to a multiprocessing model to fix these issues.</p>
+		<b>NOTE: In UNIX, everything is a file. This includes connections over the internet. When you want to send data, you write to a file, and when you want to receive data, you read from a file. I will refer to connections as file descriptors from now on.</b>
+		<p>When using multithreading, all file descriptors are shared. This means that the main thread can just accept connections and pass along a file descriptor to a child, and it will already exist in that child. In UNIX, processes don't share file descriptors. This meant that I have to find some way of sending a file descriptor from one process to another. When I first wrote swebs, I didn't think that this was possible, so I had to settle for a multithreading model rather than a multiprocessing model. Luckily, I now know of <code>SCM_RIGHTS</code>.</p>
+		<p>In UNIX, there is something called a UNIX socket. UNIX sockets were the very first thing that you could actually call a server. One process will create a UNIX server, which is just a file, and another process will connect to that UNIX server. A UNIX server looks something like this:</p>
+		<code class="block">
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/un.h&gt;
+#include &lt;sys/socket.h&gt;
+
+int main() {
+        int fd;
+        struct sockaddr_un addr;
+        socklen_t addrlen;
+
+        fd = socket(AF_UNIX, SOCK_STREAM, 0);
+        if (fd &lt; 0)
+                return 1;
+
+        addr.sun_family = AF_UNIX;
+        strcpy(addr.sun_path, "/tmp/server");
+        addrlen = sizeof(addr);
+        if (bind(fd, (struct sockaddr *) &amp;addr, addrlen) &lt; 0)
+                return 1;
+
+        if (listen(fd, 10) &lt; 0)
+                return 1;
+        for (;;) {
+                int newfd;
+                newfd = accept(fd, (struct sockaddr *) &amp;addr, &amp;addrlen);
+                /* Now you can use the read() and write() calls on newfd */
+                printf("test\n");
+        }
+}
+		</code>
+		<p>While a UNIX client looks something like this:</p>
+		<code class="block">
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/un.h&gt;
+#include &lt;sys/socket.h&gt;
+
+int main() {
+        int fd;
+        struct sockaddr_un addr;
+        socklen_t addrlen;
+
+        fd = socket(AF_UNIX, SOCK_STREAM, 0);
+        if (fd &lt; 0)
+                return 1;
+
+        addr.sun_family = AF_UNIX;
+        strcpy(addr.sun_path, "/tmp/server");
+        addrlen = sizeof(addr);
+        if (connect(fd, (struct sockaddr *) &amp;addr, addrlen) &lt; 0)
+                return 1;
+
+        /* Now you can use read() and write() on fd */
+}
+		</code>
+		<p>In UNIX, <code>read()</code> and <code>write()</code> both work on sockets, but for sockets there are some extra special functions such as <code>send()</code> and <code>recv()</code>. They do the exact same thing as <code>read()</code> and <code>write</code>, just with added flags. There's also <code>sendto()</code> and <code>recvfrom()</code>, which need an address to send to or receive from. The final pair of special functions, and the important ones for this context, are <code>sendmsg()</code> and <code>recvmsg()</code>. These 2 functions allow you to send packets through UNIX sockets instead of just streams of data. These packets are special in that they also contain special actions. One of these actions is called SCM_RIGHTS, which will send a copy of a file descriptor to another process. This allows us to create functions which send and receive file descriptors, which allows us to use multiprocessing, which allows us to capture <code>SIGCHLD</code> events. Behold:</p>
+		<code class="block">
+void sendFd(int fd, int dest) {
+	struct msghdr msg;
+	struct cmsghdr *cmsg;
+	char iobuf[1];
+	struct iovec io;
+	union {
+		char buf[CMSG_SPACE(sizeof(fd))];
+		struct cmsghdr align;
+	} u;
+	memset(&amp;msg, 0, sizeof(msg));
+	io.iov_base = iobuf;
+	io.iov_len = sizeof(iobuf);
+	msg.msg_iov = &amp;io;
+	msg.msg_iovlen = 1;
+	msg.msg_control = u.buf;
+	msg.msg_controllen = sizeof(u.buf);
+	cmsg = CMSG_FIRSTHDR(&amp;msg);
+	cmsg-&gt;cmsg_level = SOL_SOCKET;
+	cmsg-&gt;cmsg_type = SCM_RIGHTS;
+	cmsg-&gt;cmsg_len = CMSG_LEN(sizeof(fd));
+	memcpy(CMSG_DATA(cmsg), &amp;fd, sizeof(fd));
+	sendmsg(dest, &amp;msg, 0);
+}
+
+int recvFd(int source) {
+	union {
+		char buff[CMSG_SPACE(sizeof(int))];
+		struct cmsghdr align;
+	} cmsghdr;
+	struct msghdr msg;
+	struct cmsghdr *cmsg;
+	struct iovec iov;
+	int data;
+	ssize_t nr;
+	int ret;
+
+	msg.msg_name = NULL;
+	msg.msg_namelen = 0;
+
+	iov.iov_base = &amp;data;
+	iov.iov_len = sizeof(data);
+	msg.msg_iov = &amp;iov;
+	msg.msg_iovlen = 1;
+
+	msg.msg_control = cmsghdr.buff;
+	msg.msg_controllen = sizeof(cmsghdr.buff);
+	nr = recvmsg(source, &amp;msg, 0);
+	if (nr &lt; 0)
+		return -1;
+
+	cmsg = CMSG_FIRSTHDR(&amp;msg);
+	if (cmsg == NULL || cmsg-&gt;cmsg_len != CMSG_LEN(sizeof(data)))
+		return -1;
+	if (cmsg-&gt;cmsg_level != SOL_SOCKET)
+		return -1;
+	if (cmsg-&gt;cmsg_type != SCM_RIGHTS)
+		return -1;
+
+	memcpy(&amp;ret, CMSG_DATA(cmsg), sizeof(ret));
+	return ret;
+}
+		</code>
+	</body>
+</html>
