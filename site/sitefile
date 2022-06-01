@@ -1,5 +1,8 @@
-define transport TCP
-define port 49100
+define port 443
+
+define transport TLS
+define key /secrets/privkey.pem
+define cert /secrets/fullchain.pem
 
 read / /site/site/index.html
 read .* /site/site/
