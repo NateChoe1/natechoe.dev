@@ -77,7 +77,7 @@ specification.</p>
 
 <p>I really have no point to this post, I've just been frustrated after trying
 to write a Markdown parser for a month and a half and I eventually gave up and
-just wrote an <a href="https://github.com/NateChoe1/ncdg/"HTML preprocessor</a>
+just wrote an <a href="https://github.com/NateChoe1/ncdg/">HTML preprocessor</a>
 instead. I just really really hate the Commonmark spec, and think it's terribly
 written for people working at multi billion dollar tech companies.</p>
 
