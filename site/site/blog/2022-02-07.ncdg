@@ -1,0 +1,6 @@
+@%/site/head.html@
+@=title This is a test post@
+
+<p>I've set up a cron job to automatically update the site from github every hour, this post is just to test if that works. It is 3:13 am right now I am incredibly tired but I just need a short break from statistics homework.</p>
+
+@%/site/tail.html@

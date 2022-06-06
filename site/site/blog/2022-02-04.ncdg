@@ -1,0 +1,6 @@
+@%/site/head.html@
+@=title This site runs gentoo now!@
+
+<p>Yesterday, I installed Gentoo Linux on the server that natechoe.dev runs on. It's the distribution that I personally use and I switched to it for the greater customization. That's all.</p>
+
+@%/site/tail.html@

@@ -1,0 +1,14 @@
+@%/site/head.html@
+@=title This site isn't very polished yet, please bare with that for a while.@
+
+<a href="/blog/2022-04-05.html">2022-04-05 - natechoe.dev is now dockerized</a><br>
+<a href="/blog/2022-04-03.html">2022-04-03 - Fixing swebs</a><br>
+<a href="/blog/2022-03-14.html">2022-03-14 - Balancing binary search trees</a><br>
+<a href="/blog/2022-03-07.html">2022-03-07 - Bash sucks</a><br>
+<a href="/blog/2022-02-23.txt">2022-02-23 - I hate ASCII</a><br>
+<a href="/blog/2022-02-07.html">2022-02-07 - Test post</a><br>
+<a href="/blog/2022-02-04.html">2022-02-04 - This site runs gentoo now!</a><br>
+<a href="/blog/2022-02-02.html">2022-02-02 - Directly modifying Linux process memory</a><br>
+<a href="/blog/2022-01-30.html">2022-01-30 - How I made this site</a><br>
+
+@%/site/tail.html@

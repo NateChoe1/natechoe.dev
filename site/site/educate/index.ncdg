@@ -1,0 +1,6 @@
+@%/site/head.html@
+@=title Here's some stuff about computers@
+
+<a href="/educate/passwords.html">How to choose a good password</a>
+
+@%/site/tail.html@
