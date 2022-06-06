@@ -1,4 +1,4 @@
-@%site/head.html@
+@%/site/head.html@
 @=title Bash sucks@
 
 <p>I've recently been trying to clean up my home directory. I've switched from xinit to <a href="https://github.com/Earnestly/sx">sx</a>, I've switched from vim to <a href="https://neovim.io/">neovim</a>, and I've set the <code>SSH_CONFIG</code> variable to be XDG compliant.</p>
@@ -53,4 +53,4 @@ bash_logout ()
 <p>Your eyes don't deceive you, that's C code written inside a <code>.def</code> file. This file will generate C code in a manner similar to yacc and bison. Why anybody in their right mind would ever add auto-generated code to a shell is beyond me, but the geniuses coding for GNU projects have decided that this is the most practical way to do this.</p>
 <p>All of this pain and misery could have been avoided had there just been a <code>--bashrc-file=[ARG]</code> option in bash, or at least a header file that contained all these constants in a single place, but the geniuses at GNU have decided on taking the solution with the highest learning difficulty to efficiency ratio known to man.</p>
 
-@%site/tail.html@
+@%/site/tail.html@
