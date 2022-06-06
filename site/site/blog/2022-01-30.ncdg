@@ -12,7 +12,7 @@
 <p>The solution that <a href="https://www.nginx.com/">nginx</a> (pronounced engine X) uses, and which I decided to steal, is to just keep track of all the connections yourself. Threads are handled by the operating system, and thread creation is very expensive. Structures have to be set up, systems have to be notified, this can all be circumvented by just keeping track of all the current connections in memory. There are several runner threads to utilize all the CPU power available, then a main thread. The main thread's only job is to accept connections. Whenever it accepts a connection, it tells the least busiest thread about it, which handles all requests from that connection.</p>
 
 <p>In the main thread:</p>
-<code class="block">
+<code class="block">@&
 //NOTE: This is old code, not used anymore. It is also released under the
 //GNU General Public License v3.
 
@@ -22,124 +22,124 @@ int *pending = calloc(processes - 1, sizeof(int));
 
 int *schedule = malloc(2 * sizeof(int));
 if (schedule == NULL)
-exit(EXIT_FAILURE);
+	exit(EXIT_FAILURE);
 schedule[0] = -1;
 //schedule[0] is the thread that should take the next connection
 //schedule[1] is the file descriptor of the next connection
 
 pthread_t *threads = malloc(sizeof(pthread_t) * (processes - 1));
 if (threads == NULL)
-exit(EXIT_FAILURE);
+	exit(EXIT_FAILURE);
 for (int i = 0; i &lt; processes - 1; i++) {
-RunnerArgs *args = malloc(sizeof(RunnerArgs));
-if (args == NULL)
-exit(EXIT_FAILURE);
-args-&gt;site = site;
-args-&gt;pending = pending;
-args-&gt;schedule = schedule;
-args-&gt;id = i;
-pthread_create(threads + i, NULL,
-       (void*(*)(void*)) runServer, args);
+	RunnerArgs *args = malloc(sizeof(RunnerArgs));
+	if (args == NULL)
+	exit(EXIT_FAILURE);
+	args-&gt;site = site;
+	args-&gt;pending = pending;
+	args-&gt;schedule = schedule;
+	args-&gt;id = i;
+	pthread_create(threads + i, NULL,
+	       (void*(*)(void*)) runServer, args);
 }
 //create the runner threads
 
 for (;;) {
-fsync(fd);
-//I have no idea how this works, but for some reason the server broke
-//when I didn't have this
-if (schedule[0] == -1) {
-int newfd = accept(fd, (struct sockaddr *) &amp;addr,
-		       &amp;addrlen);
-//accept a connection
-if (newfd &lt; 0)
-	exit(EXIT_FAILURE);
-int flags = fcntl(newfd, F_GETFL);
-if (fcntl(newfd, F_SETFL, flags | O_NONBLOCK))
-	exit(EXIT_FAILURE);
-//make it nonblocking
-int lowestThread = 0;
-int lowestCount = pending[0];
-for (int i = 1; i &lt; processes - 1; i++) {
-	if (pending[i] &lt; lowestCount) {
-		lowestThread = i;
-		lowestCount = pending[i];
+	fsync(fd);
+	//I have no idea how this works, but for some reason the server broke
+	//when I didn't have this
+	if (schedule[0] == -1) {
+		int newfd = accept(fd, (struct sockaddr *) &amp;addr,
+				       &amp;addrlen);
+		//accept a connection
+		if (newfd &lt; 0)
+			exit(EXIT_FAILURE);
+		int flags = fcntl(newfd, F_GETFL);
+		if (fcntl(newfd, F_SETFL, flags | O_NONBLOCK))
+			exit(EXIT_FAILURE);
+		//make it nonblocking
+		int lowestThread = 0;
+		int lowestCount = pending[0];
+		for (int i = 1; i &lt; processes - 1; i++) {
+			if (pending[i] &lt; lowestCount) {
+				lowestThread = i;
+				lowestCount = pending[i];
+			}
+		}
+		//get the least busy thread
+		schedule[1] = newfd;
+		schedule[0] = lowestThread;
+		//give that thread the connection
 	}
 }
-//get the least busy thread
-schedule[1] = newfd;
-schedule[0] = lowestThread;
-//give that thread the connection
-}
-}
-</code>
+@</code>
 <p>In the runner threads:</p>
-<code class="block">
+<code class="block">@&
 //Again, this is old code released under the GNU General Public License v3.
 
 void *runServer(RunnerArgs *args) {
-Sitefile *site = args-&gt;site;
-//the website layout is stored within a Sitefile
-int *pending = args-&gt;pending;
-int *schedule = args-&gt;schedule;
-int id = args-&gt;id;
+	Sitefile *site = args-&gt;site;
+	//the website layout is stored within a Sitefile
+	int *pending = args-&gt;pending;
+	int *schedule = args-&gt;schedule;
+	int id = args-&gt;id;
 
-Connection *connections = NULL;
-Connection *last = NULL;
-//Connections are processed in a queue, which is really just a linked
-//list where we add to the end and read from the beginning.
-for (;;) {
-if (schedule[0] == id) {
-	//If a connection is available to accepet
-	Connection *newconn = newConnection(schedule[1]);
-	assert(newconn != NULL);
-	//get that connection
+	Connection *connections = NULL;
+	Connection *last = NULL;
+	//Connections are processed in a queue, which is really just a linked
+	//list where we add to the end and read from the beginning.
+	for (;;) {
+		if (schedule[0] == id) {
+			//If a connection is available to accepet
+			Connection *newconn = newConnection(schedule[1]);
+			assert(newconn != NULL);
+			//get that connection
 
-	if (last == NULL)
-		connections = newconn;
-	else
-		last-&gt;next = newconn;
-	last = newconn;
-	//add it to the queue
-	pending[id]++;
-	schedule[0] = -1;
-	//and increase the pending connections
-}
+			if (last == NULL)
+				connections = newconn;
+			else
+				last-&gt;next = newconn;
+			last = newconn;
+			//add it to the queue
+			pending[id]++;
+			schedule[0] = -1;
+			//and increase the pending connections
+		}
 
-Connection *prev = NULL;
-Connection *iter = connections;
-while (iter != NULL) {
-	//go through all the connections
-	if (updateConnection(iter, site)) {
-	//updateConnection() will get all new data from that
-	//connection and process it. It returns 1 (true) if the
-	//connection should be killed
-		if (iter == last)
-			last = prev;
-		Connection *old = iter;
-		iter = iter-&gt;next;
-		freeConnection(old);
-		if (prev == NULL)
-			connections = iter;
-		else
-			prev-&gt;next = iter;
-		pending[id]--;
-		//if that connection should be killed, kill it.
+		Connection *prev = NULL;
+		Connection *iter = connections;
+		while (iter != NULL) {
+			//go through all the connections
+			if (updateConnection(iter, site)) {
+			//updateConnection() will get all new data from that
+			//connection and process it. It returns 1 (true) if the
+			//connection should be killed
+				if (iter == last)
+					last = prev;
+				Connection *old = iter;
+				iter = iter-&gt;next;
+				freeConnection(old);
+				if (prev == NULL)
+					connections = iter;
+				else
+					prev-&gt;next = iter;
+				pending[id]--;
+				//if that connection should be killed, kill it.
+			}
+			else {
+				prev = iter;
+				iter = iter-&gt;next;
+			}
+		}
 	}
-	else {
-		prev = iter;
-		iter = iter-&gt;next;
-	}
+	return NULL;
 }
-}
-return NULL;
-}
-</code>
+@</code>
 
 <p>You can see that the only threads being created are the runner threads. Everything else is handled manually. There is a problem with this code, though, and it has to do with performance.</p>
 <p>In the main thread, most of the time nothing gets done. When someone creates a new connection to the web server, it "wakes up" with the <a href="https://man7.org/linux/man-pages/man2/accept.2.html">accept()</a> system call, handles it, then goes back to sleep. In the runner threads, however, even when no work is getting done at all, the threads are still constantly checking to see if there's more work to do. This means that whatever CPU the runner thread is running on will be operating at 100% load 100% of the time, even if nothing's happening. The solution to this is to somehow wait until either a new connection is available or until an existing connection has sent data.</p>
 <p>In UNIX systems, the <a href="https://man7.org/linux/man-pages/man2/poll.2.html">poll()</a> system call will wait until any one of several file descriptors is available for reading. In layman's terms it means that we can wait until any of the connections we have has data to read. This still doesn't solve the problem of waiting for a new connection, but it's a start. In UNIX, it's possible to create a pipe, where writing to one end allows reading from the other end. If we create a pipe from the main thread to each of the runner threads, and for each connection we send the runner a message through that pipe, each of the runners can wait until either one of the connections has data available to read, or until there is a new connection availabe.</p>
 <p>In the main thread:</p>
-<code class="block">
+<code class="block">@&
 //This is still old code released under the GNU General Public License v3
 //This code is slightly newer.
 int *pending = calloc(processes - 1, sizeof(int));
@@ -147,127 +147,127 @@ int (*notify)[2] = malloc(sizeof(int[2]) * (processes - 1));
 //instead of a schedule, we have several pipes
 pthread_t *threads = malloc(sizeof(pthread_t) * (processes - 1));
 if (threads == NULL)
-exit(EXIT_FAILURE);
+	exit(EXIT_FAILURE);
 
 for (int i = 0; i &lt; processes - 1; i++) {
-if (pipe(notify[i]))
-exit(EXIT_FAILURE);
-//create the pipes for the runner threads
-RunnerArgs *args = malloc(sizeof(RunnerArgs));
-if (args == NULL)
-exit(EXIT_FAILURE);
-args-&gt;site = site;
-args-&gt;pending = pending;
-args-&gt;notify = notify[i][0];
-args-&gt;id = i;
-pthread_create(threads + i, NULL,
-       (void*(*)(void*)) runServer, args);
+	if (pipe(notify[i]))
+		exit(EXIT_FAILURE);
+	//create the pipes for the runner threads
+	RunnerArgs *args = malloc(sizeof(RunnerArgs));
+	if (args == NULL)
+		exit(EXIT_FAILURE);
+	args-&gt;site = site;
+	args-&gt;pending = pending;
+	args-&gt;notify = notify[i][0];
+	args-&gt;id = i;
+	pthread_create(threads + i, NULL,
+		       (void*(*)(void*)) runServer, args);
 }
 //create the runner threads
 
 for (;;) {
-fsync(fd);
-//Still have no clue why this works, it's not in the new code.
-int newfd = accept(fd, (struct sockaddr *) &amp;addr,
-	       &amp;addrlen);
-//accept connections (blocking)
-if (newfd &lt; 0)
-exit(EXIT_FAILURE);
-int flags = fcntl(newfd, F_GETFL);
-if (fcntl(newfd, F_SETFL, flags | O_NONBLOCK))
-exit(EXIT_FAILURE);
-//make the connection nonblocking
-int lowestThread = 0;
-int lowestCount = pending[0];
-for (int i = 1; i &lt; processes - 1; i++) {
-if (pending[i] &lt; lowestCount) {
-	lowestThread = i;
-	lowestCount = pending[i];
+	fsync(fd);
+	//Still have no clue why this works, it's not in the new code.
+	int newfd = accept(fd, (struct sockaddr *) &amp;addr,
+			&amp;addrlen);
+	//accept connections (blocking)
+	if (newfd &lt; 0)
+		exit(EXIT_FAILURE);
+	int flags = fcntl(newfd, F_GETFL);
+	if (fcntl(newfd, F_SETFL, flags | O_NONBLOCK))
+		exit(EXIT_FAILURE);
+	//make the connection nonblocking
+	int lowestThread = 0;
+	int lowestCount = pending[0];
+	for (int i = 1; i &lt; processes - 1; i++) {
+		if (pending[i] &lt; lowestCount) {
+			lowestThread = i;
+			lowestCount = pending[i];
+		}
+	}
+	//get the least busiest thread
+	if (write(notify[lowestThread][1], &amp;newfd, sizeof(newfd))
+		  &lt; sizeof(newfd))
+	exit(EXIT_FAILURE);
+	//send that thread the new connection
 }
-}
-//get the least busiest thread
-if (write(notify[lowestThread][1], &amp;newfd, sizeof(newfd))
-  &lt; sizeof(newfd))
-exit(EXIT_FAILURE);
-//send that thread the new connection
-}
-</code>
+@</code>
 <p>In the runner threads:</p>
-<code class="block">
+<code class="block">@&
 //This code has been slightly modified from the original commit that I took it
 //from (the original commit was broken), but it's still GPLed. This code is also
 //untested.
 void *runServer(RunnerArgs *args) {
-Sitefile *site = args-&gt;site;
-int *pending = args-&gt;pending;
-int notify = args-&gt;notify;
-int id = args-&gt;id;
+	Sitefile *site = args-&gt;site;
+	int *pending = args-&gt;pending;
+	int notify = args-&gt;notify;
+	int id = args-&gt;id;
 
-int allocConns = 100;
-struct pollfd *fds = malloc(sizeof(struct pollfd) * allocConns);
-Connection *connections = malloc(sizeof(Connection) * allocConns);
-assert(fds != NULL);
-assert(connections != NULL);
-fds[0].fd = notify;
-fds[0].events = POLLIN;
-int connCount = 1;
-//connections are no longer linked lists, and are now stored in a
-//parallel array to fds. Note that connections are 1 indexed, as fds[0]
-//is the connection to the main thread.
+	int allocConns = 100;
+	struct pollfd *fds = malloc(sizeof(struct pollfd) * allocConns);
+	Connection *connections = malloc(sizeof(Connection) * allocConns);
+	assert(fds != NULL);
+	assert(connections != NULL);
+	fds[0].fd = notify;
+	fds[0].events = POLLIN;
+	int connCount = 1;
+	//connections are no longer linked lists, and are now stored in a
+	//parallel array to fds. Note that connections are 1 indexed, as fds[0]
+	//is the connection to the main thread.
 
-for (;;) {
-poll(fds, connCount, -1);
-//wait for either a message from the main thread or one of the
-//connections.
+	for (;;) {
+		poll(fds, connCount, -1);
+		//wait for either a message from the main thread or one of the
+		//connections.
 
-for (int i = 1; i &lt; connCount; i++) {
-	//go through all the connections
-	if (updateConnection(connections + i, site)) {
-		connCount--;
-		freeConnection(connections + i);
-		memcpy(fds + i, fds + connCount,
-				sizeof(struct pollfd));
-		memcpy(connections + i, connections + connCount,
-				sizeof(Connection));
-		pending[id]--;
-		//if a connection should be removed, remove it
-		//by moving the last item to the removed
-		//position
+		for (int i = 1; i &lt; connCount; i++) {
+			//go through all the connections
+			if (updateConnection(connections + i, site)) {
+				connCount--;
+				freeConnection(connections + i);
+				memcpy(fds + i, fds + connCount,
+						sizeof(struct pollfd));
+				memcpy(connections + i, connections + connCount,
+						sizeof(Connection));
+				pending[id]--;
+				//if a connection should be removed, remove it
+				//by moving the last item to the removed
+				//position
+			}
+		}
+
+		if (fds[0].revents == POLLIN) {
+			//if there's a new connection to accept
+			if (connCount &gt;= allocConns) {
+				allocConns *= 2;
+				struct pollfd *newfds = realloc(fds,
+					sizeof(struct pollfd) * allocConns);
+				if (newfds == NULL)
+					exit(EXIT_FAILURE);
+				fds = newfds;
+
+				Connection *newconns = realloc(connections,
+					sizeof(Connection) * allocConns);
+				if (newconns == NULL)
+					exit(EXIT_FAILURE);
+				connections = newconns;
+			}
+			int newfd;
+			if (read(notify, &amp;newfd, sizeof(newfd)) &lt; sizeof(newfd))
+				exit(EXIT_FAILURE);
+			fds[connCount].fd = newfd;
+			fds[connCount].events = POLLIN;
+
+			if (newConnection(newfd, connections + connCount))
+				exit(EXIT_FAILURE);
+			connCount++;
+			pending[id]++;
+			//accept it
+		}
 	}
+	return NULL;
 }
-
-if (fds[0].revents == POLLIN) {
-	//if there's a new connection to accept
-	if (connCount &gt;= allocConns) {
-		allocConns *= 2;
-		struct pollfd *newfds = realloc(fds,
-			sizeof(struct pollfd) * allocConns);
-		if (newfds == NULL)
-			exit(EXIT_FAILURE);
-		fds = newfds;
-
-		Connection *newconns = realloc(connections,
-			sizeof(Connection) * allocConns);
-		if (newconns == NULL)
-			exit(EXIT_FAILURE);
-		connections = newconns;
-	}
-	int newfd;
-	if (read(notify, &amp;newfd, sizeof(newfd)) &lt; sizeof(newfd))
-		exit(EXIT_FAILURE);
-	fds[connCount].fd = newfd;
-	fds[connCount].events = POLLIN;
-
-	if (newConnection(newfd, connections + connCount))
-		exit(EXIT_FAILURE);
-	connCount++;
-	pending[id]++;
-	//accept it
-}
-}
-return NULL;
-}
-</code>
+@</code>
 
 <p>The code has gotten a lot more complicated since then, so I chose this version of the code for simplicity. This version of the code also had some bugs I noticed while commenting the new runner thread, so those have been fixed.</p>
 <p>I'd be remiss if i said that getting a working web server was the whole story. This website is being hosted at my house, where my Dad's sites are also being hosted. We only have a single ip address for multiple websites. The http protocol states that the hostname should be sent as part of the request. The only way to differentiate the sites would be by parsing http requests and then proxying them to some other device. Luckily, nginx saves the day again, as <a href="https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/">nginx can be used as a reverse proxy.</a> We have 3 ip addresses:</p>
