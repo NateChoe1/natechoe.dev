@@ -6,7 +6,7 @@
 <p>This isn't really as daunting as it sounds, I use Gentoo Linux (I refuse to please Richard Stallman after seeing the code quality of the GNU project), so I have to compile every program I use from scratch. This means that <a href="https://wiki.gentoo.org/wiki//etc/portage/patches">I could just write a patch, and Gentoo would automatically apply it and compile it</a>. I downloaded the bash source code, and the first thing I did was try to find where the path constants were stored.</p>
 <code class="block">@&
 Script started on 2022-03-07 16:50:09-06:00 [TERM="st-256color" TTY="/dev/pts/2" COLUMNS="191" LINES="55"]
-nate@nates-gentoo-laptop ~/repos/bash-5.1.16 $ grep --color=none -rn "bashrc"
+nate@@nates-gentoo-laptop ~/repos/bash-5.1.16 $ grep --color=none -rn "bashrc"
 
 [83 lines of other files]
 
@@ -16,7 +16,7 @@ config-top.h:91:#define DEFAULT_BASHRC "~/.bashrc"
 config-top.h:93:/* System-wide .bashrc file for interactive shells. */
 config-top.h:94:/* #define SYS_BASHRC "/etc/bash.bashrc" */
 config-top.h:104:   sshd and source the .bashrc if so (like the rshd behavior).  This checks
-nate@nates-gentoo-laptop ~/repos/bash-5.1.16 $
+nate@@nates-gentoo-laptop ~/repos/bash-5.1.16 $
 exit
 
 Script done on 2022-03-07 16:50:29-06:00 [COMMAND_EXIT_CODE="0"]
