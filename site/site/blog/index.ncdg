@@ -1,7 +1,7 @@
 @%/site/head.html@
 @=title This site isn't very polished yet, please bare with that for a while.@
 
-<a href="/blog/2022-04-05.html">2022-06-06 - The Commonmark spec sucks</a><br>
+<a href="/blog/2022-06-06.html">2022-06-06 - The Commonmark spec sucks</a><br>
 <a href="/blog/2022-04-05.html">2022-04-05 - natechoe.dev is now dockerized</a><br>
 <a href="/blog/2022-04-03.html">2022-04-03 - Fixing swebs</a><br>
 <a href="/blog/2022-03-14.html">2022-03-14 - Balancing binary search trees</a><br>
