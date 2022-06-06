@@ -15,7 +15,7 @@ Markdown parser.</p>
 follow when creating your own Markdown implementation. Similar to C, the
 original Markdown "specification" was really a tutorial document written by John
 Gruber. After Markdown became quite popular, several people gathered together to
-create the <a href="https://spec.commonmark.org/"Commonmark specification</a>,
+create the <a href="https://spec.commonmark.org/">Commonmark specification</a>,
 an unambiguous description of what Markdown is. When writing my Markdown parser,
 I obviously read this spec, and I very quickly realized that despite the fact
 that people from Reddit, Stack Overflow, Github, and Berkeley wrote it, the
