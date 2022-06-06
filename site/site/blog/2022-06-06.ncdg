@@ -1,0 +1,85 @@
+@%/site/head.html@
+@=title The Commonmark spec sucks@
+
+<p>For a while now, writing my website in pure raw HTML was getting quite
+tiresome. Copying all the boilerplate code every single time I wanted to update
+my site was awful, so I decided to abandon HTML entirely and just use Markdown.
+I figured I could just write an HTML template and use Markdown to specify the
+contents of my site. Now the whole point of this website is that it's mine. It's
+my web server on my own server (except I started using Linode last week so
+that's not right anymore) using my own HTML. This meant that any tools I used
+had to be written by me. This obviously meant that I had to write my own
+Markdown parser.</p>
+
+<p>When Markdown was first created, there was actually no specification to
+follow when creating your own Markdown implementation. Similar to C, the
+original Markdown "specification" was really a tutorial document written by John
+Gruber. After Markdown became quite popular, several people gathered together to
+create the <a href="https://spec.commonmark.org/"Commonmark specification</a>,
+an unambiguous description of what Markdown is. When writing my Markdown parser,
+I obviously read this spec, and I very quickly realized that despite the fact
+that people from Reddit, Stack Overflow, Github, and Berkeley wrote it, the
+specification sucks.</p>
+
+<p>Starting with the technical details, Markdown requires multiple passes to
+parse. If Markdown was parsable with a single passthrough, then you could read a
+small chunk of your Markdown file, parse it, write it to the output file, and
+move on. Unfortunately, Commonmark has 2 features which make this
+impossible.</p>
+
+<code class='block'>
+%\
+Setext headers:
+
+Header
+==========
+
+Subheader
+----------
+
+Link references
+
+[link]
+
+[link]: /url "title"
+%
+</code>
+
+<p>Thanks to setext headers, we have to store each paragraph for at least 1
+extra line to determine whether to make it a paragraph or a header, and thanks
+to link references, the entire file has to be read once for link reference
+definitions and then again for writing to the output. This is pretty annoying,
+but it's bearable. Unfortunately, the worst is yet to come.</p>
+
+<p>Take a look at this actual quote from the latest version of the Commonmark
+spec at the time of writing (0.30):</p>
+
+<i>Basic case. If a sequence of lines Ls constitute a sequence of blocks Bs starting with a character other than a space or tab, and M is a list marker of width W followed by 1 ≤ N ≤ 4 spaces of indentation, then the result of prepending M and the following spaces to the first line of Ls*, and indenting subsequent lines of Ls by W + N spaces, is a list item with Bs as its contents. The type of the list item (bullet or ordered) is determined by the type of its list marker. If the list item is ordered, then it is also assigned a start number, based on the ordered list marker.
+<br><br>
+Copyright (C) John MacFarlane 2021</i>
+
+<p>I still have no idea what this means. To be fair, this is a pretty bad
+example, but my biggest problem with the spec is that it tries far to hard to
+be specific and exact with natural language, and natural language is almost
+never specific and exact. Take a look at this understandable but verbose quote
+from the spec:</p>
+
+<i>
+An ATX heading consists of a string of characters, parsed as inline content, between an opening sequence of 1–6 unescaped # characters and an optional closing sequence of any number of unescaped # characters. The opening sequence of # characters must be followed by spaces or tabs, or by the end of line. The optional closing sequence of #s must be preceded by spaces or tabs and may be followed by spaces or tabs only. The opening # character may be preceded by up to three spaces of indentation. The raw contents of the heading are stripped of leading and trailing space or tabs before being parsed as inline content. The heading level is equal to the number of # characters in the opening sequence.
+<br><br>
+Copyright (C) John MacFarlane 2021
+</i>
+
+<p>Now you may have noticed the word "between" used in that quote. This
+paragraph describes headings middle first, then beginning, then end. Just say
+the thing you're describing in the order that it appears on the file, we're not
+writing poetry don't worry about how the words flow in a technical
+specification.</p>
+
+<p>I really have no point to this post, I've just been frustrated after trying
+to write a Markdown parser for a month and a half and I eventually gave up and
+just wrote an <a href="https://github.com/NateChoe1/ncdg/"HTML preprocessor</a>
+instead. I just really really hate the Commonmark spec, and think it's terribly
+written for people working at multi billion dollar tech companies.</p>
+
+@%/site/tail.html@
