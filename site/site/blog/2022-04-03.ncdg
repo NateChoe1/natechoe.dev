@@ -1,5 +1,5 @@
 @%/site/head.html@
-@=title Fixing swebs@
+@=header Fixing swebs@
 
 <p>For the past several months natechoe.dev has been experiencing regular outages. The trouble was that swebs, my webserver, was using multithreading rather than multiprocessing. Generally, to do multitasking in UNIX systems, you can either use multithreading, or multiprocessing.</p>
 <p>To do multithreading, all you have to do is create a new pthread, and assign it to a function, like this:</p>

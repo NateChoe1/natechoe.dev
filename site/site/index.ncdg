@@ -1,5 +1,5 @@
 @%/site/head.html@
-@=title Welcome to natechoe.dev!@
+@=header Welcome to natechoe.dev!@
 
 <a href="/blog/index.html">The blog</a><br>
 <a href="/educate/index.html">Some stuff on computers in general</a><br>

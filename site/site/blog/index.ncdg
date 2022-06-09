@@ -1,5 +1,6 @@
 @%/site/head.html@
-@=title This site isn't very polished yet, please bare with that for a while.@
+@=header Thanks for bearing with the extreme lack of polish for a while.@
+@=title The blog@
 
 <a href="/blog/2022-06-06.html">2022-06-06 - The Commonmark spec sucks</a><br>
 <a href="/blog/2022-04-05.html">2022-04-05 - natechoe.dev is now dockerized</a><br>

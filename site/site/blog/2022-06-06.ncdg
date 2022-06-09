@@ -1,5 +1,5 @@
 @%/site/head.html@
-@=title The Commonmark spec sucks@
+@=header The Commonmark spec sucks@
 
 <p>For a while now, writing my website in pure raw HTML was getting quite
 tiresome. Copying all the boilerplate code every single time I wanted to update

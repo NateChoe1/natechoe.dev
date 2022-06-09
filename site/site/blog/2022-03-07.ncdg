@@ -1,5 +1,5 @@
 @%/site/head.html@
-@=title Bash sucks@
+@=header Bash sucks@
 
 <p>I've recently been trying to clean up my home directory. I've switched from xinit to <a href="https://github.com/Earnestly/sx">sx</a>, I've switched from vim to <a href="https://neovim.io/">neovim</a>, and I've set the <code>SSH_CONFIG</code> variable to be XDG compliant.</p>
 <p>The hardest change I've made (so far, I haven't ported firefox yet), was making bash XDG compliant. Bash puts all of its files into dotfiles in the home directory. I hate that. Going through possible solutions, I realized that the only feasible solution was to modify the bash source code directly.</p>

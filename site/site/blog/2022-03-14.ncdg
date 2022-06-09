@@ -1,5 +1,5 @@
 @%/site/head.html@
-@=title Balancing binary search trees@
+@=header Balancing binary search trees@
 
 <b>Note: I have done very little research on this, faux-balanced is not a technical term, and there is a good chance that this is not an operation you would find on wikipedia. Look up "left rotation" and "right rotation" to do your own research.</b>
 <p>One of the most versatile data types out there is the binary search tree. It allows you to search, create, or delete item in (ideally) O(log n) time. In order to explain how it works though, we first have to talk about binary search.</p>

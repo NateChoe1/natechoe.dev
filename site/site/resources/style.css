@@ -1,5 +1,14 @@
 html {
-	background: LightSkyBlue;
+	background: #87cefa;
+}
+
+body {
+	margin: 0px;
+}
+
+#content {
+	margin-left: 5px;
+	margin-right: 5px;
 }
 
 h1 {
@@ -24,4 +33,29 @@ code.block {
 	max-height: 400px;
 	overflow-y: scroll;
 	display: block;
+}
+
+header {
+	background-color: #62c1fc;
+	top: 0;
+	width: 100%;
+	position: sticky;
+	box-shadow: 0px 3px 3px #444444;
+}
+
+header>a {
+	color: black;
+	text-decoration: none;
+	font-size: 20px;
+	font-family: monospace;
+	margin-right: 20px;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	padding-left: 5px;
+	position: relative;
+	display: inline-block;
+}
+
+header>a:hover {
+	text-decoration: underline;
 }

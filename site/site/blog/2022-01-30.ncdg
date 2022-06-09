@@ -1,5 +1,5 @@
 @%/site/head.html@
-@=title How I made this site@
+@=header How I made this site@
 
 <p>Over the past week I've been writing a <a href="https://github.com/natechoe1/swebs">web server</a>. I'm going to be honest, it's not great, and I wouldn't recommend that you use it, but it's mine, and this blog post is going to detail how it works.</p>
 <p>When I was designing swebs (a Simple WEB Server) I had a few constraints in mind:</p>
