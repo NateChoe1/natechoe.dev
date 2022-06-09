@@ -3,7 +3,7 @@
 
 <p>For the past several months natechoe.dev has been experiencing regular outages. The trouble was that swebs, my webserver, was using multithreading rather than multiprocessing. Generally, to do multitasking in UNIX systems, you can either use multithreading, or multiprocessing.</p>
 <p>To do multithreading, all you have to do is create a new pthread, and assign it to a function, like this:</p>
-<code class="block">@&
+<pre><code class="block">@&
 #include &lt;pthread.h&gt;
 #define NUM_THREADS 10
 
@@ -27,9 +27,9 @@ int main() {
 		exit_code = pthread_join(threads[i], &amp;result);
 	}
 }
-@</code>
+@</code></pre>
 <p>This code initializes 10 pthreads (POSIX threads), makes them all run <code>action()</code>, and waits for them all to finish. To do multiprocessing, you use the <code>fork()</code> system call, like this:</p>
-<code class="block">@&
+<pre><code class="block">@&
 #include &lt;sys/wait.h&gt;
 #include &lt;unistd.h&gt;
 #include &lt;stdlib.h&gt;
@@ -53,7 +53,7 @@ int main() {
 	wait(NULL);
 	return 0;
 }
-@</code>
+@</code></pre>
 <b>NOTE: This code sucks, don't use it.</b>
 <p>The <code>fork()</code> system call will clone the current process, and return -1 on error, 0 for the child, and the pid of the child for the parent. You may notice the <code>wait()</code> function in there, that just waits for any of the child processes to finish. We made <code>NUM_PROCESSES</code> children, so we wait <code>NUM_PROCESSES</code> times.</p>
 <p>Because multiprocessing creates multiple processes, each individual process has its own separate heap memory. In multithreading, however, all the threads share the same 1 heap. This means that with multithreading, you can coordinate individual threads better. Multiprocessing also takes longer to start a new process because the kernel has to give that new process a process id, allocate some resources to it, and do all the things that a process has to do to start. This makes multithreading fantastic for real time applications, like rendering a 3d scene.</p>
@@ -62,7 +62,7 @@ int main() {
 <b>NOTE: In UNIX, everything is a file. This includes connections over the internet. When you want to send data, you write to a file, and when you want to receive data, you read from a file. I will refer to connections as file descriptors from now on.</b>
 <p>When using multithreading, all file descriptors are shared. This means that the main thread can just accept connections and pass along a file descriptor to a child, and it will already exist in that child. In UNIX, processes don't share file descriptors. This meant that I have to find some way of sending a file descriptor from one process to another. When I first wrote swebs, I didn't think that this was possible, so I had to settle for a multithreading model rather than a multiprocessing model. Luckily, I now know of <code>SCM_RIGHTS</code>.</p>
 <p>In UNIX, there is something called a UNIX socket. UNIX sockets were the very first thing that you could actually call a server. One process will create a UNIX server, which is just a file, and another process will connect to that UNIX server. A UNIX server looks something like this:</p>
-<code class="block">@&
+<pre><code class="block">@&
 #include &lt;string.h&gt;
 #include &lt;unistd.h&gt;
 #include &lt;sys/un.h&gt;
@@ -92,9 +92,9 @@ int main() {
 		printf("test\n");
 	}
 }
-@</code>
+@</code></pre>
 <p>While a UNIX client looks something like this:</p>
-<code class="block">@&
+<pre><code class="block">@&
 #include &lt;string.h&gt;
 #include &lt;unistd.h&gt;
 #include &lt;sys/un.h&gt;
@@ -117,9 +117,9 @@ int main() {
 
 	/* Now you can use read() and write() on fd */
 }
-@</code>
+@</code></pre>
 <p>In UNIX, <code>read()</code> and <code>write()</code> both work on sockets, but for sockets there are some extra special functions such as <code>send()</code> and <code>recv()</code>. They do the exact same thing as <code>read()</code> and <code>write</code>, just with added flags. There's also <code>sendto()</code> and <code>recvfrom()</code>, which need an address to send to or receive from. The final pair of special functions, and the important ones for this context, are <code>sendmsg()</code> and <code>recvmsg()</code>. These 2 functions allow you to send packets through UNIX sockets instead of just streams of data. These packets are special in that they also contain special actions. One of these actions is called SCM_RIGHTS, which will send a copy of a file descriptor to another process. This allows us to create functions which send and receive file descriptors, which allows us to use multiprocessing, which allows us to capture <code>SIGCHLD</code> events. Behold:</p>
-<code class="block">@&
+<pre><code class="block">@&
 void sendFd(int fd, int dest) {
 	struct msghdr msg;
 	struct cmsghdr *cmsg;
@@ -181,6 +181,6 @@ int recvFd(int source) {
 	memcpy(&amp;ret, CMSG_DATA(cmsg), sizeof(ret));
 	return ret;
 }
-@</code>
+@</code></pre>
 
 @%/site/tail.html@

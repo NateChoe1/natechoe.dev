@@ -27,7 +27,7 @@ small chunk of your Markdown file, parse it, write it to the output file, and
 move on. Unfortunately, Commonmark has 2 features which make this
 impossible.</p>
 
-<code class='block'>@\
+<pre><code class='block'>@\
 Setext headers:
 
 Header
@@ -42,7 +42,7 @@ Link references
 
 [link]: /url "title"
 
-@</code>
+@</code></pre>
 
 <p>Thanks to setext headers, we have to store each paragraph for at least 1
 extra line to determine whether to make it a paragraph or a header, and thanks

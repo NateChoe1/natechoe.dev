@@ -6,7 +6,7 @@
 <p>Perhaps the 2 most interesting files in here are <code>/proc/[PID]/maps</code> and <code>/proc/[PID]/mem</code>. <code>/proc/[PID]/maps</code> shows the memory map of that process, including (among other things) the address spaces that each map takes up, and the permissions that the current process has on it. If you <code>cat</code> out one of these files, you may notice that you have quite a few privileges on many processes. This means that you can open <code>/proc/[PID]/mem</code>, the actual memory of that process, and just change a few values in there. To demonstrate this, I wrote 2 programs.</p>
 
 <p>printvalue.c:</p>
-<code class="block">@&
+<pre><code class="block">@&
 #include &lt;stdio.h&gt;
 #include &lt;unistd.h&gt;
 
@@ -17,9 +17,9 @@ int main() {
 		sleep(1);
 	}
 }
-@</code>
+@</code></pre>
 <p>changevalue.c:</p>
-<code class="block">@&
+<pre><code class="block">@&
 #include &lt;stdio.h&gt;
 #include &lt;fcntl.h&gt;
 #include &lt;unistd.h&gt;
@@ -42,24 +42,24 @@ int main() {
 	lseek(fd, (unsigned long long) addr, SEEK_SET);
 	write(fd, &amp;newval, sizeof(newval));
 }
-@</code>
+@</code></pre>
 
 <p>After compiling and running printvalue.c, you might get something like this:</p>
 
-<code class="block">@&
+<pre><code class="block">@&
 Value at 0x7ffeaceef7e4 for process 25720: 5
 Value at 0x7ffeaceef7e4 for process 25720: 5
 Value at 0x7ffeaceef7e4 for process 25720: 5
 ...
-@</code>
+@</code></pre>
 <p>Then after running changevalue.c and putting in input similar to</p>
-<code class="block">@&
+<pre><code class="block">@&
 Enter the pid: 25720
 Enter the pointer: 0x7ffeaceef7e4
 Enter the new value: 10
-@</code>
+@</code></pre>
 <p>You'll see that the output of printvalue.c has changed!</p>
-<code class="block">@&
+<pre><code class="block">@&
 ...
 Value at 0x7ffeaceef7e4 for process 25720: 5
 Value at 0x7ffeaceef7e4 for process 25720: 5
@@ -68,7 +68,7 @@ Value at 0x7ffeaceef7e4 for process 25720: 10
 Value at 0x7ffeaceef7e4 for process 25720: 10
 Value at 0x7ffeaceef7e4 for process 25720: 10
 ...
-@</code>
+@</code></pre>
 <p>That's it, just a neat thing that you can do in Linux.</p>
 
 @%/site/tail.html@

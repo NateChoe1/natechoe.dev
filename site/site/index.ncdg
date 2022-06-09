@@ -1,8 +1,17 @@
 @%/site/head.html@
 @=header Welcome to natechoe.dev!@
 
-<a href="/blog/index.html">The blog</a><br>
-<a href="/educate/index.html">Some stuff on computers in general</a><br>
-<a href="https://github.com/NateChoe1/natechoe.dev">The source code to this website</a>
+<p>You found my personal site! At the time of writing it's indexed on Bing but
+not Google so if you found this then congratulations! If you're from my school
+district, please unblock this site, there's nothing conspicuous on here.</p>
+
+<p>If you want to contact me, my email is nate@@natechoe.dev. This site is
+pretty new, so if you have any suggestions as to how to make it better, please
+email me.</p>
+
+<p>This page used to be a table of contents for the rest of the site before I
+added that top bar, so I really have no idea what to put here. If you have any
+ideas, you can email me about that as well. Or if you don't have any ideas, I
+really don't care.</p>
 
 @%/site/tail.html@

@@ -12,10 +12,10 @@
 <p>Anyways, the ideal strategy is (obviously) not to go through every single number. The ideal strategy is to remove half the numbers in every guess by just guessing the middle. For example, if your first guess is 500, and my fantastic code response "higher", then you've just eliminated 500 numbers. After that, you can 750 to eliminate 250 numbers, and so on. Using this strategy you can find the answer in 9 or 10 guesses every time, which is far better than doing it in 1000.<p>
 <p>Now imagine that instead of trying to find a number, you're trying to find where something is in a sorted list. The same principle applies. Since you know the list is sorted, by checking the middle element you can eliminate half the possible positions for the item you're searching for. This algorithm to search for something by splitting the list in 2 and eliminating one of the halves is called binary search.</p>
 <p>Binary search does have the caveat that you can't add something in the middle of the list.</p>
-<code class="block">
+<pre><code class="block">
 0 1 2 4 5 6
 0 1 2 3 4 5 6
-</code>
+</code></pre>
 <p>As you can see from my crude imagery, in order to add the 3 to this sorted list, the 4, 5, and 6 all had to shift over to the right. This takes time, time which we don't have. We've lost the ability to just add things to the end of our list thanks to our insistence on sorting. What if there was some way to get the blazing efficiency of binary search, but the dynamicallity of just a regular old array.</p>
 <p>Introducing binary search trees! Just store the middle element, and the 2 elements to the left and the right.</p>
 <img src="/resources/good-bst.png" alt="Example of a balanced binary tree">
