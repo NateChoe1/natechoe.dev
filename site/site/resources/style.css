@@ -1,5 +1,5 @@
 html {
-	background: #87cefa;
+	background: #b0dffc;
 }
 
 body {
@@ -7,25 +7,30 @@ body {
 }
 
 #content {
-	margin-left: 5px;
-	margin-right: 5px;
+	padding: 5px;
+	background: #87cefa;
+	box-shadow: 0px 3px 3px #444444;
+}
+
+@media (min-width: 1200px) {
+	#content {
+		margin: 0px 25vw 0px 25vw;
+	}
 }
 
 h1 {
 	text-align: center;
-	font-family: monospace;
 }
 
-h2 {
+h1,h2 {
 	font-family: monospace;
 }
 
 code {
 	background-color: lightgrey;
-	border-color: lightgrey;
-	border-style: solid;
-	border-width: 3px;
+	border-color: lightgrey solid 3px;
 	border-radius: 3px;
+	padding: 3px;
 	white-space: pre;
 }
 
@@ -56,6 +61,37 @@ header>a {
 	display: inline-block;
 }
 
-header>a:hover {
-	text-decoration: underline;
+img {
+	max-width: 100%;
+}
+
+.hubtitle {
+	background-color: #62c1fc;
+}
+.hubitem {
+	display: block;
+	color: #000000;
+	text-decoration: none;
+}
+.hubitem:hover {
+	background-color: #62c1fc;
+}
+.hubitem,.hubtitle {
+	font-size: 24px;
+	border: 1px solid #000000;
+	border-radius: 5px;
+	margin: 5px;
+	padding: 3px;
+	display: flex;
+	align-items: center;
+}
+.rightarrow {
+	transform: rotate(-45deg);
+	-webkit-transform: rotate(-45deg);
+	border: solid black;
+	border-width: 0 1px 1px 0;
+	display: inline-block;
+	padding: 5px;
+	margin-right: 5px;
+	margin-left: auto;
 }

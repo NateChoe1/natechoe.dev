@@ -1,0 +1,68 @@
+@%/site/head.html@
+@=header My journey in setting up email@
+
+<p>I've recently created a new email address, nate@@natechoe.dev. If you want to
+set up email yourself, just get a VPS with port 25 unblocked, and run
+<a href=https://github.com/docker-mailserver/docker-mailserver>docker-mailserver</a>.
+The config that I use can be found
+<a href=https://github.com/NateChoe1/mailserver>here</a>. This post is going to
+detail my far too difficult journey in setting up email.</p>
+
+<p>Firstly, I can't host email at my house. Email, specifically the Simple Mail
+Transfer Protocol (SMTP) runs on port 25, which is blocked by most consumer ISPs
+including AT&T to prevent users from accidentally creating open relays. This
+meant that I had to get a VPS. I decided to go with
+<a href=https://www.linode.com/>Linode</a> because I'd heard good things about
+them. As it turns out, Linode also blocks port 25 so the first several hours
+after buying the VPS was spent trying to figure out why nothing was working at
+all before realizing I had to file a support ticket to get port 25
+unblocked.</p>
+
+<p>After that, I decided to try and find a dockerized mail server. I'd already
+known about <a href=https://github.com/LukeSmithxyz/emailwiz>Luke Smith's
+emailwiz script</a>, but I really wanted a dockerized solution for extra
+portability. Going through the options, there's
+<a href=https://www.axigen.com/docker-mail-server/>axigen</a> (propriety trash),
+<a href=https://mailcow.email/>mailcow</a> (too much memory usage),
+<a href=https://www.iredmail.org/>iRedMail</a> (docker image is unstable),
+<a href=https://james.apache.org/index.html>Apache James</a> (bad
+documentation), <a href=https://mailu.io/1.9/>mailu</a> (didn't work for reasons
+I will explain later), and
+<a href=https://github.com/docker-mailserver/docker-mailserver>docker
+mailserver</a> (also didn't work for the same reason as mailu).</p>
+
+<p>After spending a couple of days going through all of these options, I decided
+to give in and use the emailwiz script. After sending the first few emails my
+Dad wanted to set up his own emails on his own domains. The configuration that
+emailwiz creates email addresses based on the users on the system. My VPS had
+a user called nate, and the domain name in my VPS was natechoe.dev, so the email
+nate@@natechoe.dev was created with the same password as my user password. This
+configuration, you may notice, does not allow for email addresses to exist on
+some domains but not others, or even for multiple domains to be served by one
+email server. Going back to the drawing board, I realized that docker-mailserver
+did have support for multiple domains, but first I'd have to set it up
+correctly. After several hours of trying and failing to set up a mail server,
+I noticed that some of the log messages I was seeing looked exactly like the
+log messages that I wrote for my web server. Messages such as</p>
+
+<pre><code class=block>@\
+[2022-06-13T03:17:25Z] Accepted stream
+[2022-06-13T03:17:25Z] poll() finished with 1 connections
+[2022-06-13T03:17:25Z] Obtained file descriptor from child
+[2022-06-13T03:17:25Z] poll() finished with 2 connections
+@</code></pre>
+
+<p>To bring this entire journey to a quite anticlimactic conclusion, as it turns
+out docker-compose container names are based on the last subdirectory path that
+the docker-compose file is in. Because my mail server was in
+<code>/root/mail/natechoe.dev</code> and my web server was in
+<code>/root/natechoe.dev</code>, docker-compose thought that the mail server and
+the web server were the same natechoe.dev, and binded to the wrong
+container.</p>
+
+<p>So what's the moral of the story here? docker-compose names containers based
+on the last subdirectory name? Read the error messages you get from the programs
+you use? The solution may be right under your nose? Really I have no idea, this
+is just a frustrating story about setting up an email server.</p>
+
+@%/site/tail.html@
