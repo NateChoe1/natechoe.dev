@@ -1,5 +1,5 @@
 html {
-	background: #b0dffc;
+	background: var(--backcol);
 }
 
 body {
@@ -8,8 +8,8 @@ body {
 
 #content {
 	padding: 5px;
-	background: #87cefa;
-	box-shadow: 0px 3px 3px #444444;
+	background: var(--doccol);
+	box-shadow: 0px 3px 3px var(--shadowcol);
 }
 
 @media (min-width: 1200px) {
@@ -27,8 +27,9 @@ h1,h2 {
 }
 
 code {
-	background-color: lightgrey;
-	border-color: lightgrey solid 3px;
+	background-color: var(--codeback);
+	border-color: var(--codeback) solid 3px;
+	color: var(--codecol);
 	border-radius: 3px;
 	padding: 3px;
 	white-space: pre;
@@ -41,15 +42,15 @@ code.block {
 }
 
 header {
-	background-color: #62c1fc;
+	background-color: var(--barcol);
 	top: 0;
 	width: 100%;
 	position: sticky;
-	box-shadow: 0px 3px 3px #444444;
+	box-shadow: 0px 3px 3px var(--shadowcol);
 }
 
 header>a {
-	color: black;
+	color: var(--textcol);
 	text-decoration: none;
 	font-size: 20px;
 	font-family: monospace;
@@ -66,19 +67,19 @@ img {
 }
 
 .hubtitle {
-	background-color: #62c1fc;
+	background-color: var(--barcol);
 }
 .hubitem {
 	display: block;
-	color: #000000;
+	color: var(--textcol);
 	text-decoration: none;
 }
 .hubitem:hover {
-	background-color: #62c1fc;
+	background-color: var(--barcol);
 }
 .hubitem,.hubtitle {
 	font-size: 24px;
-	border: 1px solid #000000;
+	border: 1px solid var(--textcol);
 	border-radius: 5px;
 	margin: 5px;
 	padding: 3px;
@@ -88,7 +89,7 @@ img {
 .rightarrow {
 	transform: rotate(-45deg);
 	-webkit-transform: rotate(-45deg);
-	border: solid black;
+	border: solid var(--textcol);
 	border-width: 0 1px 1px 0;
 	display: inline-block;
 	padding: 5px;
