@@ -1,0 +1,7 @@
+@%/site/head.html@
+@=header Contact info@
+
+<p>Email: <a href=mailto:nate@@natechoe.dev>nate@@natechoe.dev</a></p>
+<p>GPG key: <a href=/info/public.key>Can be found here</a></p>
+
+@%/site/tail.html@
