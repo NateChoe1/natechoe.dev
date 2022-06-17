@@ -1,6 +1,6 @@
-define port 80
+define port 443
 
-define transport TCP
+define transport TLS
 define key /secrets/privkey.pem
 define cert /secrets/fullchain.pem
 define library /site/library.so
