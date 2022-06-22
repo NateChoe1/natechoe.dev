@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<meta name=viewport content=width=device-width,content-scale=1>
+		<title>This is not what you're looking for.</title>
+	</head>
+	<body>
+		<h1>You're in the wrong place.</h1>
+
+		<p>Why would you even put the www. in front of natechoe.dev? Not
+		only is it unnecessary, it takes active effort to do so. I'm not
+		even going to put in a hyperlink for you, you have to manually
+		remove the www. now since you seem to love putting in extra
+		effort to show a web page for some reason.</p>
+
+		<p>In fact, out of pure spite, I've taken special care and
+		attention to make this part of the site look terrible. This is
+		probably going to absolutely tank my SEO but I don't care. It's
+		worth it to me to make you suffer.</p>
+	</body>
+</html>
+<style>
+html {
+	background: red;
+};
+</style>
+<style>
+p,h1 {
+	color: blue;
+	filter: drop-shadow(1px 1px 0px yellow);
+};
+</style>

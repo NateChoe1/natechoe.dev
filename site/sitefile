@@ -1,10 +1,18 @@
-define port 443
+declare TCP 80
+# Port 80 is open for development purposes, it's closed through docker.
 
-define transport TLS
-define key /secrets/privkey.pem
-define cert /secrets/fullchain.pem
+declare TLS 443
+key /secrets/privkey.pem 443
+cert /secrets/fullchain.pem 443
+
+set port 80
+
 define library /site/library.so
 
+set host www\\.natechoe\\.dev
+read / /site/site/wrong.html
+
+set host .*
 linked /autogen/colors.css
 read / /site/site/index.html
 read .* /site/site/
