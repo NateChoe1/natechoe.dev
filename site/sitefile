@@ -5,7 +5,7 @@ declare TLS 443
 key /secrets/privkey.pem 443
 cert /secrets/fullchain.pem 443
 
-set port 80
+set port 443
 
 define library /site/library.so
 
