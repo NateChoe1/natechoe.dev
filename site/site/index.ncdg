@@ -14,4 +14,9 @@ added that top bar, so I really have no idea what to put here. If you have any
 ideas, you can email me about that as well. Or if you don't have any ideas, I
 really don't care.</p>
 
+<p>There's a tor hidden service now, it's
+@$tail -fn1 /tor-data/natechoe-dev-onion/hostname | head -n1 | head -c-1@, so if
+you want to visit this site on the dark web, you can do that.
+</p>
+
 @%/site/tail.html@

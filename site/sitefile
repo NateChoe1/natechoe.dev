@@ -1,11 +1,11 @@
 declare TCP 80
-# Port 80 is open for development purposes, it's closed through docker.
+# Port 80 is open for the tor hidden service.
 
-declare TLS 443
+declare TCP 443
 key /secrets/privkey.pem 443
 cert /secrets/fullchain.pem 443
 
-set port 443
+set port 80,443
 
 define library /site/library.so
 

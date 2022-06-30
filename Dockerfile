@@ -6,7 +6,6 @@ RUN [ "rm", "-rf", "/site" ]
 COPY --from=ncdg /usr/bin/ncdg /usr/bin/ncdg
 COPY ./site /site
 WORKDIR /site
-RUN [ "make" ]
 RUN [ "mkdir", "/secrets" ]
 
-ENTRYPOINT [ "swebs", "-s", "/site/sitefile", "-o", "/dev/stdout" ]
+ENTRYPOINT make && swebs -s /site/sitefile -o /dev/stdout
