@@ -10,6 +10,7 @@ body {
 	padding: 5px;
 	background: var(--doccol);
 	box-shadow: 0px 3px 3px var(--shadowcol);
+	word-wrap: break-word;
 }
 
 @media (min-width: 1200px) {
