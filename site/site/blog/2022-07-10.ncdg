@@ -1,0 +1,85 @@
+@%/site/head.html@
+@=header Troubles with the ENS and decentralization@
+
+<p>I recently found out about the <a href=https://ens.domains/>Ethereum Naming
+System</a>, or the ENS. In order to understand exactly what the ENS is, we have
+to understand the problem it's trying to solve.</p>
+
+<p>The way the internet works is fundamentally very centralized. It has to be.
+When you type in natechoe.dev into your web browser, your web browser uses the
+Domain Name System (DNS) to convert natechoe.dev into an IP address, and asks
+that IP address for the natechoe.dev webpage. The DNS has to be internally
+consistent so the financial advisor Nate Choe can't take the same domain as the
+programmer Nate Choe. The organization that manages the DNS and makes sure that
+everything is internally consistent is the Internet Corporation for Assigned
+Names and Numbers (ICANN). This gives ICANN the power to effectively regulate
+the entire internet. They don't, they're a politically neutral not-for-profit
+corporation, but this danger is why the ENS was created.</p>
+
+<p>The ENS works through an Ethereum smart contract to allow human readable
+domains to get converted into an Ethereum address. You just make a request to
+the smart contract to create a new domain, and now it's yours. You make another
+request to the smart contract to set a resolver for that domain, then you make a
+resolver smart contract that converts domains to Ethereum addresses, which are
+used instead of IP addresses.</p>
+
+<p>Ignoring all of the environmental, economic, and legal concerns with
+blockchains, there are still a few computational problems with this system.
+Firstly, blockchains are incredibly unwieldly. The ENS doesn't actually have a
+method to do a resolve. You can transfer a domain, you can set various factors
+related to a domain, but you can't actually do a resolve. Instead, you just look
+at all the times that a variable was set and figure it out yourself. This makes
+sense as repeatedly executing a smart contract is incredibly wasteful and
+expensive, but it also means that you have to go through a decent chunk of the
+Ethereum blockchain for every single ENS resolve. This means that while a DNS
+resolve takes just a few dozen milliseconds, an ENS resolve takes several
+minutes and is very expensive. With something as ubiquitous as domain names,
+any solution trying to replace the DNS better be at least as fast.</p>
+
+<p>There is one solution to the fact that the ENS is incredibly slow, you could
+cache every single ENS lookup. This would be an incredibly time-consuming and
+resource intensive process, so it would probably be outsourced to a few
+companies, and we've just reinvented the DNS. The fact is that blockchains are
+just too unwieldy to avoid centralization. This is the reason why <a
+href=https://moxie.org/2022/01/07/web3-first-impressions.html>NFTs can
+effectively disappear if an NFT marketplace decides that it breaks their terms
+of conditions</a>.</p>
+
+<p>The second problem with the ENS is that it's still not free from the ICANN.
+How do you actually receive the Ethereum blockchain to do an ENS resolve? The
+math behind blockchains allow you to verify that a blockchain is correct if you
+have it, but how do you actually receive it? You could receive several hard
+drives through the postal service, but in all likelihood you're just going to
+use the internet. Even if you didn't do a single DNS resolve and used raw IP
+addresses to get the blockchain, a procedure which is incredibly difficult
+without any centralization, you'd still have to use an IP address, and IP
+addresses are allocated by the Internet Assigned Numbers Authority (IANA), which
+is controlled by the ICANN. In order to get rid of ICANN, you'd have to
+restructure the fundamental foundations of the internet. Every single Windows 98
+machine still running a hospital for some reason, every single web server
+written from scratch, every single website that's been using the same tech stack
+for 30 years, they'd all have to be updated to use some new hypothetical
+cryptographically secure protocol which would almost definitely be more
+computationally expensive by several orders of magnitude.</p>
+
+<p>The fact is that there's an inverse relationship between centralization and
+cost, and for things as important and ubiquitous as the internet, not only is it
+worth it to do some centralization, it's inevitable. Once the numbers are
+allocated, the process of actually connecting to a server is theoretically
+decentralized such that I could get thousands of miles of cable and connect my
+computer to thousands of other people's computers, but because that's so
+incredibly impractical for the average user everybody just centralizes that job
+into internet service providers. Theoretically, every tech company could build
+their own servers and host them on site, but that's so difficult to get right
+and so expensive to get wrong that everybody just centralizes their web hosting
+to Amazon, Google, or Microsoft. Theoretically, anybody could create their own
+Distributed Denial of Service (DDoS) protection, but this is such an expensive
+task that everybody just centralizes their DDoS protection to Cloudflare. The
+advantages of economies of scale make it cheaper to centralize than to
+decentralize, and that's not necessarily a bad thing.</p>
+
+<p>In conclusion, the costs of decentralization almost always outweigh its
+benefits simply due to the removal of economies of scale, and any attempt to
+decentralize will be halted by its extreme costs.</p>
+
+@%/site/tail.html@
