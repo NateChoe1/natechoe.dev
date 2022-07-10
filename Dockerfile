@@ -8,4 +8,4 @@ COPY ./site /site
 WORKDIR /site
 RUN [ "mkdir", "/secrets" ]
 
-ENTRYPOINT make && swebs -s /site/sitefile -o /dev/stdout
+ENTRYPOINT /site/start.sh
