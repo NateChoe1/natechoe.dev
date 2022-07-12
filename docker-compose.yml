@@ -4,8 +4,8 @@ services:
     image: natechoe/natechoe.dev
     container_name: natechoe.dev
     ports:
-      - "443:443"
-      - "200:80"
+      - "198.251.83.152:443:443"
+      - "198.251.83.152:200:80"
         # Port 200 is used for the tor hidden service. I'd rather not use port
         # 80 because the .dev domain has HSTS and Let's Encrypt has to have port
         # 80 open
