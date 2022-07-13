@@ -1,7 +1,7 @@
 declare TCP 80
 # Port 80 is open for the tor hidden service.
 
-declare TCP 443
+declare TLS 443
 key /secrets/privkey.pem 443
 cert /secrets/fullchain.pem 443
 
