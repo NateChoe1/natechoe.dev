@@ -1,5 +1,6 @@
 @%/site/head.html@
 @=header This server is a Tor exit relay@
+@=diffdomain https://natechoe.dev@
 
 <p>I converted one of my Tor relays to an exit relay on 2022-07-12 (CST), so
 there is a decent chance that some abusive behaviour will happen from the IP
