@@ -1,7 +1,7 @@
 declare TCP 80
 # Port 80 is open for the tor hidden service.
 
-declare TLS 443
+declare TCP 443
 key /secrets/privkey.pem 443
 cert /secrets/fullchain.pem 443
 
@@ -10,12 +10,33 @@ set port 80,443
 define library /site/library.so
 
 set host www\\.natechoe\\.dev
+set type text/html
 read / /site/site/wrong.html
+throw .* 404
 
 set host tor\\.natechoe\\.dev
 read / /site/site/tor.html
+set type text/css
+linked /autogen/colors.css
+read /resources/style.css /site/site/resources/style.css
+throw .* 404
 
 set host .*
+set type text/css
 linked /autogen/colors.css
+read .*\\.css /site/site/
+
+set type text/html
 read / /site/site/index.html
-read .* /site/site/
+read .*\\.(html|ncdg) /site/site/
+
+set type text/plain
+read .*\\.txt /site/site/
+read /info/public.key /site/site/info/public.key
+
+set type image/png
+read .*\\.png /site/site/
+
+set type text/javascript
+read .*\\.js /site/site/
+# Ew javascript.
