@@ -1,5 +1,5 @@
 @%/site/head.html@
-@=header This server is a tor exit relay@
+@=header This server is a Tor exit relay@
 
 <p>I converted one of my Tor relays to an exit relay on 2022-07-12 (CST), so
 there is a decent chance that some abusive behaviour will happen from the IP
@@ -50,7 +50,7 @@ prepared response</a>.</p>
 
 <p>For more information, please consult the following documentation:</p>
 
-@$ /site/create-hub.sh /site/tor-docs@
+@$ /site/create-hub.sh /site/tor-docs "pieces of documentation"@
 
 <p>If you still have a complaint about the router, you may email the <a
 href=mailto:nate@@natechoe.dev>maintainer</a>. If there's a particular service
