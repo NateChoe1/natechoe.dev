@@ -1,3 +1,3 @@
 HiddenServiceDir /var/lib/tor/tor-data/natechoe-dev-onion
-HiddenServicePort 80 host.docker.internal:200
-HiddenServicePort 443 host.docker.internal:443
+HiddenServicePort 80 10.1.123.2:200
+HiddenServicePort 443 10.1.123.2:443

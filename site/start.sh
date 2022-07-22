@@ -1,6 +1,5 @@
 #!/bin/sh
 
-echo "/core/core.%e.%p" >> /proc/sys/kernel/core_pattern
-ulimit -c unlimited
+ulimit -c unlimited 2>&1
 make
 swebs -s /site/sitefile -o /dev/stdout

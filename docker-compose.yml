@@ -16,6 +16,9 @@ services:
     working_dir: "/site/"
     restart:
       always
+    networks:
+      natechoedev_network:
+        ipv4_address: 10.1.123.2
   natechoe.dev-onion:
     image: natechoe/tor-relay
     container_name: natechoe.dev-onion
@@ -28,3 +31,12 @@ services:
       - RELAY_EXPERT=1
     restart:
       always
+    networks:
+      natechoedev_network:
+
+networks:
+  natechoedev_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.1.123.0/24
