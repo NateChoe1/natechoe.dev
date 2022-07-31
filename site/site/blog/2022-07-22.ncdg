@@ -188,8 +188,9 @@ replace other programming techniques. They're too simple to do even things like
 branching, and should not be taken to extremes. Second, they shouldn't be used
 for unstable things which are likely to change, or where any change at all would
 likely be a rewrite of the entire system. Basically, you're almost never going
-to find a good use for X-macros. I really don't know how to end this blog, so
-I'll just ask that if you do find a good use for X-macros, send me an email
-about at <a href=mailto:nate@natechoe.dev>nate@natechoe.dev</a></p>
+to find a good use for X-macros. I really don't know how to end this blog post,
+so I'll just ask that if you find a cool hack using X-macros please email me at
+<a href=mailto:nate@@natechoe.dev>nate@@natechoe.dev</a>, I'd love to hear
+it.</p>
 
 @%/site/tail.html@
