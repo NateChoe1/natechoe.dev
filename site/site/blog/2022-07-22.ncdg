@@ -1,4 +1,4 @@
-@%/site/head.ncdg
+@%/site/head.html@
 @=header Notes on X-macros@
 
 <p>There is a very neat decades old hack called X-macros which allow you to
@@ -192,4 +192,4 @@ to find a good use for X-macros. I really don't know how to end this blog, so
 I'll just ask that if you do find a good use for X-macros, send me an email
 about at <a href=mailto:nate@natechoe.dev>nate@natechoe.dev</a></p>
 
-@%/site/tail.ncdg@
+@%/site/tail.html@
