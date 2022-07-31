@@ -1,0 +1,195 @@
+@%/site/head.ncdg
+@=header Notes on X-macros@
+
+<p>There is a very neat decades old hack called X-macros which allow you to
+auto-generate complex repetitive code. They work like this:</p>
+
+<pre><code class=block>@\
+/* func() will declare 5 variables a, b, c, d, e, initialize them to different
+ * values, call 5 different functions with them, then change them to 5 different
+ * values. */
+
+void func() {
+#define LOCAL_VARS \
+		X(a, 1, a_func, b) \
+		X(b, 2, b_func, c) \
+		X(c, 3, c_func, a ^ b) \
+		X(d, 4, d_func, e) \
+		X(e, 5, e_func, a ^ d)
+
+/* Declare 5 variables and initialize them to different values */
+#define X(name, init, func, new) \
+	int name = init;
+	LOCAL_VARS
+#undef X
+
+/* Call 5 different functions with those variables */
+#define X(name, init, func, new) \
+	func(name);
+	LOCAL_VARS
+#undef X
+
+/* Change those variables to 5 different values */
+#define X(name, init, func, new) \
+	name = new;
+	LOCAL_VARS
+#undef X;
+}
+@</code></pre>
+
+<p>You define a template X which takes in several arguments and does some
+processing, and an index which calls that template several times. By redefining
+the template to do different processing you can process the same data in several
+different ways. This is incredibly useful in many contexts, perhaps the most
+obvious one being SHA-256 hashing where 8 variables are repeatedly processed
+with very similar arguments in many phases over and over again. X-macros are
+incredibly powerful, but (as I've learned the hard way) they're not without
+their limitations. This article will go through a few of those.</p>
+
+<p>Firstly, preprocessor macros are not a programming language in it of
+themselves, they're an extra feature that was added for convenience sake. This
+means that to get stuff done with X-macros you have to do a lot more work than
+you would have for any other method. For example, maybe for the c variable I
+don't want to call the function, but I do want to create the variable and change
+it later. Perhaps the simplest solution is just to create a NOP function and use
+that instead like this:</p>
+
+<pre><code class=block>@\
+#define NOP(arg)
+
+void func() {
+#define LOCAL_VARS \
+		X(a, 1, a_func, b) \
+		X(b, 2, b_func, c) \
+		X(c, 3, NOP, a ^ b) \
+		X(d, 4, d_func, e) \
+		X(e, 5, e_func, a ^ d)
+
+#define X(name, init, func, new) \
+	int name = init;
+	LOCAL_VARS
+#undef X
+
+#define X(name, init, func, new) \
+	func(name);
+	LOCAL_VARS
+#undef X
+
+#define X(name, init, func, new) \
+	name = new;
+	LOCAL_VARS
+#undef X;
+}
+@</code></pre>
+
+<p>What if I don't really want to skip the function step, but I do want to skip
+the set step. I could set the variable to itself in the template, if we continue
+this pattern we have to create a NOP pattern for every argument. What we really
+need is some way to skip an argument. One solution for this is to have 2
+functions, a NOP function and an ECHO function. The NOP function is passed when
+you want to skip an argument, and the ECHO function is passed when you don't
+want to. Something like this:</p>
+
+<pre><code class=block>@\
+#define NOP(arg)
+#define ECHO(arg) arg
+
+/* In this example, e is already defined so we shouldn't define it again, c_func
+ * shouldn't be called, and b shouldn't be set to anything after initialization.
+ * */
+void func() {
+#define LOCAL_VARS \
+		X(ECHO, a, 1, ECHO, a_func, ECHO, b) \
+		X(ECHO, b, 2, ECHO, b_func, NOP,  0) \
+		X(ECHO, c, 3, NOP,  c_func, ECHO, a ^ b) \
+		X(ECHO, d, 4, ECHO, d_func, ECHO, e) \
+		X(NOP,  e, 5, ECHO, e_func, ECHO, a ^ d)
+
+#define X(initop, name, init, funcop, func, newop, new) \
+	nameop(int name = init;)
+	LOCAL_VARS
+#undef X
+
+#define X(initop, name, init, funcop, func, newop, new) \
+	funcop(func(name);)
+	LOCAL_VARS
+#undef X
+
+#define X(initop, name, init, funcop, func, newop, new) \
+	newop(name = new;)
+	LOCAL_VARS
+#undef X;
+}
+@</code></pre>
+
+<p>This way, we can choose whether or not to generate code with X-macros, and
+our problems are solved. Trouble is, we've just nearly double the amount of
+arguments that the X-macro takes, and every single X redefinition has to take
+the same arguments or else you'll get a compiler error. The fact is that
+preprocessor macros are not a programming language. There are no standard
+library tools, default definitions, or language quirks that were added in to
+help you do this. If you want to use X-macros, you have to do everything
+yourself.</p>
+
+<p>Another limitation of X-macros is that they're too "magical". What I mean by
+that is that if you saw an X-macro in code, you'd have to look at it for a few
+minutes to understand exactly what was happening, and you still wouldn't be
+entirely sure that your assumption was correct. Either people reading your code
+have to scroll down to when you actually define X and use it in context to
+understand (usually incorrectly) what's happening, or you have to write a
+(usually incorrect) detailed comment explaining the exact arguments that X takes
+and how it should be used in context. This leads into another problem with
+X-macros, they're too specific. If I want to add more arguments to an X-macro, I
+have to change every single redefinition of X to include that extra argument.
+This leads to code duplication which isn't even being used for anything
+useful.</p>
+
+<p>The main programming principle that you'd use X-macros to adhere to is that
+logic should be separated from data. In your code you've got logic - complicated
+operations that require human thought to understand - and you've got data -
+lists of things such as commands and functions. When you mix the two, you get
+code duplication, magic numbers, and errors. For example:</p>
+
+<pre><code class=block>@\
+switch (request_type) {
+case 0:
+	set_request_type(0);
+	handle_request(request);
+	break;
+case 1:
+	set_request_type(1);
+	handle_request(request);
+	break;
+case 2:
+	set_request_type(22);
+	handle_request(request);
+	break;
+}
+@</pre></code>
+
+<p>This code is terrible. Nobody knows what 0, 1, or 2 really mean because
+that's just data. Those 3 lines of code are repeated over and over again for
+every request type, wasting our logical brain power on repetitive stuff. It
+doesn't even work because request type 2 sets the request type to 22. All of
+these problems could be solved by just moving that stuff to data.</p>
+
+<p>X-macros are great at moving data away from code. It moves the data to the
+index and keeps the code in the definitions. As long as nothing too crazy is
+happening, the index is free of logic, and the logic is free from data. If I
+want to change an X-macro, however, I now have to change every redefinition of
+said macro, add more documentation on how the X-macro is defined, and pray that
+everything still works. There is only one characteristic that truly defines all
+good code, and that is that I can make a change to my code confidently. If I get
+50 compiler warnings every time I change the X-macro template, I'm doing
+something wrong.</p>
+
+<p>This all leads to two truths about X-macros. First, they shouldn't try to
+replace other programming techniques. They're too simple to do even things like
+branching, and should not be taken to extremes. Second, they shouldn't be used
+for unstable things which are likely to change, or where any change at all would
+likely be a rewrite of the entire system. Basically, you're almost never going
+to find a good use for X-macros. I really don't know how to end this blog, so
+I'll just ask that if you do find a good use for X-macros, send me an email
+about at <a href=mailto:nate@natechoe.dev>nate@natechoe.dev</a></p>
+
+@%/site/tail.ncdg@
