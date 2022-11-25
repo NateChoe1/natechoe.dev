@@ -17,13 +17,6 @@ set type text/html
 read / /site/site/wrong.html
 throw .* 404
 
-set host tor\\.natechoe\\.dev
-read / /site/site/tor.html
-set type text/css
-linked /autogen/colors.css
-read /resources/style.css /site/site/resources/style.css
-throw .* 404
-
 set host .*
 set type text/css
 linked /autogen/colors.css
