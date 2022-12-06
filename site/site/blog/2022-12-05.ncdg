@@ -1,5 +1,5 @@
 @%/site/head.html@
-@=title Writing secure code is hard@
+@=header Writing secure code is hard@
 
 <p>My laptop runs <a href=https://www.gentoo.org>Gentoo</a>, which means that I
 have to compile all of my software from source. This is fine for small command
