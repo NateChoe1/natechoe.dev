@@ -174,9 +174,10 @@ the path you're chrooting to is actually within <code>GCHROOT_CHROOTS</code>.
 This can be done with the <a
 href=https://man7.org/linux/man-pages/man3/realpath.3.html>realpath</a> standard
 library function, which converts paths into their most direct forms, so
-"/usr/share/gchroot/chroots/../../../../home/nate/broken-chroot" just turns into
-"/home/nate/broken-chroot". We can then check to make sure that the path we're
-chrooting to is actually within <code>GCHROOT_CHROOTS</code>.</p>
+<code>/usr/share/gchroot/chroots/../../../../home/nate/broken-chroot</code>
+turns into <code>/home/nate/broken-chroot</code>. We can then check to make sure
+that the path we're chrooting to is actually within
+<code>GCHROOT_CHROOTS</code>.</p>
 
 <pre><code class=block>@&
 #define GCHROOT_PREFIX "/usr/share/gchroot"
@@ -219,9 +220,9 @@ int main(int argc, char **argv) {
 }
 @</code></pre>
 
-<p>This C code is now (probably) secure, but this is not all of the gchroot
-code. There's also that shell script which gets executed at the end of this
-program. If that's not secure, then this whole thing breaks.</p>
+<p>This C code is now (probably) secure, but that's only half the battle. If the
+shell script that the C code runs is insecure, then the entire thing is
+insecure.</p>
 
 <pre><code class=block>@&
 #!/bin/sh
@@ -276,11 +277,12 @@ then the first mount command becomes <code>mount --bind -text4 -text4</code>,
 which interprets "-text4" as "Use the ext4 filesystem type" rather than "Use the
 file '-text4'". Luckily, the <a
 href=https://man7.org/linux/man-pages/man3/getopt.3.html>getopt</a> function
-which parses command line arguments in Linux interprets any arguments after a
-"--" argument as a literal string and not as a flag, so to print a file called
-"-h", you can run <code>cat -- -h</code> to make the "-h" argument get
-interpreted as a literal string and not as a help flag. To make this code safer,
-we have to put a "--" argument in front of every single command, like this:</p>
+which parses command line arguments in UNIX interprets any arguments after a
+<code>--</code> argument as a literal string and not as a flag. For example, to
+print a file called <code>-h</code>, you can run <code>cat -- -h</code> to make
+the <code>-h</code> argument get interpreted as a literal string and not as a
+help flag. To make this code safer, we have to put a <code>--</code> argument in
+front of every single command, like this:</p>
 
 <pre><code class=block>@&
 #!/bin/bash
@@ -302,10 +304,10 @@ chroot -- "$1" su nate -c /init.sh
 umount -R -- "$1"
 @</code></pre>
 
-<p>Eagle-eyed readers may have noticed the final issue with this script (at
-least the last one I've seen). This issue is the reason why setuid scripts
-aren't allowed in UNIX. To explain it, we have to know how shell scripts run in
-UNIX systems with an example.</p>
+<p>There is still a huge problem with this script, though. This problem is the
+reason why most UNIX-like kernels, including Linux, don't allow you to run a
+setuid shell script. To explain it, though, we first have to talk about how
+shell scripts work internally.</p>
 
 <pre><code class=block>@&
 #!/bin/sh
@@ -313,24 +315,25 @@ UNIX systems with an example.</p>
 echo $1
 @</code></pre>
 
-<p>Let's say this script is stored in "script.sh". When I run
+<p>Let's say this script is stored in <code>script.sh</code>. When I run
 <code>./script.sh</code>, the UNIX kernel notices that the file starts with the
 shebang <code>#!</code>, and determines that this is a shell script or something
 similar. It then looks at the stuff that follows the shebang to determine what
 the interpreter is. In this case, it determines that the interpreter for
-"script.sh" is "/bin/sh". It then runs <code>/bin/sh ./script.sh</code>. In this
-case, running <code>./script.sh</code> and <code>/bin/sh ./script.sh</code> are
-exactly equivalent. If "script.sh" had the setuid bit set, and this version of
-UNIX allowed the setuid on shell scripts, then something like this could
-happen:</p>
+<code>script.sh</code> is </code>/bin/sh</code>. It then runs <code>/bin/sh
+./script.sh</code>. In this case, running <code>./script.sh</code> and
+<code>/bin/sh ./script.sh</code> are exactly equivalent. If "script.sh" had the
+setuid bit set, and this version of UNIX allowed the setuid on shell scripts,
+then something like this could happen:</p>
 
 <pre><code class=block>@&
 $ ln -s -- script.sh -i
 $ -i # This is equivalent to /bin/sh -i, which opens an interactive shell
 @</code></pre>
 
-<p>Because "script.sh" is a setuid executable, if you don't escape the shebang
-you can do privilege escalation. A better shell script looks like this:</p>
+<p>Because <code>script.sh</code> is a setuid executable, if you don't escape
+the shebang you can do privilege escalation. A better shell script looks like
+this:</p>
 
 <pre><code class=block>@&
 #!/bin/sh --
@@ -347,9 +350,9 @@ $ vi malicious-script.sh
 $ ln -s script.sh temp.sh
 $ nice -n20 ./temp.sh &amp;
 $ mv malicious-script.sh temp.sh
-@</code</pre>
+@</code></pre>
 
-<p>If an attacker times this just right, the following happens:</p>
+<p>If an attacker times this just right, the following may happen:</p>
 
 <ol>
 	<li>The kernel notices the shebang</li>
@@ -391,9 +394,9 @@ umount -R -- "$1"
 @</code></pre>
 
 <p>In conclusion, writing secure code is hard. The original source code for
-gchroot had less than 50 lines of code including whitespace, but there were at
-least 5 security vulnerabilities in it anyways. The only real solution to this
-is to have many eyes looking at our code. That's the reason why all the big
+gchroot had less than 50 lines of code including whitespace, but there were
+still at least 5 security vulnerabilities in it. The only way to write secure
+code is to have many eyes looking at our code. That's the reason why all the big
 encryption libraries and algorithms are open source. If I could manage to create
 5 security vulnerabilities in under 50 lines of code, you can only imagine how
 many vulnerabilities are in the several million lines of code in Windows. The
