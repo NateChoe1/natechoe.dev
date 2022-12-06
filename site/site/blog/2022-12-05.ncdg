@@ -90,7 +90,7 @@ email to the administrator of the system and exits. You can see this in the
 information that <code>ls -l</code> gives you.</p>
 
 <pre><code class=block>@&
-nate@ubuntu-server:~$ ls -l /usr/bin/sudo
+$ ls -l /usr/bin/sudo
 -rwsr-xr-x 1 root root 232416 Aug  4 05:35 /usr/bin/sudo
 @</code></pre>
 
@@ -300,7 +300,7 @@ mount --bind -- /etc/resolv.conf "$1/etc/resolv.conf"
 chroot -- "$1" su nate -c /init.sh
 
 umount -R -- "$1"
-</code></pre>
+@</code></pre>
 
 <p>Eagle-eyed readers may have noticed the final issue with this script (at
 least the last one I've seen). This issue is the reason why setuid scripts
@@ -311,7 +311,7 @@ UNIX systems with an example.</p>
 #!/bin/sh
 
 echo $1
-</code></pre>
+@</code></pre>
 
 <p>Let's say this script is stored in "script.sh". When I run
 <code>./script.sh</code>, the UNIX kernel notices that the file starts with the
@@ -327,7 +327,7 @@ happen:</p>
 <pre><code class=block>@&
 $ ln -s -- script.sh -i
 $ -i # This is equivalent to /bin/sh -i, which opens an interactive shell
-</code></pre>
+@</code></pre>
 
 <p>Because "script.sh" is a setuid executable, if you don't escape the shebang
 you can do privilege escalation. A better shell script looks like this:</p>
@@ -336,7 +336,7 @@ you can do privilege escalation. A better shell script looks like this:</p>
 #!/bin/sh --
 
 echo $1
-</code></pre>
+@</code></pre>
 
 <p>Now, <code>-i</code> is equivalent to <code>/bin/sh -- -i</code>, so all is
 right in the world. Except of course it isn't, we've got a race condition
@@ -347,7 +347,7 @@ $ vi malicious-script.sh
 $ ln -s script.sh temp.sh
 $ nice -n20 ./temp.sh &amp;
 $ mv malicious-script.sh temp.sh
-</code</pre>
+@</code</pre>
 
 <p>If an attacker times this just right, the following happens:</p>
 
@@ -388,7 +388,7 @@ mount --bind -- /etc/resolv.conf "$1/etc/resolv.conf"
 chroot -- "$1" su nate -c /init.sh
 
 umount -R -- "$1"
-</code></pre>
+@</code></pre>
 
 <p>In conclusion, writing secure code is hard. The original source code for
 gchroot had less than 50 lines of code including whitespace, but there were at
