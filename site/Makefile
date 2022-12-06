@@ -15,6 +15,9 @@ site/sitemap.txt: $(SRCS)
 	find -name *.ncdg | sed "s/ncdg$$/html/g" | sed "s/^\.\/site/https:\/\/natechoe.dev/g" > $@
 	echo "https://natechoe.dev/" >> $@
 
+site/blog/index.html: site/blog/index.ncdg site/blog/posts
+	ncdg site/blog/index.ncdg site/blog/index.html
+
 %.html: %.ncdg
 	ncdg $< $@
 
