@@ -1,0 +1,405 @@
+@%/site/head.html@
+@=title Writing secure code is hard@
+
+<p>My laptop runs <a href=https://www.gentoo.org>Gentoo</a>, which means that I
+have to compile all of my software from source. This is fine for small command
+line utilities and even for the Linux kernel, but compiling a graphical
+environment and web browser on my decade old Thinkpad would take several hours.
+Instead, I have several <a
+href=https://man7.org/linux/man-pages/man1/chroot.1.html>chroot</a> environments
+on my system running <a href=https://archlinux.org>Arch</a>. This system has a
+few advantages, the biggest one being that I can create separate environments
+for different purposes. I have one chroot for school, and another for personal
+use. The one for personal use has Tor installed, and the one for school uses
+Google as a search engine because my school blocks all other search engines.
+Unfortunately, it's also incredibly inconvenient. To chroot into an environment,
+you have to mount several filesystems and be running as root. This can be made a
+bit more convenient with a shell script like this:</p>
+
+<pre><code class=block>@&
+#!/bin/sh
+
+if [ $# -lt 1 ] ; then
+	echo "Usage: $0 [dir]"
+	exit
+fi
+
+mount --bind $1 $1
+mount -t proc /proc $1/proc
+mount --make-rslave --rbind /sys $1/sys
+mount --make-rslave --rbind /dev $1/dev
+mount --make-rslave --rbind /run $1/run
+mount --bind -- /etc/resolv.conf $1/etc/resolv.conf
+
+chroot $1
+
+umount -R $1
+@</code></pre>
+
+<p>That way to chroot you can just run <code>sudo ./chroot [dir]</code> to get a
+root shell in the chroot environment. Then, you can just <a
+href=https://man7.org/linux/man-pages/man1/su.1.html>su</a> into your user and
+use something like <a href=https://linux.die.net/man/1/xinit>xinit</a> to start
+a graphical environment. I actually used this solution for an embarrassingly long
+time, despite the fact that anybody could obtain a root shell by just exiting
+the graphical environment and su shell. This problem isn't even difficult to
+solve, a simple modification of the script and an addition to the chroot
+environment fixes this problem entirely.</p>
+
+<pre><code class=block>@&
+#!/bin/sh
+
+if [ $# -lt 1 ] ; then
+	echo "Usage: $0 [dir]"
+	exit
+fi
+
+mount --bind $1 $1
+mount -t proc /proc $1/proc
+mount --make-rslave --rbind /sys $1/sys
+mount --make-rslave --rbind /dev $1/dev
+mount --make-rslave --rbind /run $1/run
+mount --bind -- /etc/resolv.conf $1/etc/resolv.conf
+
+chroot $1 su nate -c /init.sh
+
+umount -R $1
+@</code></pre>
+
+<p>With this simple modification, <code>/init.sh</code> is run with the nate
+user with every chroot, rather than just a plain shell as the root user. This is
+a lot more secure as exiting the graphical environment, or whatever environment
+<code>/init.sh</code> creates will exit immediately to the Gentoo environment
+and not to a root shell. I'm pretty sure this code is secure, but I don't want
+to have to type my password into sudo (or in my case, doas) every time I want to
+use my computer for school. The convenience of not having to type my password
+twice to do stuff for school (once to log in to my Gentoo system, the second
+time to chroot) is worth the slight security risk of someone accessing a
+graphical environment on my system because none of my important stuff is in a
+chroot.</p>
+
+<p>To allow someone to run a program as root without a password, you can use the
+setuid bit. If an executable file has the setuid bit set, then any time a user
+runs that program it's run with the permissions of the user that owns that
+executable file. This is how <code>sudo</code> and <code>doas</code> work. The
+executable files for these programs have the setuid bits set, so every time you
+run <code>sudo</code>, a program is run with root privileges. The code within
+the <code>sudo</code> executable then determine whether you're actually allowed
+to run a program as root, and if you aren't, then it reports the incident in an
+email to the administrator of the system and exits. You can see this in the
+information that <code>ls -l</code> gives you.</p>
+
+<pre><code class=block>@&
+nate@ubuntu-server:~$ ls -l /usr/bin/sudo
+-rwsr-xr-x 1 root root 232416 Aug  4 05:35 /usr/bin/sudo
+@</code></pre>
+
+<p>That <code>s</code> in <code>-rwsr-xr-x</code> means "setuid", which means
+"whenever you run this program, run it with the permissions of the owner of this
+program", and since the root user owns that program, <code>sudo</code> runs with
+the permissions of the root user. We can't actually set the setuid bit for shell
+scripts for security reasons I'll get to later, but we can create a C program
+that runs the shell script as a wrapper, like this:</p>
+
+<pre><code class=block>@&
+#define GCHROOT_PREFIX "/usr/share/gchroot"
+#define GCHROOT_CHROOTS GCHROOT_PREFIX "/chroots/"
+
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+#include &lt;unistd.h&gt;
+#include &lt;limits.h&gt;
+
+int main(int argc, char **argv) {
+	char path[PATH_MAX];
+
+	if (argc &lt; 2) {
+		fprintf(stderr, "Usage: %s [environment]\n", argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	snprintf(path, sizeof path, GCHROOT_CHROOTS "%s", argv[1]);
+
+	setuid(0);
+	execl(GCHROOT_PREFIX "/chroot", "chroot", path, NULL);
+}
+@</code></pre>
+
+<p>This code, which I call gchroot, just generates the path that you're
+chrooting to, and runs the script as root. There are, however, a couple of huge
+security vulnerabilities in just these 22 lines of code.</p>
+
+<p>The first one, and the one that GCC gives you a warning for if you use the
+right flags, is that we're not checking the return value for the
+<code>setuid()</code> system call. This is quite easy to fix, a better version
+of this code might look like this:</p>
+
+<pre><code class=block>@&
+#define GCHROOT_PREFIX "/usr/share/gchroot"
+
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+#include &lt;unistd.h&gt;
+#include &lt;limits.h&gt;
+
+int main(int argc, char **argv) {
+	char path[PATH_MAX];
+
+	if (argc &lt; 2) {
+		fprintf(stderr, "Usage: %s [environment]\n", argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	snprintf(path, sizeof path, GCHROOT_PREFIX "/chroots/%s", argv[1]);
+
+	if (setuid(0) == -1) {
+		perror("setuid()");
+		exit(EXIT_FAILURE);
+	}
+	execl(GCHROOT_PREFIX "/chroot", GCHROOT_PREFIX "/chroot", path, NULL);
+}
+@</code></pre>
+
+<p>There is still a second, more subtle vulnerability in this code, though. The
+reason why you can't chroot unless you're the root user is because by carefully
+crafting a new filesystem, a non-root user can become the root user of a chroot.
+The root user of a chroot could then mount some filesystems and chroot back into
+the original system, gaining root access to the whole system. In this code,
+we're not checking the value of <code>argv[1]</code>. For all we know, an
+attacker could run <code>gchroot ../../../../home/nate/broken-chroot</code> and
+gain complete control of my laptop. The solution to this is to make sure that
+the path you're chrooting to is actually within <code>GCHROOT_CHROOTS</code>.
+This can be done with the <a
+href=https://man7.org/linux/man-pages/man3/realpath.3.html>realpath</a> standard
+library function, which converts paths into their most direct forms, so
+"/usr/share/gchroot/chroots/../../../../home/nate/broken-chroot" just turns into
+"/home/nate/broken-chroot". We can then check to make sure that the path we're
+chrooting to is actually within <code>GCHROOT_CHROOTS</code>.</p>
+
+<pre><code class=block>@&
+#define GCHROOT_PREFIX "/usr/share/gchroot"
+#define GCHROOT_CHROOTS GCHROOT_PREFIX "/chroots/"
+
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdlib.h&gt;
+
+#include &lt;unistd.h&gt;
+#include &lt;limits.h&gt;
+
+int main(int argc, char **argv) {
+	char path[PATH_MAX];
+
+	if (argc &lt; 2) {
+		fprintf(stderr, "Usage: %s [environment]\n", argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	{
+		char naivepath[PATH_MAX];
+		snprintf(naivepath, sizeof path, GCHROOT_CHROOTS "%s", argv[1]);
+		if (realpath(naivepath, path) == NULL) {
+			perror("realpath()");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if (strncmp(path, GCHROOT_CHROOTS, strlen(GCHROOT_CHROOTS)) != 0) {
+		fputs("Directory mismanagement detected, exiting\n", stderr);
+		exit(EXIT_FAILURE);
+	}
+
+	if (setuid(0) == -1) {
+		perror("setuid()");
+		exit(EXIT_FAILURE);
+	}
+	execl(GCHROOT_PREFIX "/chroot", GCHROOT_PREFIX "/chroot", path, NULL);
+}
+@</code></pre>
+
+<p>This C code is now (probably) secure, but this is not all of the gchroot
+code. There's also that shell script which gets executed at the end of this
+program. If that's not secure, then this whole thing breaks.</p>
+
+<pre><code class=block>@&
+#!/bin/sh
+
+if [ $# -lt 1 ] ; then
+	echo "Usage: $0 [dir]"
+	exit
+fi
+
+mount --bind $1 $1
+mount -t proc /proc $1/proc
+mount --make-rslave --rbind /sys $1/sys
+mount --make-rslave --rbind /dev $1/dev
+mount --make-rslave --rbind /run $1/run
+mount --bind -- /etc/resolv.conf $1/etc/resolv.conf
+
+chroot $1 su nate -c /init.sh
+
+umount -R $1
+@</code></pre>
+
+<p>The first major problem with this code is that we're not sanitizing our
+arguments. If someone runs <code>gchroot "file1 file2"</code>, then the first
+<code>mount</code> command in the shell script becomes <code>mount --bind file1
+file2 file1 file2</code>, a command that has 5 arguments rather than the
+intended 3. To fix this, we can just put double quotes around all the arguments,
+like this:</p>
+
+<pre><code class=block>@&
+#!/bin/sh
+
+if [ $# -lt 1 ] ; then
+	echo "Usage: $0 [dir]"
+	exit
+fi
+
+mount --bind "$1" "$1"
+mount -t proc /proc "$1/proc"
+mount --make-rslave --rbind /sys "$1/sys"
+mount --make-rslave --rbind /dev "$1/dev"
+mount --make-rslave --rbind /run "$1/run'
+mount --bind -- /etc/resolv.conf "$1/etc/resolv.conf"
+
+chroot "$1" su nate -c /init.sh
+
+umount -R $1
+@</code></pre>
+
+<p>We do have a second problem, though. We may not be splitting arguments up,
+but we are still interpreting them. If someone runs <code>gchroot -text4</code>,
+then the first mount command becomes <code>mount --bind -text4 -text4</code>,
+which interprets "-text4" as "Use the ext4 filesystem type" rather than "Use the
+file '-text4'". Luckily, the <a
+href=https://man7.org/linux/man-pages/man3/getopt.3.html>getopt</a> function
+which parses command line arguments in Linux interprets any arguments after a
+"--" argument as a literal string and not as a flag, so to print a file called
+"-h", you can run <code>cat -- -h</code> to make the "-h" argument get
+interpreted as a literal string and not as a help flag. To make this code safer,
+we have to put a "--" argument in front of every single command, like this:</p>
+
+<pre><code class=block>@&
+#!/bin/bash
+
+if [ $# -lt 1 ] ; then
+	echo "Usage: $0 [dir]"
+	exit
+fi
+
+mount --bind -- "$1" "$1"
+mount -t proc -- /proc "$1/proc"
+mount --make-rslave --rbind -- /sys "$1/sys"
+mount --make-rslave --rbind -- /dev "$1/dev"
+mount --make-rslave --rbind -- /run "$1/run"
+mount --bind -- /etc/resolv.conf "$1/etc/resolv.conf"
+
+chroot -- "$1" su nate -c /init.sh
+
+umount -R -- "$1"
+</code></pre>
+
+<p>Eagle-eyed readers may have noticed the final issue with this script (at
+least the last one I've seen). This issue is the reason why setuid scripts
+aren't allowed in UNIX. To explain it, we have to know how shell scripts run in
+UNIX systems with an example.</p>
+
+<pre><code class=block>@&
+#!/bin/sh
+
+echo $1
+</code></pre>
+
+<p>Let's say this script is stored in "script.sh". When I run
+<code>./script.sh</code>, the UNIX kernel notices that the file starts with the
+shebang <code>#!</code>, and determines that this is a shell script or something
+similar. It then looks at the stuff that follows the shebang to determine what
+the interpreter is. In this case, it determines that the interpreter for
+"script.sh" is "/bin/sh". It then runs <code>/bin/sh ./script.sh</code>. In this
+case, running <code>./script.sh</code> and <code>/bin/sh ./script.sh</code> are
+exactly equivalent. If "script.sh" had the setuid bit set, and this version of
+UNIX allowed the setuid on shell scripts, then something like this could
+happen:</p>
+
+<pre><code class=block>@&
+$ ln -s -- script.sh -i
+$ -i # This is equivalent to /bin/sh -i, which opens an interactive shell
+</code></pre>
+
+<p>Because "script.sh" is a setuid executable, if you don't escape the shebang
+you can do privilege escalation. A better shell script looks like this:</p>
+
+<pre><code class=block>@&
+#!/bin/sh --
+
+echo $1
+</code></pre>
+
+<p>Now, <code>-i</code> is equivalent to <code>/bin/sh -- -i</code>, so all is
+right in the world. Except of course it isn't, we've got a race condition
+now.</p>
+
+<pre><code class=block>@&
+$ vi malicious-script.sh
+$ ln -s script.sh temp.sh
+$ nice -n20 ./temp.sh &amp;
+$ mv malicious-script.sh temp.sh
+</code</pre>
+
+<p>If an attacker times this just right, the following happens:</p>
+
+<ol>
+	<li>The kernel notices the shebang</li>
+	<li>The attacker runs <code>mv malicious-script.sh temp.sh</code></li>
+	<li>The kernel runs "/bin/sh temp.sh"</li>
+	<li>malicious-script.sh gets run as root</li>
+</ol>
+
+<p>The only solution to this is to make sure that the user running a privileged
+script can't actually edit it, meaning either the kernel locks setuid scripts
+before they're executed, or the context in which a privileged shell script can
+be executed is limited through some other means, possibly by hardcoding a script
+directory that an unprivileged user can't modify into a C program.</p>
+
+<p>Going back to our original chroot script, we have to escape our shebang to
+make sure that this sort of stuff can't happen, and we have to be really sure
+that our C program is only ever executing this shell script as a privileged
+user, and that this shell script can't be run in a privileged mode except by
+that C program.</p>
+
+<pre><code class=block>@&
+#!/bin/bash --
+
+if [ $# -lt 1 ] ; then
+	echo "Usage: $0 [dir]"
+	exit
+fi
+
+mount --bind -- "$1" "$1"
+mount -t proc -- /proc "$1/proc"
+mount --make-rslave --rbind -- /sys "$1/sys"
+mount --make-rslave --rbind -- /dev "$1/dev"
+mount --make-rslave --rbind -- /run "$1/run"
+mount --bind -- /etc/resolv.conf "$1/etc/resolv.conf"
+
+chroot -- "$1" su nate -c /init.sh
+
+umount -R -- "$1"
+</code></pre>
+
+<p>In conclusion, writing secure code is hard. The original source code for
+gchroot had less than 50 lines of code including whitespace, but there were at
+least 5 security vulnerabilities in it anyways. The only real solution to this
+is to have many eyes looking at our code. That's the reason why all the big
+encryption libraries and algorithms are open source. If I could manage to create
+5 security vulnerabilities in under 50 lines of code, you can only imagine how
+many vulnerabilities are in the several million lines of code in Windows. The
+only way to find and fix all of these is to have thousands of people looking at
+the code constantly to find and fix any vulnerabilities. If you're ever writing
+code to do some important task that has to be secure, I implore you to make it
+open source so that these vulnerabilities can be found and addressed.</p>
+
+@%/site/tail.html@

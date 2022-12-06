@@ -2,7 +2,7 @@
 
 cd $(dirname $0)
 
-files=$(ls | grep -E "^[0-9]{4}-[0-9]{2}-[0-9]{2}\." | sort)
+files=$(ls | grep -E "^[0-9]{4}-[0-9]{2}-[0-9]{2}\." | sort -r)
 
 create_entry() {
 	file=$1
