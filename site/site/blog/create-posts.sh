@@ -13,7 +13,7 @@ create_entry() {
 		echo "/blog/$date.html \"$date - $title\""
 	elif [ $file = "2022-02-23.txt" ] ; then
 		echo "/blog/$file \"$date - I hate ASCII\""
-	else
+	elif [ $extension != ".html" ] ; then
 		echo "/blog/$file \"$date - Unrecognized post\""
 	fi
 }

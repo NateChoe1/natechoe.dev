@@ -1,0 +1,66 @@
+@%/site/head.html@
+@=header Generating PSF files@
+
+<p>The <a href=https://man7.org/linux/man-pages/man8/setfont.8.html>setfont
+utility</a>, which (obviously) sets the Linux console font, requires a psf file
+to work. After several hours fo trying to use existing utilities, then giving up
+and spending more hours writing my own utility, I have a <a
+href=https://github.com/NateChoe1/ttf2psf>utility to generate PSF files now</a>.
+The rest of this blog post will be some technical information on why this is
+hard, and some design lessons we can learn by avoiding this situation.</p>
+
+<h2>Part 1: Why existing toolchains suck</h2>
+
+<p>If you search how to convert ttf files to psf files and somehow don't get any
+scammy online pdf converters in your search results, you'll find this <a
+href=https://www.reddit.com/r/linuxquestions/comments/7st7hz/>Reddit</a> post,
+which recommends using the <code>otf2bdf</code> and <code>bdf2psf</code>
+utilities. When I used these tools, however, bdf2psf gave me this message:</p>
+
+<code class=block>@\
+Use of uninitialized value $font_size in numeric le (&lt;=) at bdf2psf line 99.
+</code>
+
+<p>This leads to our first two design lessons: Make it work, and make it
+responsive. The first point is obvious, but if your program doesn't work tell
+the user why it doesn't. In this case I think bdf2psf received an invalid file
+as input, but I have no way of knowing because bdf2psf doesn't tell me what
+happened. Whenever you have or expect an error, give the user a hint to get back
+on track. I had no such hints, and decided after several hours that it would be
+easier to write my own utility instead.</p>
+
+<h2>Part 2: Why psf sucks</h2>
+
+<p>To roll my own converter, I'd have to learn about psf files in the first
+place, so I went where I always go when I don't know something, <a
+href=https://en.wikipedia.org/w/index.php?title=PC_Screen_Font&oldid=962411042>Wikipedia</a>.
+Here is the entire article at the time I checked:</p>
+
+<blockquote>
+PC Screen Font (PSF) is a bitmap font format currently employed by the Linux
+kernel for console fonts. Documentation of the PSF file format can be found
+within the source code of the Linux kernel.[1] The format can be found here with
+University Eindhoven.[2] 
+</blockquote>
+
+<p>That's not very helpful, and that university is quite vague with its
+description as well. As it turns out, the only complete, authoritative
+description of the psf format is the setfont source code itself. Font files
+consist of a header with little endian values, some bitmaps, and a glyph table.
+The setfont utility doesn't actually parse the bitmaps though, it just reads
+them and sends them to the kernel. The system call in the kernel doesn't read
+the bitmaps either, though, it just stores the bitmaps in a place that the
+screen renderer can understand. This leads to our second design lesson: Make
+things obvious. To get a full description of the psf format, rather than reading
+a human-written document I had to read source code. Not only that, I had to read
+source code from two separate repositories and manage details from both, because
+"the source code is the documentation" only works with well-written source code
+that doesn't span two codebases and doesn't make the parsing process
+obvious.</p>
+
+<h2>Part 3: Conclusion</h2>
+
+<p><a href=https://github.com/NateChoe1/ttf2psf>ttf2psf</a> exists now, it
+generates psf files from ttf files using FreeType, and actually works.</p>
+
+@%/site/tail.html@
