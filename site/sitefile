@@ -1,14 +1,9 @@
 declare TCP 80
 # Port 80 is open for the tor hidden service.
 
-declare TLS 443
-key /secrets/privkey.pem 443
-cert /secrets/fullchain.pem 443
-
 timeout 10000 80
-timeout 10000 443
 
-set port 80,443
+set port 80
 
 define library /site/library.so
 
