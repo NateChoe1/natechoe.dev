@@ -1,3 +1,2 @@
 HiddenServiceDir /var/lib/tor/tor-data/natechoe-dev-onion
-HiddenServicePort 80 10.1.123.2:200
-HiddenServicePort 443 10.1.123.2:443
+HiddenServicePort 80 192.168.50.191:82
