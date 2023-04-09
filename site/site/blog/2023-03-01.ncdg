@@ -17,9 +17,9 @@ href=https://www.reddit.com/r/linuxquestions/comments/7st7hz/>Reddit</a> post,
 which recommends using the <code>otf2bdf</code> and <code>bdf2psf</code>
 utilities. When I used these tools, however, bdf2psf gave me this message:</p>
 
-<code class=block>@\
+<pre><code class=block>@\
 Use of uninitialized value $font_size in numeric le (&lt;=) at bdf2psf line 99.
-</code>
+@</code></pre>
 
 <p>This leads to our first two design lessons: Make it work, and make it
 responsive. The first point is obvious, but if your program doesn't work tell
