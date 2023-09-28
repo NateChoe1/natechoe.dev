@@ -1,5 +1,4 @@
 declare TCP 80
-# Port 80 is open for the tor hidden service.
 
 timeout 10000 80
 

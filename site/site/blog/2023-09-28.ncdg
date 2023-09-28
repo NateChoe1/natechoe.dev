@@ -1,0 +1,346 @@
+@%/site/head.html@
+@=title Unix and C@
+
+<p>C and Unix are fundamentally intertwined. C was created to build Unix, so all
+the low-level interfaces Unix provided are only accessible through C (and
+assembly, but that's not portable). You can't really understand Unix without
+knowing C, which is a shame because once you learn C you start to understand the
+elegance of Unix. This blog post is a very basic introduction to C and its
+relationship to Unix.</p>
+
+<h2>Part 1: Command line arguments</h2>
+
+<p>Every C program begins at the <code>main</code> function, which looks
+something like this:</p>
+
+<pre><code>@\
+int main(int argc, char *argv[]) {
+	/* Some code here */
+}
+@</code></pre>
+
+<p>When you run the any C program in Unix, the code inside the <code>main</code>
+function runs. Then when the main function ends the program quits.
+<code>argc</code> and <code>argv</code> are the program arguments.
+<code>argc</code> is the number of arguments, and <code>argv</code> is an array
+of the arguments themselves. You can look at the arguments being passed into a
+function with a program like this:</p>
+
+<pre><code>@\
+#include <stdio.h>
+
+int main(int argc, char *argv[]) {
+	int i;
+	for (i = 0; i < argc; ++i) {
+		printf("  argument %d: %s\n", i, argv[i]);
+	}
+	printf("  END OF ARGUMENTS\n");
+	return 0;
+}
+@</code></pre>
+
+<p>This program just goes through each argument and prints them out. Here are
+some examples of me running this program:</p>
+
+<pre><code>@\
+nate@nate-x230 ~/tmp $ cc args.c -o args
+nate@nate-x230 ~/tmp $ ./args
+  argument 0: ./args
+  END OF ARGUMENTS
+nate@nate-x230 ~/tmp $ ./args -l
+  argument 0: ./args
+  argument 1: -l
+  END OF ARGUMENTS
+nate@nate-x230 ~/tmp $ ./args       -l
+  argument 0: ./args
+  argument 1: -l
+  END OF ARGUMENTS
+nate@nate-x230 ~/tmp $ ./args *
+  argument 0: ./args
+  argument 1: args
+  argument 2: args.c
+  argument 3: file.txt
+  END OF ARGUMENTS
+nate@nate-x230 ~/tmp $ ./args hello world
+  argument 0: ./args
+  argument 1: hello
+  argument 2: world
+  END OF ARGUMENTS
+nate@nate-x230 ~/tmp $ ./args 'hello world'
+  argument 0: ./args
+  argument 1: hello world
+  END OF ARGUMENTS
+nate@nate-x230 ~/tmp $
+@</code></pre>
+
+<p>What this shows is that when you run a C program, the command you type in is
+split up into individual words which the program receives. Wildcards (asterisks,
+the * character) get turn into a bunch of arguments, one per file. Anything in
+quotes gets passed in as a single argument, and the 0th argument is the name of
+the program. That's it. By itself, this system does not understand the flags in
+commands like <code>ls -l</code>. Command line flags are the job of
+<code>getopt</code></p>
+
+<p><code>getopt</code> is a C standard library function provided in Unix
+systems. C programs in Unix can use <code>getopt</code> to search for command
+line flags. <code>getopt</code> only understands command line arguments in a
+single format, so if every program uses <code>getopt</code>, then every program
+will have the same argument format and you won't have to learn a whole new
+syntax every time you use a new command. Here's what getopt looks like:</p>
+
+<pre><code>@\
+#include <stdio.h>
+#include <unistd.h>
+
+int main(int argc, char *argv[]) {
+	int i, opt;
+
+	while ((opt = getopt(argc, argv,
+				"ha:" /* THIS IS THE IMPORTANT PART */))
+			!= -1) {
+		switch (opt) {
+		case 'h':
+			printf("  h detected!\n");
+			break;
+		case 'a':
+			printf("  a value: %s\n", optarg);
+			break;
+		default:
+			printf("  Error detected, quitting\n");
+			return 1;
+		}
+	}
+
+	printf("\n");
+
+	for (i = optind; i < argc; ++i) {
+		printf("  argument %d: %s\n", i, argv[i]);
+	}
+	return 0;
+}
+@</code></pre>
+
+<p>Most of this code is just boilerplate that I pulled directly from the man
+page. The only important line of code is that string "ha:". This line tells
+<code>getopt</code> "there are two command line flags: 'h', and 'a'. 'h' is just
+a flag, tell me if it's there but don't ask for anything else. 'a' is a flag
+that takes an argument as well." Anything without a ':' after it is just a flag,
+anything with a ':' after it has an argument as well. This is (unimaginatively)
+called a <code>getopt</code> string. Running this program looks like this:</p>
+
+<pre><code>@\
+nate@nate-x230 ~/tmp $ cc getopt.c -o getopt
+nate@nate-x230 ~/tmp $ ./getopt -h
+  h detected!
+
+nate@nate-x230 ~/tmp $ ./getopt -a 'This argument is tied to the -a flag'
+  a value: This argument is tied to the -a flag
+
+nate@nate-x230 ~/tmp $ ./getopt "This argument isn't tied to any flag"
+
+  argument 1: This argument isn't tied to any flag
+nate@nate-x230 ~/tmp $ ./getopt -a "This argument is tied to the -a flag" "This argument isn't tied to any flag"
+  a value: This argument is tied to the -a flag
+
+  argument 3: This argument isn't tied to any flag
+nate@nate-x230 ~/tmp $ ./getopt -a
+./getopt: option requires an argument -- 'a'
+  Error detected, quitting
+nate@nate-x230 ~/tmp $ ./getopt -- -a
+
+  argument 2: -a
+nate@nate-x230 ~/tmp $
+@</code></pre>
+
+<p>This program is able to detect '-h' flags, '-a [argument]' flags, and invalid
+flags. It also finds and prints everything that isn't part of a flag. The genius
+of this system is that the arguments a program sees are very simple, the code
+that the program uses to parse the arguments is very simple, and the user
+interface is unified across every program.</p>
+
+<h2>Part 2: Files</h2>
+
+<p>You may have heard that everything in Unix is a file. In Unix-flavored C,
+files are just things that you can read from, and write to. Standard C has its
+own file interfaces which you can use with Unix, but for this section I won't
+be using those. When using the raw Unix interfaces, here's how you would open
+and write to a file:</p>
+
+<pre><code>@\
+#include <fcntl.h>
+#include <unistd.h>
+
+int main(int argc, char *argv[]) {
+	int fd = open("file.txt", O_WRONLY | O_CREAT | O_TRUNC,
+			/* write only, create the file if it doesn't exist,
+			 * remove any existing data if it does */
+			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+			/* file permissions, I can read/write, others can
+			 * read */
+	write(fd, "hello world\n", 12);
+	return 0;
+}
+@</code></pre>
+
+<p>I use the <code>open</code> system call to get a file descriptor, then I use
+the <code>write</code> system call to write to that file descriptor. Basically,
+I open the file and write to it. Here's an example of the program running:</p>
+
+<pre><code>@\
+nate@nate-x230 ~/tmp $ cc files.c -o files
+nate@nate-x230 ~/tmp $ ./files
+nate@nate-x230 ~/tmp $ ls -l
+total 24
+-rwxr-xr-x 1 nate nate 15520 Sep 28 00:43 files
+-rw-r--r-- 1 nate nate   388 Sep 28 00:43 files.c
+-rw-r--r-- 1 nate nate    12 Sep 28 00:44 file.txt
+nate@nate-x230 ~/tmp $ cat file.txt
+hello world
+@</code></pre>
+
+<p>Note that the file descriptor is just a number. These numbers are almost
+always generated by system calls such as <code>open</code>, but there are three
+numbers which everybody knows: 0 (standard input), 1 (standard output), and 2
+(standard error).</p>
+
+<p>If we slightly modify this code to write to file descriptor 1, the program
+writes "hello world" to standard output.</p>
+
+<pre><code>@\
+#include <fcntl.h>
+#include <unistd.h>
+
+int main(int argc, char *argv[]) {
+	int fd = 1; /* Standard output */
+	write(fd, "hello world\n", 12);
+	return 0;
+}
+@</code></pre>
+
+<pre><code>@\
+nate@nate-x230 ~/tmp $ cc files.c -o files
+nate@nate-x230 ~/tmp $ ./files
+hello world
+@</code></pre>
+
+<p>If we modify this code again to read from file descriptor 0 and write to file
+descriptor 1, the program copies standard input to standard output.</p>
+
+<pre><code>@\
+#include <fcntl.h>
+#include <unistd.h>
+
+int main(int argc, char *argv[]) {
+	int infd = 0;
+	int outfd = 1;
+	for (;;) {
+		char data[1024];
+		ssize_t len;
+		len = read(infd, data, sizeof data);
+		if (len < 0) {
+			break;
+		}
+		write(outfd, data, len);
+	}
+	return 0;
+}
+@</code></pre>
+
+<pre><code>@\
+nate@nate-x230 ~/tmp $ cc files.c -o files
+nate@nate-x230 ~/tmp $ ./files
+hello world!
+hello world!
+@</code></pre>
+
+<p>I typed in that first line and the program printed out the second.</p>
+
+<p><b>The next paragraph is <i>really</i> important. I wrote this entire blog
+post just to convey the point in the next paragraph.</b></p>
+
+<p>Standard input just means file descriptor 0, and standard output just means
+file descriptor 1. The file with the number '0' could be anything. Usually it's
+a terminal, but it could be the input from another program. Similarly, the file
+with the number '1' could be anything. Usually it's a terminal, but it could be
+the input to another program, or a file on disk, or your hard drive. As long as
+it can be a file, it could have the number 1, and anything can be a file.</p>
+
+<p>Case in point, let's replace file descriptor 1 (stdout) with a file on
+disk.</p>
+
+<pre><code>@\
+#include <fcntl.h>
+#include <unistd.h>
+
+int main(int argc, char *argv[]) {
+	int infd = 0;
+	int outfd = 1;
+	int diskfd = open("file.txt", O_WRONLY | O_CREAT | O_TRUNC,
+			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+
+	dup2(diskfd, 1);
+	/* Replace file descriptor 1 with a clone of diskfd */
+
+	for (;;) {
+		char data[1024];
+		ssize_t len;
+		len = read(infd, data, sizeof data);
+		if (len < 0) {
+			break;
+		}
+		write(outfd, data, len);
+	}
+	return 0;
+}
+@</code></pre>
+
+<pre><code>@\
+nate@nate-x230 ~/tmp $ cc files.c -o files
+nate@nate-x230 ~/tmp $ ./files
+This is some text I am typing into standard input
+^C
+nate@nate-x230 ~/tmp $ cat file.txt
+This is some text I am typing into standard input
+@</code></pre>
+
+<p>This code is still reading from standard input and writing to standard
+output, we just changed standard output from a terminal to a file on disk. If
+this sounds weird to you, wait until you find out about pipes.</p>
+
+<pre><code>@\
+nate@nate-x230 ~/tmp $ echo "This text is being entered with a pipe" | ./files
+^C
+nate@nate-x230 ~/tmp $ cat file.txt
+This text is being entered with a pipe
+@</code></pre>
+
+<p>A pipe just takes the standard output of one program and feeds it into the
+standard input of another. This simple idea is at the core of the Unix
+philosophy. Every program should assume that its input might be coming from
+another program and that its output might go to another program. The power of
+Unix comes from having many small programs that can communicate with each other
+very clearly, and this is how it's done in Unix.</p>
+
+<p>In case you don't believe me, here's me feeding the standard input of
+<code>grep</code> with a pipe and by hand.</p>
+
+<pre><code>@\
+nate@nate-x230 ~/tmp $ cat files.c | grep fd
+        int infd = 0;
+        int outfd = 1;
+        int diskfd = open("file.txt", O_WRONLY | O_CREAT | O_TRUNC,
+        dup2(diskfd, 1);
+        /* Replace file descriptor 1 with a clone of diskfd */
+                len = read(infd, data, sizeof data);
+                write(outfd, data, len);
+nate@nate-x230 ~/tmp $ grep fd
+this line contains the regular expression 'fd'
+this line contains the regular expression 'fd'
+this line doesn't.
+@</code></pre>
+
+<p><code>grep</code> doesn't care if you're giving it input through a pipe or by
+hand, it just reads from standard input, searches for a string, and writes to
+standard output.</p>
+
+@%/site/tail.html@

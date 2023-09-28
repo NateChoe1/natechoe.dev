@@ -4,14 +4,8 @@ services:
     image: natechoe/natechoe.dev
     container_name: natechoe.dev
     ports:
-      - "198.251.83.152:443:443"
-      - "198.251.83.152:200:80"
-        # Port 200 is used for the tor hidden service. I'd rather not use port
-        # 80 because the .dev domain has HSTS and Let's Encrypt has to have port
-        # 80 open
+      - "82:80"
     volumes:
-      - /etc/letsencrypt/live/natechoe.dev/privkey.pem:/secrets/privkey.pem:ro
-      - /etc/letsencrypt/live/natechoe.dev/fullchain.pem:/secrets/fullchain.pem:ro
       - ./tor-data:/tor-data
     working_dir: "/site/"
     restart:
