@@ -13,7 +13,7 @@ relationship to Unix.</p>
 <p>Every C program begins at the <code>main</code> function, which looks
 something like this:</p>
 
-<pre><code>@\
+<pre><code class=block>@\
 int main(int argc, char *argv[]) {
 	/* Some code here */
 }
@@ -26,7 +26,7 @@ function runs. Then when the main function ends the program quits.
 of the arguments themselves. You can look at the arguments being passed into a
 function with a program like this:</p>
 
-<pre><code>@\
+<pre><code class=block>@\
 #include <stdio.h>
 
 int main(int argc, char *argv[]) {
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 <p>This program just goes through each argument and prints them out. Here are
 some examples of me running this program:</p>
 
-<pre><code>@\
+<pre><code class=block>@\
 nate@@nate-x230 ~/tmp $ cc args.c -o args
 nate@@nate-x230 ~/tmp $ ./args
   argument 0: ./args
@@ -88,7 +88,7 @@ single format, so if every program uses <code>getopt</code>, then every program
 will have the same argument format and you won't have to learn a whole new
 syntax every time you use a new command. Here's what getopt looks like:</p>
 
-<pre><code>@\
+<pre><code class=block>@\
 #include <stdio.h>
 #include <unistd.h>
 
@@ -128,7 +128,7 @@ that takes an argument as well." Anything without a ':' after it is just a flag,
 anything with a ':' after it has an argument as well. This is (unimaginatively)
 called a <code>getopt</code> string. Running this program looks like this:</p>
 
-<pre><code>@\
+<pre><code class=block>@\
 nate@@nate-x230 ~/tmp $ cc getopt.c -o getopt
 nate@@nate-x230 ~/tmp $ ./getopt -h
   h detected!
@@ -166,7 +166,7 @@ own file interfaces which you can use with Unix, but for this section I won't
 be using those. When using the raw Unix interfaces, here's how you would open
 and write to a file:</p>
 
-<pre><code>@\
+<pre><code class=block>@\
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
 the <code>write</code> system call to write to that file descriptor. Basically,
 I open the file and write to it. Here's an example of the program running:</p>
 
-<pre><code>@\
+<pre><code class=block>@\
 nate@@nate-x230 ~/tmp $ cc files.c -o files
 nate@@nate-x230 ~/tmp $ ./files
 nate@@nate-x230 ~/tmp $ ls -l
@@ -206,7 +206,7 @@ numbers which everybody knows: 0 (standard input), 1 (standard output), and 2
 <p>If we slightly modify this code to write to file descriptor 1, the program
 writes "hello world" to standard output.</p>
 
-<pre><code>@\
+<pre><code class=block>@\
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
 }
 @</code></pre>
 
-<pre><code>@\
+<pre><code class=block>@\
 nate@@nate-x230 ~/tmp $ cc files.c -o files
 nate@@nate-x230 ~/tmp $ ./files
 hello world
@@ -226,7 +226,7 @@ hello world
 <p>If we modify this code again to read from file descriptor 0 and write to file
 descriptor 1, the program copies standard input to standard output.</p>
 
-<pre><code>@\
+<pre><code class=block>@\
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -246,7 +246,7 @@ int main(int argc, char *argv[]) {
 }
 @</code></pre>
 
-<pre><code>@\
+<pre><code class=block>@\
 nate@@nate-x230 ~/tmp $ cc files.c -o files
 nate@@nate-x230 ~/tmp $ ./files
 hello world!
@@ -268,7 +268,7 @@ it can be a file, it could have the number 1, and anything can be a file.</p>
 <p>Case in point, let's replace file descriptor 1 (stdout) with a file on
 disk.</p>
 
-<pre><code>@\
+<pre><code class=block>@\
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -294,7 +294,7 @@ int main(int argc, char *argv[]) {
 }
 @</code></pre>
 
-<pre><code>@\
+<pre><code class=block>@\
 nate@@nate-x230 ~/tmp $ cc files.c -o files
 nate@@nate-x230 ~/tmp $ ./files
 This is some text I am typing into standard input
@@ -307,7 +307,7 @@ This is some text I am typing into standard input
 output, we just changed standard output from a terminal to a file on disk. If
 this sounds weird to you, wait until you find out about pipes.</p>
 
-<pre><code>@\
+<pre><code class=block>@\
 nate@@nate-x230 ~/tmp $ echo "This text is being entered with a pipe" | ./files
 ^C
 nate@@nate-x230 ~/tmp $ cat file.txt
@@ -324,7 +324,7 @@ very clearly, and this is how it's done in Unix.</p>
 <p>In case you don't believe me, here's me feeding the standard input of
 <code>grep</code> with a pipe and by hand.</p>
 
-<pre><code>@\
+<pre><code class=block>@\
 nate@@nate-x230 ~/tmp $ cat files.c | grep fd
         int infd = 0;
         int outfd = 1;
