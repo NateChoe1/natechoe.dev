@@ -1,5 +1,5 @@
 @%/site/head.html@
-@=title Unix and C@
+@=header Unix and C@
 
 <p>C and Unix are fundamentally intertwined. C was created to build Unix, so all
 the low-level interfaces Unix provided are only accessible through C (and
