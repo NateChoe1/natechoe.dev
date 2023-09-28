@@ -43,34 +43,34 @@ int main(int argc, char *argv[]) {
 some examples of me running this program:</p>
 
 <pre><code>@\
-nate@nate-x230 ~/tmp $ cc args.c -o args
-nate@nate-x230 ~/tmp $ ./args
+nate@@nate-x230 ~/tmp $ cc args.c -o args
+nate@@nate-x230 ~/tmp $ ./args
   argument 0: ./args
   END OF ARGUMENTS
-nate@nate-x230 ~/tmp $ ./args -l
-  argument 0: ./args
-  argument 1: -l
-  END OF ARGUMENTS
-nate@nate-x230 ~/tmp $ ./args       -l
+nate@@nate-x230 ~/tmp $ ./args -l
   argument 0: ./args
   argument 1: -l
   END OF ARGUMENTS
-nate@nate-x230 ~/tmp $ ./args *
+nate@@nate-x230 ~/tmp $ ./args       -l
+  argument 0: ./args
+  argument 1: -l
+  END OF ARGUMENTS
+nate@@nate-x230 ~/tmp $ ./args *
   argument 0: ./args
   argument 1: args
   argument 2: args.c
   argument 3: file.txt
   END OF ARGUMENTS
-nate@nate-x230 ~/tmp $ ./args hello world
+nate@@nate-x230 ~/tmp $ ./args hello world
   argument 0: ./args
   argument 1: hello
   argument 2: world
   END OF ARGUMENTS
-nate@nate-x230 ~/tmp $ ./args 'hello world'
+nate@@nate-x230 ~/tmp $ ./args 'hello world'
   argument 0: ./args
   argument 1: hello world
   END OF ARGUMENTS
-nate@nate-x230 ~/tmp $
+nate@@nate-x230 ~/tmp $
 @</code></pre>
 
 <p>What this shows is that when you run a C program, the command you type in is
@@ -129,27 +129,27 @@ anything with a ':' after it has an argument as well. This is (unimaginatively)
 called a <code>getopt</code> string. Running this program looks like this:</p>
 
 <pre><code>@\
-nate@nate-x230 ~/tmp $ cc getopt.c -o getopt
-nate@nate-x230 ~/tmp $ ./getopt -h
+nate@@nate-x230 ~/tmp $ cc getopt.c -o getopt
+nate@@nate-x230 ~/tmp $ ./getopt -h
   h detected!
 
-nate@nate-x230 ~/tmp $ ./getopt -a 'This argument is tied to the -a flag'
+nate@@nate-x230 ~/tmp $ ./getopt -a 'This argument is tied to the -a flag'
   a value: This argument is tied to the -a flag
 
-nate@nate-x230 ~/tmp $ ./getopt "This argument isn't tied to any flag"
+nate@@nate-x230 ~/tmp $ ./getopt "This argument isn't tied to any flag"
 
   argument 1: This argument isn't tied to any flag
-nate@nate-x230 ~/tmp $ ./getopt -a "This argument is tied to the -a flag" "This argument isn't tied to any flag"
+nate@@nate-x230 ~/tmp $ ./getopt -a "This argument is tied to the -a flag" "This argument isn't tied to any flag"
   a value: This argument is tied to the -a flag
 
   argument 3: This argument isn't tied to any flag
-nate@nate-x230 ~/tmp $ ./getopt -a
+nate@@nate-x230 ~/tmp $ ./getopt -a
 ./getopt: option requires an argument -- 'a'
   Error detected, quitting
-nate@nate-x230 ~/tmp $ ./getopt -- -a
+nate@@nate-x230 ~/tmp $ ./getopt -- -a
 
   argument 2: -a
-nate@nate-x230 ~/tmp $
+nate@@nate-x230 ~/tmp $
 @</code></pre>
 
 <p>This program is able to detect '-h' flags, '-a [argument]' flags, and invalid
@@ -187,14 +187,14 @@ the <code>write</code> system call to write to that file descriptor. Basically,
 I open the file and write to it. Here's an example of the program running:</p>
 
 <pre><code>@\
-nate@nate-x230 ~/tmp $ cc files.c -o files
-nate@nate-x230 ~/tmp $ ./files
-nate@nate-x230 ~/tmp $ ls -l
+nate@@nate-x230 ~/tmp $ cc files.c -o files
+nate@@nate-x230 ~/tmp $ ./files
+nate@@nate-x230 ~/tmp $ ls -l
 total 24
 -rwxr-xr-x 1 nate nate 15520 Sep 28 00:43 files
 -rw-r--r-- 1 nate nate   388 Sep 28 00:43 files.c
 -rw-r--r-- 1 nate nate    12 Sep 28 00:44 file.txt
-nate@nate-x230 ~/tmp $ cat file.txt
+nate@@nate-x230 ~/tmp $ cat file.txt
 hello world
 @</code></pre>
 
@@ -218,8 +218,8 @@ int main(int argc, char *argv[]) {
 @</code></pre>
 
 <pre><code>@\
-nate@nate-x230 ~/tmp $ cc files.c -o files
-nate@nate-x230 ~/tmp $ ./files
+nate@@nate-x230 ~/tmp $ cc files.c -o files
+nate@@nate-x230 ~/tmp $ ./files
 hello world
 @</code></pre>
 
@@ -247,8 +247,8 @@ int main(int argc, char *argv[]) {
 @</code></pre>
 
 <pre><code>@\
-nate@nate-x230 ~/tmp $ cc files.c -o files
-nate@nate-x230 ~/tmp $ ./files
+nate@@nate-x230 ~/tmp $ cc files.c -o files
+nate@@nate-x230 ~/tmp $ ./files
 hello world!
 hello world!
 @</code></pre>
@@ -295,11 +295,11 @@ int main(int argc, char *argv[]) {
 @</code></pre>
 
 <pre><code>@\
-nate@nate-x230 ~/tmp $ cc files.c -o files
-nate@nate-x230 ~/tmp $ ./files
+nate@@nate-x230 ~/tmp $ cc files.c -o files
+nate@@nate-x230 ~/tmp $ ./files
 This is some text I am typing into standard input
 ^C
-nate@nate-x230 ~/tmp $ cat file.txt
+nate@@nate-x230 ~/tmp $ cat file.txt
 This is some text I am typing into standard input
 @</code></pre>
 
@@ -308,9 +308,9 @@ output, we just changed standard output from a terminal to a file on disk. If
 this sounds weird to you, wait until you find out about pipes.</p>
 
 <pre><code>@\
-nate@nate-x230 ~/tmp $ echo "This text is being entered with a pipe" | ./files
+nate@@nate-x230 ~/tmp $ echo "This text is being entered with a pipe" | ./files
 ^C
-nate@nate-x230 ~/tmp $ cat file.txt
+nate@@nate-x230 ~/tmp $ cat file.txt
 This text is being entered with a pipe
 @</code></pre>
 
@@ -325,7 +325,7 @@ very clearly, and this is how it's done in Unix.</p>
 <code>grep</code> with a pipe and by hand.</p>
 
 <pre><code>@\
-nate@nate-x230 ~/tmp $ cat files.c | grep fd
+nate@@nate-x230 ~/tmp $ cat files.c | grep fd
         int infd = 0;
         int outfd = 1;
         int diskfd = open("file.txt", O_WRONLY | O_CREAT | O_TRUNC,
@@ -333,7 +333,7 @@ nate@nate-x230 ~/tmp $ cat files.c | grep fd
         /* Replace file descriptor 1 with a clone of diskfd */
                 len = read(infd, data, sizeof data);
                 write(outfd, data, len);
-nate@nate-x230 ~/tmp $ grep fd
+nate@@nate-x230 ~/tmp $ grep fd
 this line contains the regular expression 'fd'
 this line contains the regular expression 'fd'
 this line doesn't.
