@@ -1,0 +1,100 @@
+@%/site/head.html@
+@=header The new natechoe.dev backup system@
+
+<p>I probably shouldn't admit this while applying as a CS major for college, but
+before last week I didn't have backups. I know, that's insane, but last week I
+set up a very technically satisfying backup system which I feel deserves a blog
+post.</p>
+
+<h2>Part 1: Constraints</h2>
+
+<p>I want to protect myself from ransomware attacks, so I need a system where
+even if you broke into my server and got root access, you still wouldn't be able
+to delete backups. In other words, I need a write-only backup system.</p>
+
+<p>I also want to make this system simple, so most of the work should be done
+server-side. All the client has to do is upload a file to back up, and the
+server handles everything else. The client shouldn't have to worry about
+choosing a file path that doesn't collide with anything else, TOCTOU
+vulnerabilities, or anything else like that. The client uploads a file, and the
+server says "it worked" or "it didn't work".</p>
+
+<p>Finally, this system should be private. My backups are hosted by <a
+href=https://buyvm.net/>BuyVM</a>. I don't trust them (or anyone, really) with
+all of my email data completely unencrypted. My backups ought to be encrypted
+before getting sent to or stored on a remote host.</p>
+
+<h2>Part 2: Options</h2>
+
+<p>If you use Linux, your first thought when I said "backups" was probably
+<a href=https://linux.die.net/man/1/rsync>rsync</a>. The problem is that rsync
+isn't encrypted server-side. There are some rsync-like programs with encryption,
+but I don't want to go through all the effort of auditing their source code.</p>
+
+<p>If you don't use Linux, your immediate thought might have been to use FTP,
+which does technically allow you to configure a write-only server. This might
+work for some use-cases, but the client would have to worry about file-name
+collisions. Ideally, the server handles the creation of file names because
+that's where the files are.</p>
+
+<p>The next obvious solution would be to create an HTTP server with an API to
+upload a file as a backup. The client would simply tar the files, encrypt them,
+then upload them. This would be simple to set up client-side, but it's an
+absolute pain server-side. I'd have to use some bloated server-side framework
+like node.js or PHP just to redirect some file paths. It would make the system
+way too big for a simple backup system like this.</p>
+
+<p>It'd be really nice if I could just <a
+href=https://www.man7.org/linux/man-pages/man1/scp.1.html>scp</a> a file to a
+fixed location and the server handled everything for me. I began looking into
+creating a server with <a href=https://www.libssh.org/>libssh</a>, before
+realizing that scp is actually deprecated and the alternative would take way too
+long to implement.</p>
+
+<p>Then I had a brainwave. <a
+href=https://github.com/camel-cdr/execfs>execfs</a> is a custom filesystem that
+allows you to execute shell commands from the filesystem, meant for use with the
+C preprocessor. Running <code>cat execfs/(ls)</code> will make execfs actually
+run the "ls" command and give you its output as the file content. What if I did
+something similar with my backup system, creating a custom filesystem that
+redirects writes to some randomly generated file path so that the client only
+has to write to a single file?</p>
+
+<h2>Part 3: My solution</h2>
+
+<p>My backup server has a user called "backupfs" and a systemd service which
+runs <a href=https://github.com/NateChoe1/backupfs>my custom filesystem</a> on
+<code>/run/sftp-only/backupfs</code>. Writing to
+<code>/run/sftp-only/backupfs/dev</code> as the "backupfs" user will generate a
+new file path and redirect any writes to that new file. My
+<code>sshd_config</code> also contains these lines:</p>
+
+<pre><code class=block>@\
+Match User backupfs
+        ForceCommand internal-sftp
+        ChrootDirectory /run/sftp-only
+        PermitTunnel no
+        AllowAgentForwarding no
+        AllowTcpForwarding no
+        X11Forwarding no
+        AuthorizedKeysFile /var/run/sftp-only/backupfs-authorized-keys.txt
+        PasswordAuthentication no
+@</code></pre>
+
+<p>To upload a backup, a client can authenticate itself as the "backupfs" user
+and copy a file with <a
+href=https://www.man7.org/linux/man-pages/man1/sftp.1.html>sftp</a> to
+<code>/backupfs/dev</code>. Most importantly, a client that can authenticate
+itself as the "backupfs" user can't do much beyond that. If I ever get pwned,
+the worst the attacker can do is fill up my backup disk space with meaningless
+data.</p>
+
+<h2>Part 4: Retrospective</h2>
+
+<p>This entire system including the custom filesystem and sshd configuration
+takes up just over 300 lines of code and took me around four hours to set up.
+I'm sure experienced Linux users will tell me about some shiny system that does
+exactly what I need with a single line of configuration, but this solution is
+technically interesting enough to stay.</p>
+
+@%/site/tail.html@

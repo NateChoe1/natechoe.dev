@@ -1,5 +1,5 @@
 @%/site/head.html@
-@=header Thanks for bearing with the extreme lack of polish for a while.@
+@=header Welcome to my awesome blog!@
 @=title The blog@
 
 @$ /site/create-hub.sh /site/site/blog/posts "blog posts"@
