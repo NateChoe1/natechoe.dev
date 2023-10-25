@@ -1,0 +1,6 @@
+@%/site/head.html@
+@=header Resume@
+
+@%/site/site/resume_content.html@
+
+@%/site/tail.html@

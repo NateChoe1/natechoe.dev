@@ -6,6 +6,8 @@ stack was built by me from the ground up. I wrote the web server, the webpage
 generator, designed the templates, built the computer, and configured and
 compiled all the software.</p>
 
+<p><a href=/resume.html>My resume can be found here</a></p>
+
 <p>Tor hidden service:
 @$while ! [ -f /tor-data/natechoe-dev-onion/hostname ] ; do sleep 1 ; done ;
   tail -fn1 /tor-data/natechoe-dev-onion/hostname | head -n1 | head -c-1@</p>
