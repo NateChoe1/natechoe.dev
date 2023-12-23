@@ -1,0 +1,82 @@
+@%/site/head.html@
+@=title Santa could definitely visit all of those houses in one night@
+
+<p>The non-believers out there will tell you that Santa would have to travel
+faster than light to reach every house in a single night, but that's just not
+true.</p>
+
+<p>First of all, how long is a single night? The obvious answer is "around eight
+hours", after all Santa visits us when we're sleeping, and you're supposed to
+get around eight hours of sleep. That's not right though, because of time
+zones.</p>
+
+<p>When it's midnight in Greenwich, it's 6:00 in Austin. Santa has six
+hours to deliver all the Greenwich presents before he ever has to worry about
+the Austin kids. If Santa starts at one end of the international date line and
+works his way westward throughout the entire planet, he'll have a full 24 hours
+to deliver all the presents, not eight!</p>
+
+<p>He'll obviously have to go at approximately the same pace as the Earth's
+rotation, but Santa's magic. He's got abilities that surpass any technologies
+that we have today. Let's assume that he can go at 10% of the speed of light.
+Let's also define one "second" as the distance that the sun travels in the sky
+in a single second, or 1/86400 times the circumference of a given lattitude.
+Note that this is <i>not</i> the conventional definition of a "second" as a 1/60
+"minutes", where one "minute" is 1/60 geographic degrees. Let's also assume that
+there is never more than one house within the same second and lattitude
+line.</p>
+
+<p>These assumptions make our math quite easy. Just find out the distance that
+Santa will have to travel in a single second (geographic), and check if he could
+actually cover that distance in a single second (time). Because of that "single
+house" assumption, Santa will never have to double back within a single second.
+This means that Santa just has to travel half the circumference of the Earth and
+deliver all the presents along the way. The circumference of the Earth is 40,000
+km, so in a single second Santa will have to travel at 20,000 km. The speed of
+light is around 200,000 km/s, so if Santa can travel at 10% of that he'll be
+able to deliver all of those presents.</p>
+
+<p>Of course, I made quite a few assumptions throughout this. I have no doubt
+that Santa can travel at 10% of the speed of light. Particle accelerators can
+accelerate particles far faster than that, and Santa has something far more
+powerful than a particle accelerator - Christmas spirit.</p>
+
+<p>The single house assumption is quite simple to dismiss as well. The surface
+area of a single second can be derived with calculus, but one second is 1/86400
+the surface area of the Earth, so if we assume the Earth is a perfect sphere,
+then:</p>
+
+<code><pre>@\
+Area of one second =
+1/86400 * Surface area of the Earth =
+1/86400 * 4*pi*r^2 =
+1/86400 * 4*pi*(4000km / 2*pi)^2 = 59 km^2
+@</pre></code>
+
+<p>59 square kilometers is not very much. Manhattan has a population density of
+<a href=https://en.wikipedia.org/wiki/Demographics_of_Manhattan>28,872 people
+per square kilometer</a>. If the entire planet was covered with the population
+density of Manhattan, there would be around 1.7 million people per second, which
+is equivalent to a person every 11 meters that Santa travels throughout the
+second. 11 meters is quite far, and the Earth is not more densly populated than
+Manhattan.</p>
+
+<p><b>SIDE NOTE:</b> The <a
+href=https://en.wikipedia.org/wiki/Kowloon_Walled_City>Kowloon Walled City</a>
+was wild. There were 35,000 people in 26,000 square meters. That's 1.3 million
+people per square kilometer. You would have to stack over 46 Manhattans on top
+of each other to match that population density.</p>
+
+<p>The only remaining assumption I can think of is that the Earth is evenly
+populated, but there is an eight hour window to get the houses in a given
+location. The worst possible "burst" of people that Santa could encounter is a
+large group of people concentrated along a single longitude line. This longitude
+line would have to have the same population as eight hours of Manhattan. That's
+49 billion people, or over six times the world population.</p>
+
+<p>In conclusion, Santa could definitely visit everybody's house in a single
+night, even if the entire Earth's surface area had the population density of
+Manhattan, and even if 50 billion people lived along a single longitude line
+thanks to time zones and Christmas spirit.</p>
+
+@%/site/tail.html@
