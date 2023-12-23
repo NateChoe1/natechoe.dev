@@ -46,7 +46,7 @@ area of a single second can be derived with calculus, but one second is 1/86400
 the surface area of the Earth, so if we assume the Earth is a perfect sphere,
 then:</p>
 
-<code><pre>@\
+<code class=block><pre>@\
 Area of one second =
 1/86400 * Surface area of the Earth =
 1/86400 * 4*pi*r^2 =
