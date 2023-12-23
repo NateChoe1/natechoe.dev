@@ -32,7 +32,7 @@ actually cover that distance in a single second (time). Because of that "single
 house" assumption, Santa will never have to double back within a single second.
 This means that Santa just has to travel half the circumference of the Earth and
 deliver all the presents along the way. The circumference of the Earth is 40,000
-km, so in a single second Santa will have to travel at 20,000 km. The speed of
+km, so in a single second Santa will have to travel 20,000 km. The speed of
 light is around 200,000 km/s, so if Santa can travel at 10% of that he'll be
 able to deliver all of those presents.</p>
 
