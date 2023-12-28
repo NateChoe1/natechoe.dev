@@ -9,7 +9,7 @@ create_entry() {
 	date=$(echo $file | grep -Eo "^[0-9]{4}-[0-9]{2}-[0-9]{2}")
 	extension=$(echo $file | grep -o "\..*$")
 	if [ $extension = ".ncdg" ] ; then
-		title=$(grep -o "@=header .*@" $file | cut -b 10- | sed "s/@$//")
+		title=$(sed -n "s/@=header \(.*\)@/\1/p" $file | head -n1)
 		echo "/blog/$date.html \"$date - $title\""
 	elif [ $file = "2022-02-23.txt" ] ; then
 		echo "/blog/$file \"$date - I hate ASCII\""

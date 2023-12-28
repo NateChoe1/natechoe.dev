@@ -1,0 +1,501 @@
+@%/site/head.html@
+@=header An overview of the natechoe.dev architecture@
+
+<p>To MIT: This PDF can be viewed as a blog post on my website at <a
+href=https://natechoe.dev/blog/2023-12-28.html>https://natechoe.dev/blog/2023-12-28.html</a></p>
+
+<p>To everybody else: I'm submitting this as my one PDF for the MIT Maker
+Portfolio. I'm uploading it to the website to get a free blog post out of it.
+This website also has some easter eggs that I'd like to reveal to MIT but not to
+the world, so when you get to those parts of this blog just close your eyes and
+scroll down.</p>
+
+<p>To everybody: This article contains a lot of code blocks like this:</p>
+
+<pre><code class=block>@\
+1liners:turing.h:1-20
+
+static int tape[2000];
+static int ptr;
+static int state;
+/* These aren't set to anything because I count that as logic. */
+
+#define HALT -0x8000
+#define TURING_START int main(int argc) { return \
+	(argc >= 0) ? ((ptr = 1000, state = 0, memset(tape, 0, sizeof tape), main(-1))) : /* Initialize variables */ \
+	(state == HALT) ? 0 : /* Handle halt state */
+#define TURING_END 1 ;}
+
+#define LEFT -1
+#define RIGHT 1
+
+#define STATE(num, newsym0, dir0, newstate0, newsym1, dir1, newstate1) \
+	(state == num) ? ((tape[ptr] ? \
+			(tape[ptr] = !!newsym1, ptr += dir1, state = newstate1) : \
+			(tape[ptr] = !!newsym0, ptr += dir0, state = newstate0)), \
+		main(-1) \
+	) :
+@</code></pre>
+
+<p>The first line tells you that the code block is from <a
+href=https://github.com/NateChoe1/1liners>https://github.com/NateChoe1/<b>1liners</b></a>,
+in the file <b>turing.h</b> on lines <b>1-20</b>.</p>
+
+<h2>Part 1: A high level overview</h2>
+
+<p>Here are some code snippets:</p>
+
+<pre><code class=block>@\
+natechoe.dev:Dockerfile:1-11
+
+FROM natechoe/ncdg AS ncdg
+
+FROM natechoe/swebs
+RUN apt-get update -y --allow-releaseinfo-change && apt-get upgrade -y && apt-get install -y make gcc
+RUN [ "rm", "-rf", "/site" ]
+COPY --from=ncdg /usr/bin/ncdg /usr/bin/ncdg
+COPY ./site /site
+RUN mkdir /secrets && mkdir /core && chmod 777 /core
+# core is for core dumps
+
+ENTRYPOINT /site/start.sh
+@</code></pre>
+
+<pre><code class=block>@\
+natechoe.dev:site/start.sh:1-4
+
+#!/bin/sh
+
+make
+swebs -s /site/sitefile -o /dev/stdout
+@</code></pre>
+
+<pre><code class=block>@\
+natechoe.dev:site/Makefile:1-24
+
+SRCS = $(shell find -name *.ncdg)
+BLOG = $(shell find site/blog | grep -E "[0-9]{4}-[0-9]{2}-[0-9]{2}")
+HTML = $(subst .ncdg,.html,$(SRCS))
+
+all: $(HTML) site/sitemap.txt library.so site/blog/posts
+
+library.so: library.c
+	$(CC) $< -o $@@ -shared -ansi -O2 -Wall -Wpedantic
+
+site/blog/posts: site/blog/create-posts.sh $(BLOG)
+	cd ./site/blog
+	./site/blog/create-posts.sh
+
+site/sitemap.txt: $(SRCS)
+	find -name *.ncdg | sed "s/ncdg$$/html/g" | sed "s/^\.\/site/https:\/\/natechoe.dev/g" > $@@
+	echo "https://natechoe.dev/" >> $@@
+
+site/blog/index.html: site/blog/index.ncdg site/blog/posts
+	ncdg site/blog/index.ncdg site/blog/index.html
+
+%.html: %.ncdg
+	ncdg $< $@@
+
+.PHONY: all
+@</code></pre>
+
+<p>The natechoe.dev Dockerfile will install swebs and ncdg (my webserver and
+website generator), copy some files over, and set <code>start.sh</code> as the
+entrypoint. Then, <code>start.sh</code> will build the website and run swebs.
+The Makefile will compile a C library (we will get to that later, I promise),
+create a sitemap, and compile ncdg to HTML.</p>
+
+<h2>Part 2: ncdg</h2>
+
+<p>ncdg is a very small text preprocessor that compiles to HTML. ncdg will
+process text based on the following five directives, minimizing any HTML in the
+process:</p>
+
+<ol>
+  <li>
+    <p>Include:</p>
+<pre><code class=block>@\
+natechoe.dev:site/site/index.ncdg:1
+
+@@%/site/head.html@@
+@</code></pre>
+    <p>will read and place <code>/site/head.html</code> into the file. Every
+    page in natechoe.dev has this template:</p>
+<pre><code class=block>@\
+@@%/site/head.html@@
+@@=header The title of this page, eg "An overview of the natechoe.dev architecture@@
+
+<p>The HTML that makes up this page.</p>
+
+@@%/site/tail.html@@
+@</code></pre>
+    <p>The included files contain some HTML boilerplate, CSS, and UI elements
+    shared between pages.</p>
+  </li>
+
+  <li>
+    <p>Variables:</p>
+<pre><code class=block>@\
+natechoe.dev:site/site/blog/index.ncdg:1-3
+
+@@%/site/head.html@@
+@@=header Welcome to my awesome blog!@@
+@@=title The blog@@
+@</code></pre>
+<pre><code class=block>@\
+natechoe.dev:site/head.html:1-18
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<meta name=viewport content=width=device-width,content-scale=1>
+		<link rel=stylesheet href=/autogen/colors.css>
+		<link rel=stylesheet href=/resources/style.css>
+		<title>natechoe.dev - @@!title,header@@</title>
+	</head>
+	<body>
+		<header>
+			<a href=@@!diffdomain@@/>natechoe.dev</a>
+			<a href=@@!diffdomain@@/blog/index.html>The blog</a>
+			<a href=@@!diffdomain@@/info/index.html>Contact info</a>
+			<a href=https://github.com/NateChoe1/natechoe.dev>The github repo</a>
+		</header>
+		<div id=content>
+			<h1>@@!header@@</h1>
+@</code></pre>
+    <p><code>site/site/blog/index.ncdg</code> defines two variables: the page
+    header and the title of the webpage. <code>site/head.html</code> will then
+    read those variables and write the proper HTML accordingly. Note that there
+    are some fallbacks here. For example, if ncdg can't find a "title" variable
+    in the <code>title</code> block, it will fall back to the "header" variable.</p>
+  </li>
+
+  <li>
+    <p>Automatic escaping:</p>
+<pre><code class=block>@\
+This example doesn't come from anywhere, I just made it up
+
+<pre><code class=block>@@\
+echo "hello world" > file.txt
+echo "how are you doing?" >> file.txt
+@@</code></pre>
+@</code></pre>
+    <p>turns into</p>
+<pre><code class=block>@\
+echo "hello world" &gt; file.txt
+echo "how are you doing?" &gt;&gt; file.txt
+@</code></pre>
+    <p>The @@\ directive excludes text from minification and automatically
+    escapes HTML. It's used for code blocks on this site.</p>
+  </li>
+
+  <li>
+    <p>Excluding minification:</p>
+<pre><code class=block>@\
+This example also doesn't come from anywhere
+
+<pre><code class=block>@@&
+echo "hello world" &gt; file.txt
+echo "how are you doing?" &gt;&gt; file.txt
+</code></pre>
+@</code></pre>
+    <p>turns into</p>
+<pre><code class=block>@\
+echo "hello world" &gt; file.txt
+echo "how are you doing?" &gt;&gt; file.txt
+@</code></pre>
+    <p>This feature is obsolete. Before I wrote ncdg I escaped all of my code
+    blocks manually. After I created ncdg, I didn't feel like unescaping all of
+    my code, so I put added this feature.</p>
+  </li>
+
+  <li>
+    <p>Shell scripting:</p>
+<pre><code class=block>@\
+natechoe.dev:site/site/blog/index.ncdg
+
+@@$ /site/create-hub.sh /site/site/blog/posts "blog posts"@@
+@</code></pre>
+    <p>will execute <code>/site/create-hub.sh</code>. This is used to create the
+    index file for my blog. I don't want to manually create a directory of all
+    my blog posts, so I call the <code>create-hub.sh</code> script and it does
+    all the work for me.</p>
+  </li>
+</ol>
+
+<p>The simplicity of ncdg allows me to compile to HTML, so I don't need any
+complex dynamic resource generation. It's not like there isn't any dynamic
+resource generation at all though...</p>
+
+<h2>Part 3: swebs and that C library</h2>
+
+<p>swebs (also stylized in all lowercase) has a config system called "sitefile".</p>
+
+<pre><code class=block>@\
+natechoe.dev:site/sitefile:1-32
+
+declare TCP 80
+
+timeout 10000 80
+
+set port 80
+
+define library /site/library.so
+
+set host www\\.natechoe\\.dev
+set type text/html
+read / /site/site/wrong.html
+throw .* 404
+
+set host .*
+set type text/css
+linked /autogen/colors.css
+read .*\\.css /site/site/
+
+set type text/html
+read / /site/site/index.html
+read .*\\.(html|ncdg) /site/site/
+
+set type text/plain
+read .*\\.txt /site/site/
+read /info/public.key /site/site/info/public.key
+
+set type image/png
+read .*\\.png /site/site/
+
+set type text/javascript
+read .*\\.js /site/site/
+# Ew javascript.
+@</code></pre>
+
+<p>A sitefile is a series of commands that each request will go through. The
+"define" command will set a global variable that swebs understands. The "set"
+command will set some condition that future commands have to follow. For
+example, <code>set host www\\.natechoe\\.dev</code> says "only accept requests
+with a host value that matches the regular expression
+<code>www\\.natechoe\\.dev</code>".</p>
+
+<p>Then there's resources. <code>read / /site/site/wrong.html</code> says "when
+<code>/</code> is requested, respond with the data at
+<code>/site/site/wrong.html</code>". This is an easter egg with my website. When
+you visit <a href=https://www.natechoe.dev>https://www.natechoe.dev</a> rather
+than <a href=https://natechoe.dev>https://natechoe.dev</a>, you get a message
+saying that you're in the wrong place.</p>
+
+<p>This is great, but we don't have dynamic pages. That's where the "linked"
+resource comes in. We can load a shared object file (a C library) into our
+program that will dynamically generate web pages.</p>
+
+<pre><code class=block>@\
+natechoe.dev:site/library.c:1-60
+
+#include <time.h>
+#include <stdio.h>
+#include <string.h>
+
+#include <swebs/util.h>
+#include <swebs/swebs.h>
+
+static long currday = -1;
+static char buff[300];
+static int currlen;
+
+static int getcolors(Request *request, Response *response);
+
+int getResponse(Request *request, Response *response) {
+	if (strcmp(request->path.path.data, "/autogen/colors.css") == 0)
+		return getcolors(request, response);
+	response->type = DEFAULT;
+	return 404;
+}
+
+static int getcolors(Request *request, Response *response) {
+	long realday;
+
+	{
+		time_t currtime;
+		const time_t reference = 1655182800;
+		/* Midnight of the day of implementation in CST */
+		const int perday = 86400;
+		/* Seconds per day */
+		currtime = time(NULL);
+		if (currtime == -1)
+			realday = 0;
+		else
+			realday = (currtime - reference) / perday;
+	}
+
+	if (currday != realday) {
+		int color;
+		const int initial = 203;
+		/* The initial color at the time of implementation */
+		color = (realday + initial) % 360;
+		currday = realday;
+
+		currlen = sprintf(buff,
+":root{"
+	"--backcol:hsl(%d,93%%,84%%);"
+	"--doccol:hsl(%d,92%%,75%%);"
+	"--shadowcol:#444444;"
+	"--codeback:#d3d3d3;"
+	"--codecol:#000000;"
+	"--barcol:hsl(%d,96%%,68%%);"
+	"--textcol:#000000;"
+"} /*%ld %ld*/", color, color, color, currday, realday
+		);
+	}
+	response->type = BUFFER_NOFREE;
+	response->response.buffer.data = buff;
+	response->response.buffer.len = currlen;
+	return 200;
+}
+@</code></pre>
+
+<p>This is another easter egg. The C library dynamically generates requests to
+<code>/autogen/colors.css</code>, which defines the colors used in the website.
+The specific hues chosen change by one degree on the color wheel every day,
+repeating every 360 days.</p>
+
+<h2>Part 4: More about swebs</h2>
+
+<p>swebs has a strange architecture inspired by nginx. We've seen how it's
+configured through sitefiles, but we haven't seen how it processes requests
+internally.</p>
+
+<p>Like nginx, swebs has a multi-processing architecture with two types of
+processes: the main process and the runner processes. The main process will
+accept any connections and respawn dead runner processes. It has an incredibly
+simple event loop.</p>
+
+<pre><code class=block>@\
+swebs:src/main.c:179-203
+
+for (;;) {
+	createLog("poll() started");
+	if (poll(pollfds, site->portcount, -1) < 0) {
+		if (errno == EINTR)
+			continue;
+		createErrorLog("You've majorly screwed up. Good luck",
+				errno);
+		exit(EXIT_FAILURE);
+	}
+
+	createLog("Accepted stream");
+
+	for (i = 0; i < site->portcount; ++i) {
+		if (pollfds[i].revents & POLLIN) {
+			int j, lowestproc, fd;
+			fd = acceptConnection(listeners[i]);
+			lowestproc = 0;
+			for (j = 0; j < processes - 1; j++)
+				if (pending[j] < pending[lowestproc])
+					lowestproc = j;
+			sendFd(fd, runners[lowestproc].fd, &i, sizeof i);
+			close(fd);
+		}
+	}
+}
+@</code></pre>
+
+<p>Let's just ignore the vague error messages for a bit and talk about what this
+code is actually doing. We've got a bunch of server sockets in the
+<code>pollfds</code> variable, and we're waiting for any of them to get a
+connection. Once we get one, we accept it and send that connection to the
+least-busy runner process.</p>
+
+<p>The runner process has this slightly longer event loop:</p>
+
+<pre><code class=block>@\
+swebs:src/runner.c:108-160
+
+for (;;) {
+	pollConnList(&conns);
+
+	createFormatLog("poll() finished with %d connections",
+			conns.len);
+
+	for (i = 1; i < conns.len; i++) {
+		if (conns.fds[i].revents & POLLIN) {
+			createFormatLog("Connection %d has data", i);
+			if (updateConnection(conns.conns + i, site)) {
+				freeConnection(conns.conns + i);
+				removeConnList(&conns, i);
+				--i;
+			}
+		}
+	}
+
+	if (conns.fds[0].revents & POLLIN) {
+		Stream *newstream;
+		Connection newconn;
+		int portind;
+		struct pollfd newfd;
+
+		createLog("Main fd has data");
+		newfd.fd = recvFd(connfd, &portind, sizeof portind);
+		if (newfd.fd < 0) {
+			createLog("Message received that included an invalid fd, quitting");
+			exit(EXIT_FAILURE);
+		}
+		newfd.events = POLLIN;
+
+		newstream = createStream(contexts[portind],
+				O_NONBLOCK, newfd.fd);
+		if (newstream == NULL) {
+			createLog(
+couldn't be created from file descriptor");
+			shutdown(newfd.fd, SHUT_RDWR);
+			close(newfd.fd);
+			continue;
+		}
+
+		if (newConnection(newstream, &newconn, portind)) {
+			createLog("Couldn't initialize connection from stream");
+			continue;
+		}
+
+		if (addConnList(&conns, &newfd, &newconn)) {
+			freeConnection(&newconn);
+			continue;
+		}
+		pending[id]++;
+	}
+}
+@</code></pre>
+
+<p>Each runner process just waits for data. When it receives data on a
+connection, it will process that data, and then remove that connection if
+necessary. If a runner receives a connection from the main process, it will add
+that connection to the list. This is a pretty simple architecture, but because
+we're not spawning any new threads with each connection the number of
+concurrently running jobs is O(1). Multithreading is for noobs, real programmers
+do concurrency manually.</p>
+
+<h2>Part 5: The surrounding architecture</h2>
+
+<p>When I first wrote swebs and bought natechoe.dev, I couldn't host it directly
+from my house because my Dad's websites were already hosted there and we only
+had a single public IP address. Around that time, though, my Dad discovered
+this thing called Docker, so we set up a dockerized <a
+href=https://github.com/NateChoe1/reverse-proxy>reverse proxy</a> and I spun up
+swebs on a virtual machine. Then I dockerized natechoe.dev a few months later,
+then I set up email a couple months after that using a service called
+<a href=https://github.com/docker-mailserver>docker-mailserver</a>. Then at some
+point I switched from Google Domains to Porkbun and needed DNSSEC. I didn't want
+to use Cloudflare's DNS for some unforgettable reason that I can't quite
+remember, so I set up a <a href=https://github.com/NateChoe1/docker-bind9>BIND9
+docker</a> image from my house.</p>
+
+<p>Then I built a 24 core computer. My Dad and I wanted to move everything
+there. For some reason he hosts his websites on this obscure operating system
+mostly used for gaming called "Windows"? Anyways, I needed a virtual machine,
+but the only dockerized QEMU I could find didn't have VNC or QCOW2 support, so
+<a href=https://github.com/qemu-tools/qemu-docker/commits?author=NateChoe1>I
+wrote it myself</a>.</p>
+
+<p>I should note that my Dad had no influence on this system other than helping
+to set up the reverse proxy and buying the computer parts. I set up DNS, email,
+built the computer, and migrated everything myself.</p>
+
+@%/site/tail.html@

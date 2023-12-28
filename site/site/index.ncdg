@@ -8,8 +8,6 @@ compiled all the software.</p>
 
 <p><a href=/resume.html>My resume can be found here</a></p>
 
-<p>Tor hidden service:
-@$while ! [ -f /tor-data/natechoe-dev-onion/hostname ] ; do sleep 1 ; done ;
-  tail -fn1 /tor-data/natechoe-dev-onion/hostname | head -n1 | head -c-1@</p>
+<p>Tor hidden service: @%/tor-data/natechoe-dev-onion/hostname@</p>
 
 @%/site/tail.html@
