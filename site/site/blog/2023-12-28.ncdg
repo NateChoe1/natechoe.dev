@@ -1,49 +1,60 @@
 @%/site/head.html@
 @=header An overview of the natechoe.dev architecture@
 
-<p>To MIT: This PDF can be viewed as a blog post on my website at <a
+<p>To colleges: This PDF can be viewed as a blog post on my website at <a
 href=https://natechoe.dev/blog/2023-12-28.html>https://natechoe.dev/blog/2023-12-28.html</a></p>
 
-<p>To everybody else: I'm submitting this as my one PDF for the MIT Maker
-Portfolio. I'm uploading it to the website to get a free blog post out of it.
-This website also has some easter eggs that I'd like to reveal to MIT but not to
-the world, so when you get to those parts of this blog just close your eyes and
-scroll down.</p>
-
-<p>To everybody: This article contains a lot of code blocks like this:</p>
-
-<pre><code class=block>@\
-1liners:turing.h:1-20
-
-static int tape[2000];
-static int ptr;
-static int state;
-/* These aren't set to anything because I count that as logic. */
-
-#define HALT -0x8000
-#define TURING_START int main(int argc) { return \
-	(argc >= 0) ? ((ptr = 1000, state = 0, memset(tape, 0, sizeof tape), main(-1))) : /* Initialize variables */ \
-	(state == HALT) ? 0 : /* Handle halt state */
-#define TURING_END 1 ;}
-
-#define LEFT -1
-#define RIGHT 1
-
-#define STATE(num, newsym0, dir0, newstate0, newsym1, dir1, newstate1) \
-	(state == num) ? ((tape[ptr] ? \
-			(tape[ptr] = !!newsym1, ptr += dir1, state = newstate1) : \
-			(tape[ptr] = !!newsym0, ptr += dir0, state = newstate0)), \
-		main(-1) \
-	) :
-@</code></pre>
-
-<p>The first line tells you that the code block is from <a
-href=https://github.com/NateChoe1/1liners>https://github.com/NateChoe1/<b>1liners</b></a>,
-in the file <b>turing.h</b> on lines <b>1-20</b>.</p>
+<p>To everybody else: I'm sending this article to colleges, and uploading it to
+the website to get a free blog post. This website also has some easter eggs that
+I'd like to reveal to schools but not to the world, so when you get to those
+parts just close your eyes and scroll down.</p>
 
 <h2>Part 1: A high level overview</h2>
 
-<p>Here are some code snippets:</p>
+<pre><code class=block>@\
+                +-natechoe.dev------------------------------------------------------+
+		|                                                                   |
+                |              +-----------------+         +-----------------+      |
+                |              | raw page content|         |    C library    |      |
+                |              +-----------------+         |(loaded by swebs)|      |
+		|                        |                 +-----------------+      |
+		|                        |                           |              |
+		+------------------------|---------------------------|--------------+
+                                         |                           |
+                +-container entrypoint---|---------------------------|--------------+
+                |                        |                           |              |
++------------+  | 1. compiles            |                           | 3. generates |
+|    ncdg    |---------------------------|                           |              |
++------------+  |                        v                           v              |
+                |          +---------------------------+   +--------------------+   |
+                |          |cooked, static page content|   |dynamic page content|   |
+                |          +---------------------------+   +--------------------+   |
++------------+  | 2. hosts               |                           |              |
+|    swebs   |---------------------------|                           |              |
++------------+  |                        |                           |              |
+                |                        v                           v              |
+                |                     +--------------------------------+            |
+                |                     |       A very nice website      |            |
+                |                     +--------------------------------+            |
+                |                                                                   |
+                +-------------------------------------------------------------------+
+@</code></pre>
+
+<p>natechoe.dev is made of a bunch of parts, all working together.</p>
+<ol>
+  <li>ncdg (<b>n</b>ate<b>c</b>hoe.<b>d</b>ev <b>g</b>enerator, stylized in all
+  lowercase) compiles the website from the ncdg language to HTML</li>
+
+  <li>swebs (<b>s</b>imple <b>web</b> <b>s</b>erver) hosts that static page
+  content</li>
+
+  <li>swebs also loads a C library at runtime and dynamically generates some
+  resources on request</li>
+</ol>
+
+<h2>Part 2: A low level overview</h2>
+
+<p>Here's the code that makes all of this work:</p>
 
 <pre><code class=block>@\
 natechoe.dev:Dockerfile:1-11
@@ -60,6 +71,7 @@ RUN mkdir /secrets && mkdir /core && chmod 777 /core
 
 ENTRYPOINT /site/start.sh
 @</code></pre>
+<p><a href=https://github.com/NateChoe1/natechoe.dev/blob/master/Dockerfile#L1-L11>Link</a></p>
 
 <pre><code class=block>@\
 natechoe.dev:site/start.sh:1-4
@@ -69,6 +81,7 @@ natechoe.dev:site/start.sh:1-4
 make
 swebs -s /site/sitefile -o /dev/stdout
 @</code></pre>
+<p><a href=https://github.com/NateChoe1/natechoe.dev/blob/master/site/start.sh#L1-L4>Link</a></p>
 
 <pre><code class=block>@\
 natechoe.dev:site/Makefile:1-24
@@ -98,18 +111,20 @@ site/blog/index.html: site/blog/index.ncdg site/blog/posts
 
 .PHONY: all
 @</code></pre>
+<p><a
+href=https://github.com/NateChoe1/natechoe.dev/blob/master/site/Makefile#L1-L24>Link</a></p>
 
-<p>The natechoe.dev Dockerfile will install swebs and ncdg (my webserver and
-website generator), copy some files over, and set <code>start.sh</code> as the
-entrypoint. Then, <code>start.sh</code> will build the website and run swebs.
-The Makefile will compile a C library (we will get to that later, I promise),
-create a sitemap, and compile ncdg to HTML.</p>
+<p>The Dockerfile will install swebs and ncdg, copy the raw page content, and
+set <code>start.sh</code> as the entrypoint. Then, <code>start.sh</code> will
+run a Makefile (which compiles a C library and generates HTML) and run
+swebs.</p>
 
-<h2>Part 2: ncdg</h2>
+<h2>Part 3: ncdg</h2>
 
-<p>ncdg is a very small text preprocessor that compiles to HTML. ncdg will
-process text based on the following five directives, minimizing any HTML in the
-process:</p>
+<p>ncdg (<b>n</b>ate<b>c</b>hoe.<b>d</b>ev <b>g</b>enerator)is a very small text
+preprocessor that compiles to HTML. ncdg will process text based on the
+following four directives (technically five but one's obsolete), removing any
+whitespace in the process:</p>
 
 <ol>
   <li>
@@ -119,11 +134,12 @@ natechoe.dev:site/site/index.ncdg:1
 
 @@%/site/head.html@@
 @</code></pre>
+<p><a href=https://github.com/NateChoe1/natechoe.dev/blob/master/site/site/index.ncdg#L1>Link</a></p>
     <p>will read and place <code>/site/head.html</code> into the file. Every
     page in natechoe.dev has this template:</p>
 <pre><code class=block>@\
 @@%/site/head.html@@
-@@=header The title of this page, eg "An overview of the natechoe.dev architecture@@
+@@=header The title of this page, eg "An overview of the natechoe.dev architecture"@@
 
 <p>The HTML that makes up this page.</p>
 
@@ -142,6 +158,7 @@ natechoe.dev:site/site/blog/index.ncdg:1-3
 @@=header Welcome to my awesome blog!@@
 @@=title The blog@@
 @</code></pre>
+<p><a href=https://github.com/NateChoe1/natechoe.dev/blob/master/site/site/blog/index.ncdg#L1-L3>Link</a></p>
 <pre><code class=block>@\
 natechoe.dev:site/head.html:1-18
 
@@ -164,6 +181,7 @@ natechoe.dev:site/head.html:1-18
 		<div id=content>
 			<h1>@@!header@@</h1>
 @</code></pre>
+<p><a href=https://github.com/NateChoe1/natechoe.dev/blob/master/site/head.html#L1-L18>Link</a></p>
     <p><code>site/site/blog/index.ncdg</code> defines two variables: the page
     header and the title of the webpage. <code>site/head.html</code> will then
     read those variables and write the proper HTML accordingly. Note that there
@@ -172,10 +190,8 @@ natechoe.dev:site/head.html:1-18
   </li>
 
   <li>
-    <p>Automatic escaping:</p>
+    <p>Automatic HTML encoding:</p>
 <pre><code class=block>@\
-This example doesn't come from anywhere, I just made it up
-
 <pre><code class=block>@@\
 echo "hello world" > file.txt
 echo "how are you doing?" >> file.txt
@@ -186,28 +202,8 @@ echo "how are you doing?" >> file.txt
 echo "hello world" &gt; file.txt
 echo "how are you doing?" &gt;&gt; file.txt
 @</code></pre>
-    <p>The @@\ directive excludes text from minification and automatically
-    escapes HTML. It's used for code blocks on this site.</p>
-  </li>
-
-  <li>
-    <p>Excluding minification:</p>
-<pre><code class=block>@\
-This example also doesn't come from anywhere
-
-<pre><code class=block>@@&
-echo "hello world" &gt; file.txt
-echo "how are you doing?" &gt;&gt; file.txt
-</code></pre>
-@</code></pre>
-    <p>turns into</p>
-<pre><code class=block>@\
-echo "hello world" &gt; file.txt
-echo "how are you doing?" &gt;&gt; file.txt
-@</code></pre>
-    <p>This feature is obsolete. Before I wrote ncdg I escaped all of my code
-    blocks manually. After I created ncdg, I didn't feel like unescaping all of
-    my code, so I put added this feature.</p>
+    <p>The @@\ directive automatically encodes HTML. It's mainly used for code
+    blocks on this site.</p>
   </li>
 
   <li>
@@ -217,6 +213,7 @@ natechoe.dev:site/site/blog/index.ncdg
 
 @@$ /site/create-hub.sh /site/site/blog/posts "blog posts"@@
 @</code></pre>
+<p><a href=https://github.com/NateChoe1/natechoe.dev/blob/master/site/site/blog/index.ncdg>Link</a></p>
     <p>will execute <code>/site/create-hub.sh</code>. This is used to create the
     index file for my blog. I don't want to manually create a directory of all
     my blog posts, so I call the <code>create-hub.sh</code> script and it does
@@ -228,9 +225,10 @@ natechoe.dev:site/site/blog/index.ncdg
 complex dynamic resource generation. It's not like there isn't any dynamic
 resource generation at all though...</p>
 
-<h2>Part 3: swebs and that C library</h2>
+<h2>Part 4: swebs and that C library</h2>
 
-<p>swebs (also stylized in all lowercase) has a config system called "sitefile".</p>
+<p>swebs (<b>s</b>imple <b>web</b> <b>s</b>erver, also stylized in all
+lowercase) has a config system called "sitefile".</p>
 
 <pre><code class=block>@\
 natechoe.dev:site/sitefile:1-32
@@ -268,9 +266,11 @@ set type text/javascript
 read .*\\.js /site/site/
 # Ew javascript.
 @</code></pre>
+<p><a href=https://github.com/NateChoe1/natechoe.dev/blob/master/site/sitefile#L1-L32>Link</a></p>
 
 <p>A sitefile is a series of commands that each request will go through. The
-"define" command will set a global variable that swebs understands. The "set"
+<code>define</code> command will set a global variable that swebs understands.
+The <code>set</code>
 command will set some condition that future commands have to follow. For
 example, <code>set host www\\.natechoe\\.dev</code> says "only accept requests
 with a host value that matches the regular expression
@@ -351,13 +351,14 @@ static int getcolors(Request *request, Response *response) {
 	return 200;
 }
 @</code></pre>
+<p><a href=https://github.com/NateChoe1/natechoe.dev/blob/master/site/library.c#L1-L60>Link</a></p>
 
 <p>This is another easter egg. The C library dynamically generates requests to
 <code>/autogen/colors.css</code>, which defines the colors used in the website.
 The specific hues chosen change by one degree on the color wheel every day,
 repeating every 360 days.</p>
 
-<h2>Part 4: More about swebs</h2>
+<h2>Part 5: More about swebs</h2>
 
 <p>swebs has a strange architecture inspired by nginx. We've seen how it's
 configured through sitefiles, but we haven't seen how it processes requests
@@ -397,6 +398,7 @@ for (;;) {
 	}
 }
 @</code></pre>
+<p><a href=https://github.com/NateChoe1/swebs/blob/master/src/main.c#L179-L203>Link</a></p>
 
 <p>Let's just ignore the vague error messages for a bit and talk about what this
 code is actually doing. We've got a bunch of server sockets in the
@@ -463,6 +465,7 @@ couldn't be created from file descriptor");
 	}
 }
 @</code></pre>
+<p><a href=https://github.com/NateChoe1/swebs/blob/master/src/runner.c#L108-L160>Link</a></p>
 
 <p>Each runner process just waits for data. When it receives data on a
 connection, it will process that data, and then remove that connection if
@@ -472,7 +475,7 @@ we're not spawning any new threads with each connection the number of
 concurrently running jobs is O(1). Multithreading is for noobs, real programmers
 do concurrency manually.</p>
 
-<h2>Part 5: The surrounding architecture</h2>
+<h2>Part 6: The surrounding architecture</h2>
 
 <p>When I first wrote swebs and bought natechoe.dev, I couldn't host it directly
 from my house because my Dad's websites were already hosted there and we only
