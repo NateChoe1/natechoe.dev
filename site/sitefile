@@ -30,3 +30,6 @@ read .*\\.png /site/site/
 set type text/javascript
 read .*\\.js /site/site/
 # Ew javascript.
+
+set type image/vnd.microsoft.icon
+linked /favicon\\.ico /site/site/favicon.ico

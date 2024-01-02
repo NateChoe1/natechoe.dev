@@ -1,0 +1,6 @@
+@%/site/head.html@
+@=header Some javascript tools@
+
+@$ /site/create-hub.sh /site/site/misc/tools/tools "tools"@
+
+@%/site/tail.html@

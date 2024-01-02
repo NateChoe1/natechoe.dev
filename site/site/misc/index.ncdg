@@ -1,0 +1,8 @@
+@%/site/head.html@
+@=header And now for something completely different@
+
+<p>Here's some other stuff that doesn't really fit anywhere else</p>
+
+@$ /site/create-hub.sh /site/site/misc/links "things that don't really fit anywhere else"@
+
+@%/site/tail.html@

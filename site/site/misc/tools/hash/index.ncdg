@@ -1,0 +1,312 @@
+@%/site/head.html@
+@=header Pure javascript hashing!@
+
+<noscript>
+  <p>This page needs javascript :(</p>
+  <style>
+  #spec {
+  	display: none;
+  }
+</style>
+
+</noscript>
+
+<div id=spec>
+  <p>Input type:</p>
+  
+  <input type=radio id=filebutton name=input_type>
+  <label for=filebutton>
+    File: <input name=fileinput id=fileinput type=file>
+  </label>
+
+  <br>
+
+  <input type=radio id=textbutton name=input_type>
+  <label for=textbutton>
+    Text: <textarea name=textinput id=textinput></textarea>
+  </label>
+  
+  <p>Hash types:</p>
+  
+  <input type=checkbox id=md5 name=md5>
+  <label for=md5>MD5</label>
+  
+  <br>
+  
+  <input type=checkbox id=sha1 name=sha1>
+  <label for=sha1>SHA-1</label>
+  
+  <br>
+  
+  <input type=checkbox id=sha256 name=sha256>
+  <label for=sha256>SHA-256</label>
+  
+  <br>
+  
+  <button id=submit>Let's go!</button>
+
+  <p>Output:</p>
+  <code id=output class=block>No input submitted yet...</code>
+</div>
+
+<script>/*@&*/
+/*
+@@licstart  The following is the entire license notice for the JavaScript code in
+this page.
+
+Copyright (C) 2024  Nate Choe
+
+The JavaScript code in this page is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License (GNU GPL) as
+published by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version. The code is distributed WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you may distribute
+non-source (e.g., minimized or compacted) forms of that code without the copy of
+the GNU GPL normally required by section 4, provided you include this license
+notice and a URL through which recipients can access the Corresponding Source.
+
+
+@@licend  The above is the entire license notice for the JavaScript code in this
+page.
+*/
+</script>
+
+<script>
+var output;
+
+window.onload = function() {
+  output = document.getElementById("output");
+}
+
+function println(txt) {
+  output.innerHTML += `${output.innerHTML.length != 0 ? '\n':''}${txt}`;
+}
+function resetOutput() {
+  output.innerHTML = "";
+}
+
+async function getData() {
+  var data;
+  if (document.getElementById("filebutton").checked) {
+    let fileinput = document.getElementById("fileinput");
+    let file = fileinput.files[0];
+    if (!file) {
+      println("No file selected!");
+      return null;
+    }
+
+    let reader = new FileReader();
+    let status = new Promise((resolve, reject) => {
+      reader.addEventListener("abort", () => { resolve(false); });
+      reader.addEventListener("error", () => { resolve(false); });
+      reader.addEventListener("load",  () => { resolve(true); });
+    });
+    reader.readAsArrayBuffer(file);
+
+    status = await status;
+    if (status == false) {
+      println("Failed to read file.");
+      return null;
+    }
+    data = new Uint8Array(reader.result);
+  }
+  else if (document.getElementById("textbutton").checked) {
+    let encoder = new TextEncoder("UTF-8");
+    data = encoder.encode(document.getElementById("textinput").value);
+  }
+  else {
+    println("No input type selected!");
+    return null;
+  }
+
+  return data;
+}
+
+function roundUp(num, mod) {
+  let high = num + (mod-1);
+  return high - (high % mod);
+}
+
+/* Take the data, append a 1 bit, pad it out to bs-8 (mod bs), append data
+ * length in bits as a 64 bit number (big endian) */
+function getBlock(data, bs, index) {
+  if (index >= roundUp(data.length+9, bs) / bs) {
+    return undefined;
+  } 
+
+  let start = index * bs;
+  let remaining = data.length - start;
+  if (remaining >= bs) {
+    return data.slice(start, start+bs);
+  }
+
+  let ret = new Uint8Array(bs);
+
+  if (remaining >= 0) {
+    for (var i = 0; i < remaining; ++i) {
+      ret[i] = data[start+i];
+    }
+    ret[remaining] = 0x80;
+  }
+
+  if (bs - remaining - 1 >= 8) {
+    var scratch = data.length * 8;
+    for (var i = 0; i < 8; ++i) {
+      ret[bs-i-1] = scratch & 0xff;
+      scratch >>= 8;
+    }
+  }
+
+  return ret;
+}
+
+function toWords(block) {
+  ret = [];
+  for (var i = 0; i < block.length; i += 4) {
+    var next = 0n;
+    for (var b = 0; b < 4; ++b) {
+      next <<= 8n;
+      next |= BigInt(block[i+b]);
+    }
+    ret.push(next);
+  }
+  return ret;
+}
+
+function toWordsLittleEndian(block) {
+  ret = [];
+  for (var i = 0; i < block.length; i += 4) {
+    var next = 0n;
+    for (var b = 3; b >= 0; --b) {
+      next <<= 8n;
+      next |= BigInt(block[i+b]);
+    }
+    ret.push(next);
+  }
+  return ret;
+}
+
+function wordsToString(words) {
+  ret = [];
+  for (var i = 0; i < words.length; ++i) {
+    ret.push(words[i].toString(16).padStart(4, '0'));
+  }
+  return ret.join('');
+}
+
+function toLong(num) {
+  return num & 0xffffffffn;
+}
+
+function leftRotate(num, shift) {
+  return toLong((num << BigInt(shift)) | (num >> BigInt(32-shift)));
+}
+
+function md5sum(data) {
+  const s = [
+    7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
+    5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
+    4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
+    6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,
+  ]
+  const k = [
+    0xd76aa478n, 0xe8c7b756n, 0x242070dbn, 0xc1bdceeen,
+    0xf57c0fafn, 0x4787c62an, 0xa8304613n, 0xfd469501n,
+    0x698098d8n, 0x8b44f7afn, 0xffff5bb1n, 0x895cd7ben,
+    0x6b901122n, 0xfd987193n, 0xa679438en, 0x49b40821n,
+    0xf61e2562n, 0xc040b340n, 0x265e5a51n, 0xe9b6c7aan,
+    0xd62f105dn, 0x02441453n, 0xd8a1e681n, 0xe7d3fbc8n,
+    0x21e1cde6n, 0xc33707d6n, 0xf4d50d87n, 0x455a14edn,
+    0xa9e3e905n, 0xfcefa3f8n, 0x676f02d9n, 0x8d2a4c8an,
+    0xfffa3942n, 0x8771f681n, 0x6d9d6122n, 0xfde5380cn,
+    0xa4beea44n, 0x4bdecfa9n, 0xf6bb4b60n, 0xbebfbc70n,
+    0x289b7ec6n, 0xeaa127fan, 0xd4ef3085n, 0x04881d05n,
+    0xd9d4d039n, 0xe6db99e5n, 0x1fa27cf8n, 0xc4ac5665n,
+    0xf4292244n, 0x432aff97n, 0xab9423a7n, 0xfc93a039n,
+    0x655b59c3n, 0x8f0ccc92n, 0xffeff47dn, 0x85845dd1n,
+    0x6fa87e4fn, 0xfe2ce6e0n, 0xa3014314n, 0x4e0811a1n,
+    0xf7537e82n, 0xbd3af235n, 0x2ad7d2bbn, 0xeb86d391n,
+  ];
+
+  var a0 = 0x67452301n;
+  var b0 = 0xefcdab89n;
+  var c0 = 0x98badcfen;
+  var d0 = 0x10325476n;
+
+  for (var blocknum = 0;; ++blocknum) {
+    let block = getBlock(data, 64, blocknum);
+    if (block == undefined) {
+      break;
+    }
+
+    m = toWordsLittleEndian(block);
+    console.log(m);
+
+    var a = a0;
+    var b = b0;
+    var c = c0;
+    var d = d0;
+
+    for (var i = 0; i < 64; ++i) {
+      var f, g;
+      if (i < 16) {
+        f = (b & c) | (~b & d);
+        g = i;
+      }
+      else if (i < 32) {
+        f = (b & d) | (~d & c);
+        g = (i*5+1) % 16;
+      }
+      else if (i < 48) {
+        f = b ^ c ^ d;
+        g = (i*3+5) % 16;
+      }
+      else {
+        f = c ^ (b | ~d);
+        g = (i*7) % 16;
+      }
+
+      f = toLong(f + a + k[i] + m[g]);
+      a = d;
+      d = c;
+      c = b;
+      b = toLong(b + leftRotate(f, s[i]));
+    }
+
+    a0 = toLong(a0 + a);
+    b0 = toLong(b0 + b);
+    c0 = toLong(c0 + c);
+    d0 = toLong(d0 + d);
+  }
+
+  return wordsToString([a0, b0, c0, d0]);
+}
+
+function runCheckedHash(name, func, data) {
+  if (document.getElementById(name).checked) {
+    println(`${name}: ${func(data)}`);
+  }
+}
+
+function runHashes(data) {
+  runCheckedHash("md5", md5sum, data);
+  runCheckedHash("sha1", sha1, data);
+  runCheckedHash("sha256", sha256, data);
+}
+
+document.getElementById("submit").addEventListener("click", async function() {
+  resetOutput();
+
+  var data = await getData();;
+  if (data == null) {
+    return;
+  }
+  
+  runHashes(data);
+});
+/*@*/</script>
+
+@%/site/tail.html@
