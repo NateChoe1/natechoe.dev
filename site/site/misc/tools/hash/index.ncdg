@@ -250,6 +250,10 @@ function toLong(num) {
   return num & 0xffffffffn;
 }
 
+function rightRotate(num, shift) {
+  return toLong((num >> BigInt(shift)) | (num << BigInt(32-shift)));
+}
+
 function leftRotate(num, shift) {
   return toLong((num << BigInt(shift)) | (num >> BigInt(32-shift)));
 }
@@ -349,7 +353,6 @@ function sha1sum(data) {
     for (var i = 16; i < 80; ++i) {
       w.push(leftRotate(w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16], 1));
     }
-    console.log(w);
 
     let a = h0;
     let b = h1;
@@ -360,7 +363,7 @@ function sha1sum(data) {
     for (var i = 0; i < 80; ++i) {
       var f, k;
       if (i < 20) {
-        f = (b & c) | ((~b) & d);
+        f = (b & c) | (~b & d);
         k = 0x5a827999n;
       }
       else if (i < 40) {
@@ -392,6 +395,80 @@ function sha1sum(data) {
   }
 
   return wordsToString([h0, h1, h2, h3, h4]);
+}
+
+function sha256sum(data) {
+  const k = [
+    0x428a2f98n, 0x71374491n, 0xb5c0fbcfn, 0xe9b5dba5n, 0x3956c25bn, 0x59f111f1n, 0x923f82a4n, 0xab1c5ed5n,
+    0xd807aa98n, 0x12835b01n, 0x243185ben, 0x550c7dc3n, 0x72be5d74n, 0x80deb1fen, 0x9bdc06a7n, 0xc19bf174n,
+    0xe49b69c1n, 0xefbe4786n, 0x0fc19dc6n, 0x240ca1ccn, 0x2de92c6fn, 0x4a7484aan, 0x5cb0a9dcn, 0x76f988dan,
+    0x983e5152n, 0xa831c66dn, 0xb00327c8n, 0xbf597fc7n, 0xc6e00bf3n, 0xd5a79147n, 0x06ca6351n, 0x14292967n,
+    0x27b70a85n, 0x2e1b2138n, 0x4d2c6dfcn, 0x53380d13n, 0x650a7354n, 0x766a0abbn, 0x81c2c92en, 0x92722c85n,
+    0xa2bfe8a1n, 0xa81a664bn, 0xc24b8b70n, 0xc76c51a3n, 0xd192e819n, 0xd6990624n, 0xf40e3585n, 0x106aa070n,
+    0x19a4c116n, 0x1e376c08n, 0x2748774cn, 0x34b0bcb5n, 0x391c0cb3n, 0x4ed8aa4an, 0x5b9cca4fn, 0x682e6ff3n,
+    0x748f82een, 0x78a5636fn, 0x84c87814n, 0x8cc70208n, 0x90befffan, 0xa4506cebn, 0xbef9a3f7n, 0xc67178f2n,
+  ];
+
+  var h0 = 0x6a09e667n;
+  var h1 = 0xbb67ae85n;
+  var h2 = 0x3c6ef372n;
+  var h3 = 0xa54ff53an;
+  var h4 = 0x510e527fn;
+  var h5 = 0x9b05688cn;
+  var h6 = 0x1f83d9abn;
+  var h7 = 0x5be0cd19n;
+
+  for (var blocknum = 0;; ++blocknum) {
+    let block = getBlock(data, 64, blocknum);
+    if (block == undefined) {
+      break;
+    }
+
+    let w = toWords(block);
+    for (var i = 16; i < 64; ++i) {
+      let s0 = rightRotate(w[i-15], 7) ^ rightRotate(w[i-15], 18) ^ (w[i-15] >> 3n);
+      let s1 = rightRotate(w[i-2], 17) ^ rightRotate(w[i-2], 19) ^ (w[i-2] >> 10n);
+      w.push(toLong(w[i-16] + s0 + w[i-7] + s1));
+    }
+
+    let a = h0;
+    let b = h1;
+    let c = h2;
+    let d = h3;
+    let e = h4;
+    let f = h5;
+    let g = h6;
+    let h = h7;
+
+    for (var i = 0; i < 64; ++i) {
+      let s1 = rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25);
+      let ch = (e & f) ^ (~e & g);
+      let temp1 = toLong(h + s1 + ch + k[i] + w[i]);
+      let s0 = rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22);
+      let maj = (a & b) ^ (a & c) ^ (b & c);
+      let temp2 = toLong(s0 + maj);
+
+      h = g;
+      g = f;
+      f = e;
+      e = toLong(d + temp1);
+      d = c;
+      c = b;
+      b = a;
+      a = toLong(temp1 + temp2);
+    }
+
+    h0 = toLong(h0 + a);
+    h1 = toLong(h1 + b);
+    h2 = toLong(h2 + c);
+    h3 = toLong(h3 + d);
+    h4 = toLong(h4 + e);
+    h5 = toLong(h5 + f);
+    h6 = toLong(h6 + g);
+    h7 = toLong(h7 + h);
+  }
+
+  return wordsToString([h0, h1, h2, h3, h4, h5, h6, h7]);
 }
 
 function runCheckedHash(name, func, data) {
