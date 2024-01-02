@@ -163,6 +163,37 @@ function getBlock(data, bs, index) {
   return ret;
 }
 
+function getBlockLittleEndian(data, bs, index) {
+  if (index >= roundUp(data.length+9, bs) / bs) {
+    return undefined;
+  } 
+
+  let start = index * bs;
+  let remaining = data.length - start;
+  if (remaining >= bs) {
+    return data.slice(start, start+bs);
+  }
+
+  let ret = new Uint8Array(bs);
+
+  if (remaining >= 0) {
+    for (var i = 0; i < remaining; ++i) {
+      ret[i] = data[start+i];
+    }
+    ret[remaining] = 0x80;
+  }
+
+  if (bs - remaining - 1 >= 8) {
+    var scratch = data.length * 8;
+    for (var i = 0; i < 8; ++i) {
+      ret[bs-8+i] = scratch & 0xff;
+      scratch >>= 8;
+    }
+  }
+
+  return ret;
+}
+
 function toWords(block) {
   ret = [];
   for (var i = 0; i < block.length; i += 4) {
@@ -189,10 +220,28 @@ function toWordsLittleEndian(block) {
   return ret;
 }
 
+function flipEndian(num) {
+  let ret = 0n;
+  for (var i = 0; i < 4; ++i) {
+    ret <<= 8n;
+    ret |= num & 0xffn;
+    num >>= 8n;
+  }
+  return ret;
+}
+
 function wordsToString(words) {
-  ret = [];
+  let ret = [];
   for (var i = 0; i < words.length; ++i) {
-    ret.push(words[i].toString(16).padStart(4, '0'));
+    ret.push(words[i].toString(16).padStart(8, '0'));
+  }
+  return ret.join('');
+}
+
+function wordsToStringLittleEndian(words) {
+  let ret = [];
+  for (var i = 0; i < words.length; ++i) {
+    ret.push(flipEndian(words[i]).toString(16).padStart(8, '0'));
   }
   return ret.join('');
 }
@@ -237,13 +286,12 @@ function md5sum(data) {
   var d0 = 0x10325476n;
 
   for (var blocknum = 0;; ++blocknum) {
-    let block = getBlock(data, 64, blocknum);
+    let block = getBlockLittleEndian(data, 64, blocknum);
     if (block == undefined) {
       break;
     }
 
     m = toWordsLittleEndian(block);
-    console.log(m);
 
     var a = a0;
     var b = b0;
@@ -282,7 +330,7 @@ function md5sum(data) {
     d0 = toLong(d0 + d);
   }
 
-  return wordsToString([a0, b0, c0, d0]);
+  return wordsToStringLittleEndian([a0, b0, c0, d0]);
 }
 
 function runCheckedHash(name, func, data) {
