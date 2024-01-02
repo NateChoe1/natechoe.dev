@@ -1,3 +1,14 @@
+/* It's been less than a week and my blog post is already inaccurate :(
+ * 
+ * https://natechoe.dev/blog/2023-12-28.html
+ * 
+ * I added a favicon to this page which also has to be dynamically generated so
+ * I rewrote this entire file. The general control flow is still the same.
+ *
+ * By the way, I generate that favicon using an assembler! See site/favicon.asm
+ * for more info.
+ * */
+
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
