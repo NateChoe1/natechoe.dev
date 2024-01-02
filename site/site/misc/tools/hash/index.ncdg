@@ -333,6 +333,67 @@ function md5sum(data) {
   return wordsToStringLittleEndian([a0, b0, c0, d0]);
 }
 
+function sha1sum(data) {
+  var h0 = 0x67452301n;
+  var h1 = 0xefcdab89n;
+  var h2 = 0x98badcfen;
+  var h3 = 0x10325476n;
+  var h4 = 0xc3d2e1f0n;
+  for (var blocknum = 0;; ++blocknum) {
+    let block = getBlock(data, 64, blocknum);
+    if (block == undefined) {
+      break;
+    }
+
+    w = toWords(block);
+    for (var i = 16; i < 80; ++i) {
+      w.push(leftRotate(w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16], 1));
+    }
+    console.log(w);
+
+    let a = h0;
+    let b = h1;
+    let c = h2;
+    let d = h3;
+    let e = h4;
+
+    for (var i = 0; i < 80; ++i) {
+      var f, k;
+      if (i < 20) {
+        f = (b & c) | ((~b) & d);
+        k = 0x5a827999n;
+      }
+      else if (i < 40) {
+        f = b ^ c ^ d;
+        k = 0x6ed9eba1n;
+      }
+      else if (i < 60) {
+        f = (b & c) | (b & d) | (c & d);
+        k = 0x8f1bbcdcn;
+      }
+      else {
+        f = b ^ c ^ d;
+        k = 0xca62c1d6n;
+      }
+
+      var temp = toLong(leftRotate(a, 5) + f + e + k + w[i]);
+      e = d;
+      d = c;
+      c = leftRotate(b, 30);
+      b = a;
+      a = temp;
+    }
+
+    h0 = toLong(h0 + a);
+    h1 = toLong(h1 + b);
+    h2 = toLong(h2 + c);
+    h3 = toLong(h3 + d);
+    h4 = toLong(h4 + e);
+  }
+
+  return wordsToString([h0, h1, h2, h3, h4]);
+}
+
 function runCheckedHash(name, func, data) {
   if (document.getElementById(name).checked) {
     println(`${name}: ${func(data)}`);
@@ -341,8 +402,8 @@ function runCheckedHash(name, func, data) {
 
 function runHashes(data) {
   runCheckedHash("md5", md5sum, data);
-  runCheckedHash("sha1", sha1, data);
-  runCheckedHash("sha256", sha256, data);
+  runCheckedHash("sha1", sha1sum, data);
+  runCheckedHash("sha256", sha256sum, data);
 }
 
 document.getElementById("submit").addEventListener("click", async function() {
