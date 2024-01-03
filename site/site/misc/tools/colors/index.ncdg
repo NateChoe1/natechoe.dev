@@ -1,0 +1,143 @@
+@%/site/head.html@
+@=header A javascript color picker@
+
+<div id=picker>
+  <div id=reddiv class=slider>
+    <div class="signifier left">Red:</div>
+    <input class=rgbpicker type=range min=0 max=255 value=255 class=slider id=red>
+    <div id=rednum class="signifier right">1</div>
+  </div>
+  <div id=greendiv class=slider>
+    <div class="signifier left">Blue:</div>
+    <input class=rgbpicker type=range min=0 max=255 value=255 class=slider id=green>
+    <div id=greennum class="signifier right">2</div>
+  </div>
+  <div id=bluediv class=slider>
+    <div class="signifier left">Green:</div>
+    <input class=rgbpicker type=range min=0 max=255 value=255 class=slider id=blue>
+    <div id=bluenum class="signifier right">3</div>
+  </div>
+  <div id=preview>
+</div>
+
+<style>
+.slider {
+	width: 100%;
+	height: 30px;
+	position: relative;
+}
+
+.signifier {
+	position: absolute;
+	top: 50%;
+	transform: translate(0, -50%);
+}
+
+.signifier.left {
+	left: 0;
+}
+
+.signifier.right {
+	right: 0;
+}
+
+.rgbpicker {
+	position: absolute;
+	left: 50px;
+	top: 50%;
+	width: calc(100% - 80px);
+	transform: translate(0, -50%);
+	height: calc(100% - 5px);
+	-webkit-appearance: none;
+	border-radius: 5px;
+}
+
+#red {
+	background-image: linear-gradient(to right, rgb(0, var(--green), var(--blue)), rgb(255, var(--green), var(--blue)));
+}
+
+#green {
+	background-image: linear-gradient(to right, rgb(var(--red), 0, var(--blue)), rgb(var(--red), 255, var(--blue)));
+}
+
+#blue {
+	background-image: linear-gradient(to right, rgb(var(--red), var(--green), 0), rgb(var(--red), var(--green), 255));
+}
+
+#preview {
+	background: rgb(var(--red), var(--green), var(--blue));
+	width: 100%;
+	height: 100px;
+	border-radius: 5px;
+}
+</style>
+
+<script>/*@&*/
+/*
+@@licstart  The following is the entire license notice for the JavaScript code in
+this page.
+
+Copyright (C) 2024  Nate Choe
+
+The JavaScript code in this page is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License (GNU GPL) as
+published by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version. The code is distributed WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you may distribute
+non-source (e.g., minimized or compacted) forms of that code without the copy of
+the GNU GPL normally required by section 4, provided you include this license
+notice and a URL through which recipients can access the Corresponding Source.
+
+
+@@licend  The above is the entire license notice for the JavaScript code in this
+page.
+*/
+</script>
+
+<script>
+var redslide, greenslide, blueslide, rgbsliders;
+var rednum, greennum, bluenum;
+var picker;
+var preview;
+
+function update() {
+	redval = picker.style.getPropertyValue("--red");
+	greenval = picker.style.getPropertyValue("--green");
+	blueval = picker.style.getPropertyValue("--blue");
+	preview.style.background = `rgb(${redval}, ${greenval}, ${blueval})`;
+	rednum.textContent = redval;
+	greennum.textContent = greenval;
+	bluenum.textContent = blueval;
+}
+
+function updatergb() {
+	picker.style.setProperty("--red", redslide.value);
+	picker.style.setProperty("--green", greenslide.value);
+	picker.style.setProperty("--blue", blueslide.value);
+	update();
+}
+
+window.onload = function() {
+	picker = document.getElementById("picker");
+	redslide = document.getElementById("red");
+	greenslide = document.getElementById("green");
+	blueslide = document.getElementById("blue");
+	rgbsliders = [redslide, greenslide, blueslide];
+	for (var i = 0; i < rgbsliders.length; ++i) {
+		rgbsliders[i].oninput = updatergb;
+	}
+
+	rednum = document.getElementById("rednum");
+	greennum = document.getElementById("greennum");
+	bluenum = document.getElementById("bluenum");
+
+	preview = document.getElementById("preview");
+
+	updatergb();
+}
+/*@*/</script>
+
+@%/site/tail.html@

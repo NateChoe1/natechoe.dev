@@ -10,20 +10,20 @@ services:
     working_dir: "/site/"
     restart:
       always
-    networks:
-      vlan:
-        ipv4_address: 192.168.50.244
-  natechoe.dev-onion:
-    image: natechoe/tor-relay
-    container_name: natechoe.dev-onion
-    volumes:
-      - ./tor-data:/var/lib/tor/tor-data
-      - ./torrc:/etc/tor/torrc
-    environment:
-      - RELAY_EXPERT=1
-    restart:
-      always
-networks:
-  vlan:
-    external: true
-
+#    networks:
+#      vlan:
+#        ipv4_address: 192.168.50.244
+#  natechoe.dev-onion:
+#    image: natechoe/tor-relay
+#    container_name: natechoe.dev-onion
+#    volumes:
+#      - ./tor-data:/var/lib/tor/tor-data
+#      - ./torrc:/etc/tor/torrc
+#    environment:
+#      - RELAY_EXPERT=1
+#    restart:
+#      always
+#networks:
+#  vlan:
+#    external: true
+#
