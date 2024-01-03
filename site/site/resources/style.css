@@ -42,6 +42,12 @@ code.block {
 	display: block;
 }
 
+@media print {
+	code.block {
+		max-height: none;
+	}
+}
+
 header {
 	background-color: var(--barcol);
 	top: 0;
