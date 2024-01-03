@@ -5,9 +5,9 @@
   <p>This page needs javascript :(</p>
   <style>
   #spec {
-  	display: none;
+    display: none;
   }
-</style>
+  </style>
 
 </noscript>
 
