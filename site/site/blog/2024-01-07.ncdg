@@ -21,7 +21,8 @@ i.e.</p>
 \(\displaystyle \int_0^1 f(x) = f(0.0000) + f(0.0001) + f(0.0002) + ...\)
 </div>
 
-<p>Obviously I'm missing infinitely many values here, just roll with it.</p>
+<blockquote><p>Obviously I'm missing infinitely many values here, just roll with
+it.</p></blockquote>
 
 <p>These summations with infinitely many terms would spiral out towards
 infinity, if it weren't for the \(dx\) culling every term to an infinitessimal
