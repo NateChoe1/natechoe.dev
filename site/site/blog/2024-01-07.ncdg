@@ -1,0 +1,86 @@
+@%/site/head.html@
+@%/site/katex.html@
+@=header Deltas can be treated algebraically@
+
+<p>I took all of AP Calculus BC and got a 5 on the AP exam without truly
+understanding what an integral was. I get it now though, so here's my best
+attempt at explaining integrals.</p>
+
+<p>We know from Riemann sums that</p>
+
+<div>
+\(\displaystyle \int_a^b f(x)dx = \lim_{dx \to 0^+} \sum_a^b f(x)dx\)
+</div>
+
+<blockquote><p>I assume that this notation is trivial.</p></blockquote>
+
+<p>That shared \(f(x)dx\) term implies a very loose definition for an integral,
+i.e.</p>
+
+<div>
+\(\displaystyle \int_0^1 f(x) = f(0.0000) + f(0.0001) + f(0.0002) + ...\)
+</div>
+
+<p>Obviously I'm missing infinitely many values here, just roll with it.</p>
+
+<p>These summations with infinitely many terms would spiral out towards
+infinity, if it weren't for the \(dx\) culling every term to an infinitessimal
+amount. That is to say that integration is just an operation and deltas are just
+variables. Integrals are not tied to specific deltas, and deltas aren't tied to
+any specific part of an equation.</p>
+
+<p>Let's go through an example problem to show what I mean. Capacitors work with
+the following equation:</p>
+
+<div>
+\(\displaystyle q = Cv\)
+</div>
+
+<p>where \(q\) is charge, \(C\) is capacitance, and \(v\) is voltage. We're
+trying to solve for voltage with respect to current. We can take the derivative
+of both sides with respect to time and get this:</p>
+
+<div>
+\(\displaystyle \frac{dq}{dt}=C\frac{dv}{dt}\)
+</div>
+
+<p>By definition, \(\frac{dq}{dt}\) is just current, giving us this:</p>
+
+<div>
+\(\displaystyle i=C\frac{dv}{dt}\)
+</div>
+
+<p>Now for something weird, we're going to multiply both sides by \(dt\). This
+works because \(dt\) is just a variable. We can multiply expressions by it to
+get some other value.</p>
+
+<div>
+\(\displaystyle i dt=C dv \)
+</div>
+
+<p>Then we can add up all the possible values (take the integral) of both
+sides.</p>
+
+<div>
+\(\displaystyle \int i dt=\int C dv \)
+</div>
+
+<p>After that it's just basic algebra and calculus</p>
+
+<div>
+\(\displaystyle vC = \int i dt\)
+</div>
+
+<div>
+\(\displaystyle v = 1/C \int i dt\)
+</div>
+
+<div>
+\(\displaystyle v(T) = 1/C \int_0^T i dt + v_0\)
+</div>
+
+<p>This derivation works because deltas are just variables and integration is
+just an operation. Integrals do not need a specific delta value, and you can
+multiply deltas to move them around.</p>
+
+@%/site/tail.html@
