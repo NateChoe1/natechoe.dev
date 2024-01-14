@@ -211,7 +211,7 @@ it breaks rule two.</p>
 <p>The heap is perfectly balanced, but there is a node that is smaller than its
 parent (1 is less than 2), so it breaks rule one.</p>
 
-<p>Heaps have a few interesting properties. The biggest one being that the root
+<p>Heaps have a few interesting properties, the biggest one being that the root
 node of a heap is <i>always</i> the smallest node. If it wasn't, then it
 wouldn't be a valid heap. This gives an opportunity: If we can figure out how to
 efficiently add and remove from a heap, we can create an efficient priority
@@ -355,7 +355,7 @@ swapping the 0 node with its parent again.</p>
   </div>
 </div>
 
-<p>Now are heap is entirely correct, with an extra node. This operation is
+<p>Now our heap is entirely correct, with an extra node. This operation is
 called "bubble-up", because you take a node and you repeatedly swap it upwards
 until it reaches a safe spot. Let's try it again by adding an 8.</p>
 
