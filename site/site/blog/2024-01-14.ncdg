@@ -1,0 +1,619 @@
+@%/site/head.html@
+@=header How heaps (priority queues) work@
+
+<style>
+.tree {
+  width: 100%;
+}
+
+.value {
+  text-align: center;
+}
+
+.children {
+  display: flex;
+}
+
+.node {
+  width: 50%;
+}
+
+.vbar {
+  border-right: 1px solid black;
+  width: 50%;
+  height: 10px;
+}
+
+.branch {
+  width: 50%;
+  height: 10px;
+  margin-left: 25%;
+  margin-right: 25%;
+  border: 1px solid black;
+  border-bottom: none;
+}
+</style>
+@=btree_connector <div class=connector><div class=vbar></div><div class=branch></div></div>@
+
+<p>Priority queues use a very simple data structure called a "heap". Heaps are a
+special type of binary tree with exactly two properties:</p>
+
+<ol>
+  <li>Every parent node is smaller than both of its children</li>
+  <li>Heaps are "almost complete", meaning that their nodes can be represented
+  as an array in reading order without NULL values.</li>
+</ol>
+
+<p>Rule two is a bit confusing, so here's an example: The array [1, 2, 3, 4, 5]
+can be placed into a tree with all of its nodes in reading order like this:</p>
+
+<div class=tree>
+  <div class=value>1</div>
+  @!btree_connector@
+  <div class=children>
+    <div class=node>
+      <div class=value>2</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>4</div>
+        </div>
+        <div class=node>
+          <div class=value>5</div>
+        </div>
+      </div>
+    </div>
+    <div class=node>
+      <div class=value>3</div>
+    </div>
+  </div>
+</div>
+
+<p>If you just read this tree left to right and top to bottom, you get [1, 2, 3,
+4, 5]. Not all trees have this property, though. This tree, for example, cannot
+be represented as an array of values.</p>
+
+<div class=tree>
+  <div class=value>1</div>
+  @!btree_connector@
+  <div class=children>
+    <div class=node>
+      <div class=value>2</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+        <div class=node>
+          <div class=value>5</div>
+        </div>
+      </div>
+    </div>
+    <div class=node>
+      <div class=value>3</div>
+    </div>
+  </div>
+</div>
+
+<p>This tree would turn into [1, 2, 3, NULL, 5]. With heaps, you're not allowed
+to have NULL values in the middle of the array like that.</p>
+
+<p>Here are some examples of valid heaps:</p>
+
+<div class=tree>
+  <div class=value>1</div>
+  @!btree_connector@
+  <div class=children>
+    <div class=node>
+      <div class=value>2</div>
+    </div>
+    <div class=node>
+      <div class=value>3</div>
+    </div>
+  </div>
+</div>
+
+<p>The first rule passes. The only parent node (1) is smaller than all of its
+children (2 and 3). The second rule also passes, because this tree has all of
+its nodes in reading order. If I read out this tree to you, it would go [1, 2,
+3].</p>
+
+<p>Here's another example:</p>
+
+<div class=tree>
+  <div class=value>2</div>
+  @!btree_connector@
+  <div class=children>
+    <div class=node>
+      <div class=value>5</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>12,917,322</div>
+        </div>
+        <div class=node>
+          <div class=value>6</div>
+        </div>
+      </div>
+    </div>
+    <div class=node>
+      <div class=value>3</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>4</div>
+        </div>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>This heap is also valid. Every parent node is smaller than its children, and
+it can be read in reading order as [2, 5, 3, 12917322, 6, 4, NULL]. There are,
+of course, NULL elements in this array, but they're all at the end so it's
+fine.</p>
+
+<p>The following heap, on the other hand, is invalid.</p>
+
+<div class=tree>
+  <div class=value>2</div>
+  @!btree_connector@
+  <div class=children>
+    <div class=node>
+      <div class=value>5</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>12,917,322</div>
+        </div>
+        <div class=node>
+          <div class=value>6</div>
+        </div>
+      </div>
+    </div>
+    <div class=node>
+      <div class=value>3</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+        <div class=node>
+          <div class=value>4</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>If I put this tree into reading order, it would go [2, 5, 3, 12917322, 6,
+NULL, 4]. I hit a NULL <i>before</i> I finish reading all of the real nodes, so
+it breaks rule two.</p>
+
+<p>This heap is also invalid.</p>
+
+<div class=tree>
+  <div class=value>2</div>
+  @!btree_connector@
+  <div class=children>
+    <div class=node>
+      <div class=value>1</div>
+    </div>
+    <div class=node>
+      <div class=value>3</div>
+    </div>
+  </div>
+</div>
+
+<p>The heap is perfectly balanced, but there is a node that is smaller than its
+parent (1 is less than 2), so it breaks rule one.</p>
+
+<p>Heaps have a few interesting properties. The biggest one being that the root
+node of a heap is <i>always</i> the smallest node. If it wasn't, then it
+wouldn't be a valid heap. This gives an opportunity: If we can figure out how to
+efficiently add and remove from a heap, we can create an efficient priority
+queue.</p>
+
+<p>Let's try adding the number 0 to this heap.</p>
+
+<div class=tree>
+  <div class=value>3</div>
+  @!btree_connector@
+  <div class=children>
+    <div class=node>
+      <div class=value>5</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>7</div>
+        </div>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+      </div>
+    </div>
+    <div class=node>
+      <div class=value>9</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>We don't want to break rule number 2, so we can add our new node to the next
+spot in reading order.</p>
+
+<div class=tree>
+  <div class=value>3</div>
+  @!btree_connector@
+  <div class=children>
+    <div class=node>
+      <div class=value>5</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>7</div>
+        </div>
+        <div class=node>
+          <div class=value>0</div>
+        </div>
+      </div>
+    </div>
+    <div class=node>
+      <div class=value>9</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>Now we're breaking rule number 1, because 0 is less than 5. Luckily, we can
+swap those two nodes without a problem. This operation is guaranteed to be safe.
+If you make a parent node smaller, you can guarantee that both children will
+still be bigger than the parent.</p>
+
+<div class=tree>
+  <div class=value>3</div>
+  @!btree_connector@
+  <div class=children>
+    <div class=node>
+      <div class=value>0</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>7</div>
+        </div>
+        <div class=node>
+          <div class=value>5</div>
+        </div>
+      </div>
+    </div>
+    <div class=node>
+      <div class=value>9</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>Great! We've just made a small section of this heap a little bit more
+correct. Of course, it's still wrong, 0 is less than 3. We can fix this by
+swapping the 0 node with its parent again.</p>
+
+<div class=tree>
+  <div class=value>0</div>
+  @!btree_connector@
+  <div class=children>
+    <div class=node>
+      <div class=value>3</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>7</div>
+        </div>
+        <div class=node>
+          <div class=value>5</div>
+        </div>
+      </div>
+    </div>
+    <div class=node>
+      <div class=value>9</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>Now are heap is entirely correct, with an extra node. This operation is
+called "bubble-up", because you take a node and you repeatedly swap it upwards
+until it reaches a safe spot. Let's try it again by adding an 8.</p>
+
+<p>We begin by adding it to the next spot in reading order</p>
+
+<div class=tree>
+  <div class=value>0</div>
+  @!btree_connector@
+  <div class=children>
+    <div class=node>
+      <div class=value>3</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>7</div>
+        </div>
+        <div class=node>
+          <div class=value>5</div>
+        </div>
+      </div>
+    </div>
+    <div class=node>
+      <div class=value>9</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>8</div>
+        </div>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>Then we realize that this node's parent is too big, so we swap it upwards</p>
+
+<div class=tree>
+  <div class=value>0</div>
+  @!btree_connector@
+  <div class=children>
+    <div class=node>
+      <div class=value>3</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>7</div>
+        </div>
+        <div class=node>
+          <div class=value>5</div>
+        </div>
+      </div>
+    </div>
+    <div class=node>
+      <div class=value>8</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>9</div>
+        </div>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>And we're done (another swap would have broken the heap). An implementation
+of this algorithm in pseudocode might look like this:</p>
+
+<pre><code class=block>@\
+function bubble_up(node):
+    // Return if we're safe
+    if (node == root)
+        return;
+    if (node.value > node.parent.value)
+        return;
+
+    // Otherwise, swap up
+    swap(node, node.parent);
+    bubble_up(node.parent);
+
+function add_value(value):
+    new_node = add_node_to_tree_in_next_available_spot(new node(value));
+    bubble_up(new_node);
+@</code></pre>
+
+<p>We've got adding, how about removing? Let's begin by removing the root
+node.</p>
+
+<div class=tree>
+  <div class=value>NULL</div>
+  @!btree_connector@
+  <div class=children>
+    <div class=node>
+      <div class=value>3</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>7</div>
+        </div>
+        <div class=node>
+          <div class=value>5</div>
+        </div>
+      </div>
+    </div>
+    <div class=node>
+      <div class=value>8</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>9</div>
+        </div>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>Of course, this isn't a valid binary tree anymore, so let's swap the root
+node with the last node in the tree.</p>
+
+<div class=tree>
+  <div class=value>9</div>
+  @!btree_connector@
+  <div class=children>
+    <div class=node>
+      <div class=value>3</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>7</div>
+        </div>
+        <div class=node>
+          <div class=value>5</div>
+        </div>
+      </div>
+    </div>
+    <div class=node>
+      <div class=value>8</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>Because we've just taken a node from the bottom and pushed it to the top,
+this node is definitely going to be too big. We can fix this by swapping it with
+the smaller of its two children. This operation is also guaranteed to be safe
+for a similar reason to bubble-up.</p>
+
+<div class=tree>
+  <div class=value>3</div>
+  @!btree_connector@
+  <div class=children>
+    <div class=node>
+      <div class=value>9</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>7</div>
+        </div>
+        <div class=node>
+          <div class=value>5</div>
+        </div>
+      </div>
+    </div>
+    <div class=node>
+      <div class=value>8</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>It looks like our node is still too big, so we can swap it again.</p>
+
+<div class=tree>
+  <div class=value>3</div>
+  @!btree_connector@
+  <div class=children>
+    <div class=node>
+      <div class=value>5</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>7</div>
+        </div>
+        <div class=node>
+          <div class=value>9</div>
+        </div>
+      </div>
+    </div>
+    <div class=node>
+      <div class=value>8</div>
+      @!btree_connector@
+      <div class=children>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+        <div class=node>
+          <div class=value>NULL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>And we're done. This operation is called "bubble-down". Pseudo-code for this
+algorithm might look like this:</p>
+
+<pre><code class=block>@\
+function bubble_down(node):
+    // Return if we're good
+    if (node.child1 == NULL)
+        return;
+    if (node.child2 == NULL && node.child1.value < node.value)
+        return;
+    if (node.value < node.child1.value && node.value < node.child2.value)
+        return;
+
+    smaller = min(node.child1, node.child2);
+    swap(node, smaller);
+
+function remove():
+    ret = root.value;
+    swap(root, last_node());
+    bubble_down(root);
+    return ret;
+@</code></pre>
+
+<p>There is still one more thing about heaps that I haven't talked about.
+Because heaps can be represented as an array, we usually just store all of the
+nodes in an array and don't bother with storing any references. When you run</p>
+
+<pre><code class=block>@\
+System.out.println(some_priorityqueue);
+@</code></pre>
+
+<p>What you get is that array, where for any node i, its children are i*2 and
+2*i+1.</p>
+
+@%/site/tail.html@
