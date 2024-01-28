@@ -27,9 +27,12 @@ read /info/public.key /site/site/info/public.key
 set type image/png
 read .*\\.png /site/site/
 
+set type audio/wav
+read .*\\.wav /site/site/
+
 set type text/javascript
 read .*\\.js /site/site/
 # Ew javascript.
 
 set type image/vnd.microsoft.icon
-linked /favicon\\.ico /site/site/favicon.ico
+linked /favicon\\.ico

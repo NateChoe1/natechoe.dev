@@ -1,0 +1,43 @@
+@%/site/head.html@
+@%/site/katex.html@
+@=header I don't understand energy@
+
+<p>Acceleration is proportional to force, velocity is the integral of
+acceleration over time, and displacement is the integral of velocity over time.
+That's a nice symmetry of the universe. The displacement of an object is just
+the second integral of the force over the mass with respect to time.</p>
+
+<div>
+\(\displaystyle \Delta position = \int \int \frac{\sum F}{m} dt dt \)
+</div>
+
+<p>If this symmetry continued forever, then kinetic energy would be the integral
+of force over time. If I apply 1 newton of force to an object for 1 second, then
+logically I should add 1 joule. Unfortunately, it doesn't work that way.
+Instead, energy is the integral of force over distance. If I continuously apply
+1 newton of force to move an object 1 meter, then I've applied 1 joule of energy,
+even though I've applied that force for \(\sqrt{2}\) seconds.</p>
+
+<p>One obvious solution to this problem is to think of "energy" as a purely
+human invention. If I want to move a block from point A to point B, it's easier
+to have a number that works on distance rather than time. There is, in fact,
+another unit for force integrated over time; it's called <a
+href=https://en.wikipedia.org/wiki/Impulse_(physics)>impulse</a>.</p>
+
+<p>That doesn't work though, because there's another definition of energy that I
+haven't mentioned. If I take 1 mole (\(6.022 \cdot 10^{23}\) molecules) of \(H_2\)
+and 2 moles of \(O_2\), and react them to form 2 moles of \(H_2O\), 572 kJ of
+energy will be released. If I instead take 2 moles of \(H_2\) and react it with
+4 moles of \(O_2\) to form 4 moles of \(H_2O\), it will release 1144 kJ of
+energy.</p>
+
+<p>The "enthalpy change", or change in energy of a reaction is directly
+proportional to the number of particles reacted. It's not at all obvious to me
+why particles should move at a velocity proportional to the <i>square root</i>
+of their kinetic energy (temperature), rather than directly proportional to
+their kinetic energy.</p>
+
+<p>I really don't have an answer to this. I took AP Chemistry last year and I'm
+taking AP Physics this year, and something just doesn't click for me.</p>
+
+@%/site/tail.html@
