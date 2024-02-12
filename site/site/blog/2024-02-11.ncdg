@@ -1,0 +1,313 @@
+@%/site/head.html@
+@=header An update on the natechoe.dev architecture@
+
+<p>A couple of months ago I wrote <a
+href=/blog/2023-12-28.html>a blog post describing the natechoe.dev
+architecture</a> to submit for the MIT Maker Portfolio. A few things have
+changed since then, so I thought I'd create this update.</p>
+
+<h2>Change 1: The favicon</h2>
+
+<p>This website has a favicon now! Favicons are those little icons you see on
+every page you open. I didn't have one before because this website changes color
+every day and I was too lazy to create a color-changing image. Well I've done
+it now, and here's how it works:</p>
+
+<p>Some image formats use what are called color tables. We have a big list of
+all the different colors that we're ever going to use in that image, and we
+reference that list, rather than the colors themselves. This has a few
+advantages, the biggest one being size: it may take fewer bits to store an index
+into a color table, rather than the color itself.</p>
+
+<p>This means that instead of writing a program to change every pixel in an
+image, we can write a program that changes the color table. This is more
+obvious with an example:</p>
+
+<pre><code class=block>@\
+Dimensions: 10x10
+
+Color ' ': black
+Color 'X': white
+
+|          |
+|          |
+|  X    X  |
+|  X    X  |
+|          |
+| X      X |
+|  X    X  |
+|   XXXX   |
+|          |
+|          |
+@</code></pre>
+
+<p>This made-up image file is showing a white smiley face on a black background.
+If we want to change the smiley from white to red, we can just change the table,
+like this:</p>
+
+<pre><code class=block>@\
+Dimensions: 10x10
+
+Color ' ': black
+Color 'X': red
+
+|          |
+|          |
+|  X    X  |
+|  X    X  |
+|          |
+| X      X |
+|  X    X  |
+|   XXXX   |
+|          |
+|          |
+@</code></pre>
+
+<p>We didn't have to change the image content at all, we just had to change the
+table that the content was referencing.</p>
+
+<p>The first problem is to find a reasonable file format to use. Favicons use
+the <a href=https://en.wikipedia.org/wiki/ICO_(file_format)>ICO file format</a>,
+which are really just some metadata surrounding image data stored in the either
+the <a href=https://en.wikipedia.org/wiki/BMP_file_format>BMP</a> or <a
+href=https://en.wikipedia.org/wiki/PNG>PNG</a> format. Both BMP and PNG support
+color tables, but PNG uses a <a
+href=https://en.wikipedia.org/wiki/Cyclic_redundancy_check>checksum</a> to make
+sure that the image data isn't corrupted. That's great for most purposes, but
+we want to intentionally corrupt our color table, so we have to use BMP.</p>
+
+<p>The second problem is to generate a hackable BMP file. I didn't want to use
+someone else's program to generate this file for a two reasons. The first
+was that it would add a "black box" to my website; I don't know how this strange
+program generates images, so I'd either have to read a bunch of source code or
+poke the image file with a hex editor and look at the results. The second, and
+honestly more influential reason, is that I'm too arrogant to use someone else's
+code.</p>
+
+<p>We want to generate some binary data with comments. I remembered <a
+href=https://www.muppetlabs.com/~breadbox/software/tiny/teensy.html>a very
+interesting article</a> about creating tiny Linux executables where the author
+uses an assembler to fill in fields of a file format. That kind of sounded like
+what I was doing, so I played with an assembler to create this ICO image:</p>
+
+<pre><code class=block>@\
+; This snippet comes from natechoe.dev:site/favicon.asm
+; Real graphic designers create their art using a text editor, nasm, and
+; FreeType2
+
+; NOTE TO SELF: There are some hard-coded numbers in library.c, change those if
+; you're changing these
+
+ico_header:
+  dw 0                         ; Reserved
+  dw 1                         ; This is a .ico image
+  dw 1                         ; No. of images in this file
+
+ico_image_header:
+  db 32                        ; Width
+  db 32                        ; Height
+  db 2                         ; No. of colors
+  db 0                         ; Reserved
+  dw 1                         ; Color planes
+  dw 1                         ; Bits per pixel
+  dd bmp_end - bmp_header      ; Image size
+  dd bmp_header - ico_header   ; Image offset
+
+bmp_header:
+;  db "BM"                      ; Magic number
+;  dd bmp_end - bmp_header      ; File size
+;  dw 0                         ; Reserved
+;  dw 0                         ; Reserved
+;  dd img_data - bmp_header     ; Initial data location
+
+dib_header:
+  dd color_table - dib_header  ; Size of DIB header
+  dd 32                        ; Width
+  dd 64                        ; Height
+  dw 1                         ; No. of color planes
+  dw 1                         ; Bits per pixel
+  dd 0                         ; Compression method (none)
+  dd bmp_end - img_data        ; Image size
+  dd 1337                      ; Horizontal resolution (px/meter)
+  dd 1337                      ; Vertical resolution (px/meter)
+  dd 0                         ; No. of colors
+  dd 0                         ; Important colors
+
+color_table:
+  db 0x00, 0xff, 0x00, 0x00   ; Black, in BGRA format
+  db 0x00, 0x00, 0x00, 0x00   ; White, in BGRA format
+
+img_data:
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00111100, 0b00111100, 0b00000011, 0b11111000
+  db 0b00111100, 0b01111100, 0b00001111, 0b11111100
+  db 0b00111100, 0b01111100, 0b00011111, 0b11111110
+  db 0b00111100, 0b11111100, 0b00111111, 0b00011100
+  db 0b00111100, 0b11111100, 0b00111110, 0b00001000
+  db 0b00111100, 0b11111100, 0b00111100, 0b00000000
+  db 0b00111101, 0b11111100, 0b01111100, 0b00000000
+  db 0b00111101, 0b11111100, 0b01111100, 0b00000000
+  db 0b00111111, 0b10111100, 0b01111100, 0b00000000
+  db 0b00111111, 0b10111100, 0b01111100, 0b00000000
+  db 0b00111111, 0b00111100, 0b00111100, 0b00000000
+  db 0b00111111, 0b00111100, 0b00111100, 0b00000000
+  db 0b00111111, 0b00111100, 0b00111110, 0b00001000
+  db 0b00111110, 0b00111100, 0b00011111, 0b00111000
+  db 0b00111110, 0b00111100, 0b00011111, 0b11111100
+  db 0b00111100, 0b00111100, 0b00001111, 0b11111110
+  db 0b00111100, 0b00111100, 0b00000011, 0b11111000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+
+and_mask:
+  db 0b11100000, 0b00000000, 0b00000000, 0b00000111
+  db 0b11000000, 0b00000000, 0b00000000, 0b00000011
+  db 0b10000000, 0b00000000, 0b00000000, 0b00000001
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b00000000, 0b00000000, 0b00000000, 0b00000000
+  db 0b10000000, 0b00000000, 0b00000000, 0b00000001
+  db 0b11000000, 0b00000000, 0b00000000, 0b00000011
+  db 0b11100000, 0b00000000, 0b00000000, 0b00000111
+
+bmp_end:
+@</code></pre>
+
+<p>The image data itself was generated using a modified version of <a
+href=https://github.com/NateChoe1/ttf2psf>ttf2psf</a> which is unfortunately
+lost to time. Add some changes to <a
+href=https://github.com/NateChoe1/natechoe.dev/blob/master/site/library.c>library.c</a>
+to modify the color table, and we're done!</p>
+
+<h2>Change 2: The Tor hidden service</h2>
+
+<p>Websites with a Tor hidden service (such as mine) can add the <a
+href=https://community.torproject.org/onion-services/advanced/onion-location/>Onion-Location</a>
+HTTP header to redirect users to that service automatically. I've known about
+this for a while, but I haven't added it because it would have required some
+major changes to my web server which I was too lazy to make. I recently found
+out, however, about the <a
+href=https://www.w3schools.com/tags/att_meta_http_equiv.asp><code>&lt;meta&gt;</code>
+http-equiv attribute</a>. That's not a webserver change, that's an <a
+href=https://github.com/NateChoe1/ncdg>ncdg</a> problem.</p>
+
+<p>To add this feature, we need two new features in ncdg: filename detection and
+nested commands. Filename detection is pretty self-explanatory, and very easy to
+solve. We need to find the path of our current file to create a valid
+<code>&lt;meta&gt;</code> tag. To solve this we can just create a custom
+variable called '_filename' that contains the current file name. Nested commands
+are a bit more nuanced.</p>
+
+<p>Before my changes, there was no way to pass a variable name into a shell
+script. I can define a variable, and I can call a shell script, but I can't nest
+one into the other. What we need is some way to do two pass-throughs of a
+section in our file. That might look like this:</p>
+
+<pre><code class=block>@\
+@=var Hello world!@
+@n @@$ echo '@!var@' | rev @@ @m
+@</code></pre>
+
+<p>That would turn into this:</p>
+
+<pre><code class=block>@\
+@$ echo 'Hello world!' | rev @
+@</code></pre>
+
+<p>Which turns into this:</p>
+
+<pre><code class=block>@\
+!dlrow olleH
+@</code></pre>
+
+<p>This means that we can't output directly to a file like I was doing before.
+Instead, we have to define some object which could be a file, or could be a
+string that we can look over later. Dennis Ritchie gave us function pointers
+and <code>void *</code> for a reason, though, so we can create this
+interface:</p>
+
+<pre><code class=block>@\
+/* this snippet comes from ncdg:src/include/ncdgfile.h */
+#ifndef HAVE_NCDGFILE
+#define HAVE_NCDGFILE
+
+#include <stdio.h>
+
+struct ncdgfile {
+	int (*putc)(struct ncdgfile *file, int c);
+	int (*puts)(struct ncdgfile *file, char *s);
+	void (*free)(struct ncdgfile *file);
+	void *handle;
+};
+
+struct ncdgfile *file2ncdg(FILE *file);
+struct ncdgfile *stringfile(void);
+
+#endif
+@</code></pre>
+
+<p>The meat of these changes looks like this:</p>
+
+<pre><code class=block>@\
+/* this snippet comes from ncdg:src/parse.c:213-230 */
+
+if ((tmp = stringfile()) == NULL) {
+	goto bufferror;
+}
+
+/* first pass */
+nest.data = buff;
+nest.vars = file->vars;
+if (writefile(&nest, tmp)) {
+	return 1;
+}
+freestring(buff);
+
+/* second pass */
+nest.data = (struct string *) tmp->handle;
+if (writefile(&nest, out)) {
+	return 1;
+}
+tmp->free(tmp);
+</code></pre>
+
+<p>That's all the big changes. I should really learn to stop writing about the
+natechoe.dev ecosystem because something inevitably changes like two months
+after I do.</p>
+
+@%/site/tail.html@
