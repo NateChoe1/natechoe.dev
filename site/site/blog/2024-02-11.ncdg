@@ -239,14 +239,14 @@ one into the other. What we need is some way to do two pass-throughs of a
 section in our file. That might look like this:</p>
 
 <pre><code class=block>@\
-@=var Hello world!@
-@n @@$ echo '@!var@' | rev @@ @m
+@@=var Hello world!@@
+@@n @@@@$ echo '@@!var@@' | rev @@@@ @@m
 @</code></pre>
 
 <p>That would turn into this:</p>
 
 <pre><code class=block>@\
-@$ echo 'Hello world!' | rev @
+@@$ echo 'Hello world!' | rev @@
 @</code></pre>
 
 <p>Which turns into this:</p>
@@ -304,7 +304,7 @@ if (writefile(&nest, out)) {
 	return 1;
 }
 tmp->free(tmp);
-</code></pre>
+@</code></pre>
 
 <p>That's all the big changes. I should really learn to stop writing about the
 natechoe.dev ecosystem because something inevitably changes like two months
