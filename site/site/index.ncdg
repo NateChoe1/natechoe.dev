@@ -8,6 +8,6 @@ compiled all the software.</p>
 
 <p><a href=/resume.html>My resume can be found here</a></p>
 
-<p>Tor hidden service: @%/tor-data/natechoe-dev-onion/hostname@</p>
+<p>Tor hidden service: @$/site/get-tor-hostname.sh@</p>
 
 @%/site/tail.html@

@@ -1,7 +1,7 @@
 FROM natechoe/ncdg AS ncdg
 
 FROM natechoe/swebs
-RUN apt-get update -y --allow-releaseinfo-change && apt-get upgrade -y && apt-get install -y make gcc nasm
+RUN apt-get update --allow-releaseinfo-change && apt-get upgrade -y && apt-get install -y make gcc nasm
 RUN [ "rm", "-rf", "/site" ]
 COPY --from=ncdg /usr/bin/ncdg /usr/bin/ncdg
 COPY ./site /site
