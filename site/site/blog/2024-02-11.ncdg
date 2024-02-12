@@ -77,11 +77,11 @@ sure that the image data isn't corrupted. That's great for most purposes, but
 we want to intentionally corrupt our color table, so we have to use BMP.</p>
 
 <p>The second problem is to generate a hackable BMP file. I didn't want to use
-someone else's program to generate this file for a two reasons. The first
-was that it would add a "black box" to my website; I don't know how this strange
-program generates images, so I'd either have to read a bunch of source code or
-poke the image file with a hex editor and look at the results. The second, and
-honestly more influential reason, is that I'm too arrogant to use someone else's
+someone else's program to generate this file for two reasons. The first was that
+it would add a "black box" to my website; I don't know how this strange program
+generates images, so I'd either have to read a bunch of source code or poke the
+image file with a hex editor and look at the results. The second, and honestly
+more influential reason, is that I'm too arrogant to use someone else's
 code.</p>
 
 <p>We want to generate some binary data with comments. I remembered <a
