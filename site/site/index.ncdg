@@ -13,11 +13,17 @@ compiled all the software.</p>
 <div id=seccount></div>
 
 <script>
-document.onload = function() {
+window.onload = function() {
 	elem = document.getElementById("seccount");
 	setInterval(function() {
-		elem.innerHTML = `<p>${(1710455280000 - Date.now()) / 1000} seconds until MIT results come out!</p>`;
-	}, 200);
+		remaining = (1710455280000 - Date.now()) / 1000;
+		if (remaining > 0) {
+			elem.innerHTML = `<p>${remaining} seconds until MIT results come out!</p>`;
+		}
+		else {
+			elem.innerHTML = "<p>MIT results are out, holy shit</p>";
+		}
+	}, 50);
 }
 </script>
 
