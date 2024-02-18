@@ -10,4 +10,15 @@ compiled all the software.</p>
 
 <p>Tor hidden service: @$/site/get-tor-hostname.sh@</p>
 
+<div id=seccount></div>
+
+<script>
+document.onload = function() {
+	elem = document.getElementById("seccount");
+	setInterval(function() {
+		elem.innerHTML = `<p>${(1710455280000 - Date.now()) / 1000} seconds until MIT results come out!</p>`;
+	}, 200);
+}
+</script>
+
 @%/site/tail.html@
