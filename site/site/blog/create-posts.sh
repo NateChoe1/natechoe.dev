@@ -1,27 +1,21 @@
 #!/bin/sh
 
-cd $(dirname $0)
-
-files=$(ls | grep -E "^[0-9]{4}-[0-9]{2}-[0-9]{2}\." | sort -r)
+cd $(dirname "$0")
 
 create_entry() {
-	file=$1
-	date=$(echo $file | grep -Eo "^[0-9]{4}-[0-9]{2}-[0-9]{2}")
-	extension=$(echo $file | grep -o "\..*$")
-	if [ $extension = ".ncdg" ] ; then
+	file="$1"
+	date=$(printf '%s\n' "$file" | grep -Eo "^[0-9]{4}-[0-9]{2}-[0-9]{2}")
+	extension=$(printf '%s\n' "$file" | grep -o "\..*$")
+	if [ "$extension" = ".ncdg" ] ; then
 		title=$(sed -n "s/@=header \(.*\)@/\1/p" $file | head -n1)
 		echo "/blog/$date.html \"$date - $title\""
-	elif [ $file = "2022-02-23.txt" ] ; then
+	elif [ "$file" = "2022-02-23.txt" ] ; then
 		echo "/blog/$file \"$date - I hate ASCII\""
-	elif [ $extension != ".html" ] ; then
+	elif [ "$extension" != ".html" ] ; then
 		echo "/blog/$file \"$date - Unrecognized post\""
 	fi
 }
 
-create_entries() {
-	for file in $@ ; do
-		create_entry "$file"
-	done
-}
-
-create_entries $files > posts
+ls -1 | grep -E "^[0-9]{4}-[0-9]{2}-[0-9]{2}\." | sort -r | while read file ; do
+	create_entry "$file"
+done > posts
