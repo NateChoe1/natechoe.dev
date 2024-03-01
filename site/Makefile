@@ -11,8 +11,8 @@ site/blog/posts: site/blog/create-posts.sh $(BLOG)
 	cd ./site/blog
 	./site/blog/create-posts.sh
 
-site/sitemap.txt: $(SRCS) site/blog/blog-index/index.html
-	find site -name *.html -type f | sed "s/^\.\/site/https:\/\/natechoe.dev/g" > $@
+site/sitemap.txt: $(HTML) site/blog/blog-index/index.html
+	find site -name '*.html' | sed "s/^\.\/site/https:\/\/natechoe.dev/g" > $@
 	echo "https://natechoe.dev/" >> $@
 
 site/blog/blog-index/index.html: site/blog/blog-index/create-index.sh site/blog/posts

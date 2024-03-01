@@ -20,21 +20,21 @@ for x in $(seq $LIMIT) ; do
 	export NEXT_FILE=next.tmp
 	PREV_TEMPLATE=""
 	if [ $x -eq 1 ] ; then
-		PREV_TEMPLATE=unselected.ncdg
+		PREV_TEMPLATE=unselected.ncdg.template
 	else
-		PREV_TEMPLATE=selected.ncdg
+		PREV_TEMPLATE=selected.ncdg.template
 	fi
 	NEXT_TEMPLATE=""
 	if [ $x -eq $LIMIT ] ; then
-		NEXT_TEMPLATE=unselected.ncdg
+		NEXT_TEMPLATE=unselected.ncdg.template
 	else
-		NEXT_TEMPLATE=selected.ncdg
+		NEXT_TEMPLATE=selected.ncdg.template
 	fi
 
 	parsetemp $PREV_TEMPLATE $PREV_FILE $(expr $x - 1) "\&lt; newer blogs"
 	parsetemp $NEXT_TEMPLATE $NEXT_FILE $(expr $x + 1) "older blogs \&gt;"
 
-	ncdg index.ncdg > index-$x.html
+	ncdg index.ncdg.template > index-$x.html
 	rm $PREV_FILE $NEXT_FILE
 done
 
