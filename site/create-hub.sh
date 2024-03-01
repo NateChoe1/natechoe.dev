@@ -15,5 +15,5 @@ ITEMS="$2"
 echo "<div class=hubtitle><b>$(wc -l < "$FILE") "$ITEMS"</b></div>"
 while read LINE ; do
 	eval set -- "$LINE"
-	echo "<a class=hubitem class=hublink href=$1>$2<div class=rightarrow></div></a>"
+	echo "<a class=hubitem href=$1>$2<div class=rightarrow></div></a>"
 done <"$FILE"

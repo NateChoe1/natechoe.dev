@@ -1,0 +1,11 @@
+@%/site/head.html@
+@=header Welcome to my awesome blog!@
+@=title The blog@
+
+@$ /site/create-hub.sh $TMP_FILE "blog posts"@
+<div style=display:flex>
+  <div style=flex:1>@$ cat $PREV_FILE @</div>
+  <div style=flex:1;text-align:right>@$ cat $NEXT_FILE @</div>
+</div>
+
+@%/site/tail.html@

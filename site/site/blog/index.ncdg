@@ -1,7 +1,0 @@
-@%/site/head.html@
-@=header Welcome to my awesome blog!@
-@=title The blog@
-
-@$ /site/create-hub.sh /site/site/blog/posts "blog posts"@
-
-@%/site/tail.html@

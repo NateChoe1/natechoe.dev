@@ -11,12 +11,12 @@ site/blog/posts: site/blog/create-posts.sh $(BLOG)
 	cd ./site/blog
 	./site/blog/create-posts.sh
 
-site/sitemap.txt: $(SRCS)
-	find -name *.ncdg | sed "s/ncdg$$/html/g" | sed "s/^\.\/site/https:\/\/natechoe.dev/g" > $@
+site/sitemap.txt: $(SRCS) site/blog/blog-index/index.html
+	find site -name *.html -type f | sed "s/^\.\/site/https:\/\/natechoe.dev/g" > $@
 	echo "https://natechoe.dev/" >> $@
 
-site/blog/index.html: site/blog/index.ncdg site/blog/posts
-	ncdg site/blog/index.ncdg site/blog/index.html
+site/blog/blog-index/index.html: site/blog/blog-index/create-index.sh site/blog/posts
+	$<
 
 %.html: %.ncdg
 	ncdg $< $@
