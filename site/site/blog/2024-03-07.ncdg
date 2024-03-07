@@ -1,0 +1,17 @@
+@%/site/head.html@
+@=header I've been hacked!@
+
+<p>Uh oh! I recently received an email that my IP address was reported several
+times in <a href=https://www.abuseipdb.com/check/45.19.51.169>AbuseIPDB</a>!
+It's probably a problem with my email server, most reports seem to focus on
+SMTP. My best guess is that I'm using an old version of <a
+href=https://github.com/docker-mailserver/docker-mailserver>docker-mailserver</a>
+with some security vulnerability, or my Dad had a bad email password. I'm pretty
+sure it's the first one, though, because none of the AbuseIPDB reports are
+authenticated with my Dad's emails. I really have no way of knowing how far this
+goes, I've procrastinated enabling rootless docker for too long so there might
+be a rootkit on my system. I hope that there isn't, but just in case I'll be
+reinstalling my entire operating system when I get home from school later today.
+In the meantime just know that my email won't be working.</p>
+
+@%/site/tail.html@

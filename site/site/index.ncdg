@@ -1,6 +1,10 @@
 @%/site/head.html@
 @=header Welcome to natechoe.dev!@
 
+<h2>I've been hacked!</h2>
+
+<p><b>I've been hacked, see the latest blog post for more info.</b></p>
+
 <p>Welcome college admissions evaluators! Please accept me! This website's tech
 stack was built by me from the ground up. I wrote the web server, the webpage
 generator, designed the templates, built the computer, and configured and
