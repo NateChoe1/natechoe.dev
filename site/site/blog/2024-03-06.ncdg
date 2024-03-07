@@ -16,7 +16,6 @@ The entire language has just 8 commands:</p>
 .: Print the current cell as an ASCII character to the output
 ,: Receive a character from the input
 @</code></pre>
-<ol>
 
 <p>You may notice that there's no random access memory here. In Brainfuck, array
 access is an O(n) operation. This just goes to show that Big O notation is not
