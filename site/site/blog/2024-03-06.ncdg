@@ -1,0 +1,52 @@
+@%/site/head.html@
+@=header Computer Science Shower Thoughts: Big O Notation Isn't Universal@
+
+<p>Brainfuck is probably the most famous esoteric programming language out
+there. Brainfuck programs live on an infinite array (tape) of bytes, with some
+pointer (tape head) which starts at position 0, but which can be moved around.
+The entire language has just 8 commands:</p>
+
+<pre><code class=block>@\
++: Increment the tape head
+-: Decrement the tape head
+[: If the current cell contains zero, jump to the next ']'
+]: If the current cell does not contain zero, jump to the previous '['
+>: Move the tape head right
+<: Move the tape head left
+.: Print the current cell as an ASCII character to the output
+,: Receive a character from the input
+@</code></pre>
+<ol>
+
+<p>You may notice that there's no random access memory here. In Brainfuck, array
+access is an O(n) operation. This just goes to show that Big O notation is not
+canonical. Our current system is a product of the <a
+href=https://en.wikipedia.org/wiki/Von_Neumann_architecture>von Neumann
+architecture</a>, and two people designing computer science from the ground up
+would not necessarily come up with the same system for algorithmic analysis. In
+fact, the people who did design computer science from the ground up didn't
+design this system for algorithmic analysis. Brainfuck is modeled after <a
+href=https://en.wikipedia.org/wiki/Alan_Turing>Alan Turing's</a> idea of a <a
+href=https://en.wikipedia.org/wiki/Turing_machine>"Turing Machine"</a>, which
+also has O(n) memory access.</p>
+
+<p>That's why <a href=https://en.wikipedia.org/wiki/Complexity_class>complexity
+classes</a> jump from P to NP. O(n) is a fuzzy, abstract idea defined by our
+computer architecture and definition of "n". Polynomial time is a loose, but
+strictly defined limit on our time complexity. We could use Brainfuck to turn
+array access into an O(n) operation, then use a linked list to store our tape
+and turn it into an O(n^2) operation, then run that in a Brainfuck virtual
+machine to turn it into an O(n^3) operation, but we will never go beyond
+polynomial time. Array access sometimes takes O(1) time, but it always takes
+polynomial time.</p>
+
+<p>If we want to rigorously define Big O notation, we have to define our "n"
+values, and which operations are O(1). In the von Neumann architecture, setting
+a memory cell, reading a memory cell, arithmetic, and jumps are all O(1)
+operations.</p>
+
+<p>That's all I really have to say, I pretty much wrote this entire article
+mentally in the shower and typed it out, I don't really have a satisfying ending
+to this though.</p>
+
+@%/site/tail.html@
