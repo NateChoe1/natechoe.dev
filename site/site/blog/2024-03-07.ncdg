@@ -14,4 +14,561 @@ be a rootkit on my system. I hope that there isn't, but just in case I'll be
 reinstalling my entire operating system when I get home from school later today.
 In the meantime just know that my email won't be working.</p>
 
+<p><b>UPDATE: 4:13 PM</b></p>
+
+<p>It's definitely not email. I've taken down my email server and there was
+still another report. I'm bringing it back up, but just in case I'm pulling the
+latest version of everything.</p>
+
+<p><b>UPDATE: 4:21 PM</b></p>
+
+<p>I've updated and restarted all of my containers. I don't see anything
+suspicious in my SSH logs. My best guess is that the Windows virtual machine
+that hosts my Dad's websites got compromised.</p>
+
+<p><b>UPDATE: 5:01 PM</b></p>
+
+<p>I've downloaded Wireshark and began listening for packets going to port 25.
+There hasn't been anything for around ten minutes. I don't know if that's
+because I restarted the Windows VM or because I've updated all of my containers,
+though.</p>
+
+<p><b>UPDATE: 7:12 PM</b></p>
+
+<p>There have been a few more incidents. I've installed Wireshark on the docker
+container which runs the VM and am listening for connections to port 25. If that
+happens, we'll know that the Windows VM is the culprit and we can shut it off.
+If we spot an incident on the main host but don't spot one on the VM, we know
+that it's not Windows. I'm willing to bet $5 that it's Windows.</p>
+
+<p>This is a strange piece of malware. It's completely silent for a period of
+anywhere between 20-40 minutes, then talks with just maybe three hosts total,
+then shuts down again. I've never seen anything like it, although I haven't seen
+very much in the first place ;).</p>
+
+<p><b>UPDATE: 7:29 PM</b></p>
+
+<p>It's not Windows. At this point I have to reinstall everything. If there's
+some sophisticated rootkit on my system then I'm screwed, and I can't have that.
+Time to pick a distro.</p>
+
+<p><b>UPDATE: 7:46 PM</b></p>
+
+<p>As I was backing up my data, I've just realized that my backup server's
+broken as well. I have no idea how far this goes, I think I have to change
+literally all of my passwords, and revoke my GPG key. Fuck.</p>
+
+<p><b>UPDATE: 7:51 PM</b></p>
+
+<p>I've just realized that a very sophisticated attacker could have fucked up my
+personal laptop too, because the server that got hacked also had distcc.
+Fuck.</p>
+
+<p><b>UPDATE: 10:24 PM</b></p>
+
+<p>Just installed Alpine on my server. I'm writing this update from a chroot
+inside the Alpine live image because this entire situation scares the shit out
+of me. I don't even know if Vim is safe. This entire situation is a shitty
+trusing trust problem. I have a plan, though. I'll rebuild my entire system from
+scratch using distcc from that trusted Alpine system. sshd is disabled, so as
+far as I can tell my server is a reasonable root of trust. The only way to hack
+that would be to:</p>
+
+<ol>
+<li>Access my server (they have definitely done this)</li>
+<li>Gain root access to my server (they may have done this, I definitely
+would if I was an asshole)</li>
+<li>Inject malicious code into distcc (they probably haven't done this, but you
+can never be too safe)</li>
+<li>Create a fake clone of Alpine Linux with malicious code inside of it, then
+inject code into Firefox and the sha256sum command to make me fall for that
+switcheroo (they definitely have not done this)</li>
+</ol>
+
+<p>I'm starting to feel a bit better about this whole situation.</p>
+
+<p>In terms of next steps for the natechoe.dev architecture, I'm going to start
+using rootless containers owned by different users, each with minumum privileges
+to keep everything completely separate. Fool me once, fuck you. Fool me twice,
+fuck you even more.</p>
+
+<p><b>UPDATE: 11:16 PM</b></p>
+
+<p>The Gentoo website was down so I had to download the Gentoo stage 3 tarball
+from the MIT mirror. I backed up all of the files in the tarball that are
+different on my machine, and extracted it. So far, everything seems fine, which
+is absolutely insane considering the fact that I've just overwritten a bunch of
+system files, and decided which ones to back up through sheer vibes. By the
+way, I'm writing this update in nano because I haven't recompiled Vim, and I
+can't set aside the possibility that these people have installed a virus which
+adds malicious code to every package I install. It's dumb, and almost certainly
+unwarranted, but there's always that possibility.</p>
+
+<p><b>UPDATE: 2024-03-08 2:09 PM</b></p>
+
+<p>I stayed up until around 2:00 am recompiling software and then fell asleep. I
+just woke up. Spring break begins tomorrow, so I've skipped school since none of
+my teachers are doing anything too important.</p>
+
+<p><b>UPDATE: 2024-03-09 12:01 AM</b></p>
+
+<p>I've been working on this all day. I've recompiled most of the software on my
+laptop, and I've set up rootless Docker on an Alpine host. I'm not going to
+separate the users because I'm pretty sure there's no way to "escape" a Docker
+container</p>
+
+<p><b>UPDATE: 2024-03-09 10:48 PM</b></p>
+
+<p>Vim died while I was writing that previous update :(</p>
+
+<p>Anyways, I've been busy all day with band stuff (I signed up before I knew
+that I'd been hacked), but it's time to lock in. Rootless Docker has a few
+problems with my workflow. Based on my understanding (which may be wrong),
+rootless Docker runs on a separate network namespace. A proxy program forwards
+connections from the host namespace to the various container namespaces. This
+creates two big problems:</p>
+
+<ol>
+  <li>The proxy server can't bind to privileged ports on the host namespace</li>
+  <li>Services running on unprivileged Docker containers see the IP address of
+  the proxy, not the client</li>
+</ol>
+
+<p>I've got a really cool idea to solve both problems.</p>
+
+<p>The obvious way to expose client IP addresses to Docker services would be to
+change the headers of each TCP packet sent to/from the service. I'd have to
+create some custom network interface that injects data into packets in real
+time. That would be very expensive, and dumb.</p>
+
+<p>We don't really care about what the IP packets themselves say, we care about
+what the services think they say. When you accept a client socket, you can get
+the IP address of that socket by passing in a pointer to a <code>struct
+sockaddr</code> to the <code>accept</code> system call.</p>
+
+<p>We can use the <a
+href=https://axcheron.github.io/playing-with-ld_preload/>LD_PRELOAD trick</a> to
+overload the <code>accept</code> function and inject real IP addresses into our
+process.</p>
+
+<p>Of course, our injected <code>accept</code> function doesn't know the IP
+addresses of the clients either, so we set up a proxy on the host namespace
+which informs that injected <code>accept</code> function of the real IP
+addresses. That proxy has minimum privileges, the injected function is tiny, I
+think this could work!</p>
+
+<p><b>UPDATE: 2024-03-10 3:01 PM</b></p>
+
+<p>This proxy should probably be implemented as an nginx module, so I decided to
+start reading about that. <a
+href=https://linuxconcept.com/nginx-modules-building-blocks-customization/>This
+article</a> is complete fucking garbage. It just says "to build nginx modules
+you need to know how nginx works". Yeah no shit dumbass, of course you do. It
+doesn't even explain how to make an nginx module, it just says "figure it out
+dumbass" in like 500 words of AI generated garbage.</p>
+
+<p>My AP European History teacher made us grade some example essays to help us
+understand the rubric, and she included some ChatGPT generated essays as a joke.
+They were all trash. They just spat out 1000 words of information at you. No
+thesis, no line of reasoning, just a list of things that happened at around the
+time period the question was asking about. AI is really cool, but it also really
+sucks.</p>
+
+<p><b>UPDATE: 2024-03-10 3:49 PM</b></p>
+
+<p>I've just found out about the <a
+href=https://docs.nginx.com/nginx/admin-guide/load-balancer/using-proxy-protocol/>nginx
+proxy protocol</a>, which seems to have been designed for this exact purpose.</p>
+
+<p>I don't think there's a spec for the protocol, but from my experimentation
+the client sends a single line of information, then acts as a regular TCP proxy.
+That line looks like this:</p>
+
+<pre><code class=block>@\
+peer-info := "PROXY " <proto-info> " " <ip-addr> " " <ip-addr> " " <port-num> " " <port-num> <CRLF>
+proto-info := "TCP4" | "TCP6"
+@</code></pre>
+
+<p>The first IP address is the real client's IP address, the second's is nginx's
+IP address, the first port is the real client's port, the second is nginx's port
+number.</p>
+
+<p><b>UPDATE: 2024-03-10 6:12 PM</b></p>
+
+<p>I've written a small prototype. It's quite fragile since I'm trying to
+overload an interface which was not designed for this, and netcat doesn't work,
+but all the functions are there.</p>
+
+<p><b>UPDATE: 2024-03-10 7:12 PM</b></p>
+
+<p>I'm modifying netcat to see why it doesn't detect the real IP address. For
+some reason, <code>inet_ntop</code> is returning the corrent IP address, but
+<code>holler("%08x", ntohl(remend-&gt;sin_addr.s_addr))</code> always returns
+localhost.</p>
+
+<p><b>UPDATE: 2024-03-10 7:16 PM</b></p>
+
+<p><code>inet_pton</code> assumes that <code>dst</code> is of type <code>struct
+in_addr</code>. I spent the past hour trying to debug that.</p>
+
+<p><b>UPDATE: 2024-03-10 10:04 PM</b></p>
+
+<pre><code class=block>@\
+Script started on 2024-03-11 03:04:01+00:00 [TERM="xterm" TTY="/dev/pts/0" COLUMNS="119" LINES="61"]
+# nc -lp 3632 -v
+listening on [any] 3632 ...
+192.168.50.166: inverse host lookup failed: Unknown host
+connect to [172.19.0.2] from (UNKNOWN) [192.168.50.166] 46450
+a
+a
+a
+#
+
+Script done on 2024-03-11 03:04:11+00:00 [COMMAND_EXIT_CODE="0"]
+@</code></pre>
+
+<p>This was executed in an actual docker container. Let's fucking go.</p>
+
+<p><b>UPDATE: 2024-03-10 10:16 PM</b></p>
+
+<p>distcc sees it too!</p>
+
+<pre><code class=block>@\
+amdserver:~/distcc-docker$ docker compose up
+[+] Running 1/1
+ ✔ Container distcc  Recreated                                                                                   10.3s
+Attaching to distcc
+distcc  | distccd[9] (dcc_job_summary) client: 192.168.50.166:37880 COMPILE_OK exit:0 sig:0 core:0 ret:0 time:178ms /usr/lib/ccache/gcc src/connections.c
+distcc  | distccd[10] (dcc_job_summary) client: 192.168.50.166:37886 COMPILE_OK exit:0 sig:0 core:0 ret:0 time:37ms /usr/lib/ccache/gcc src/dynamic.c
+distcc  | distccd[11] (dcc_job_summary) client: 192.168.50.166:37892 COMPILE_OK exit:0 sig:0 core:0 ret:0 time:134ms /usr/lib/ccache/gcc src/main.c
+distcc  | distccd[12] (dcc_job_summary) client: 192.168.50.166:37894 COMPILE_OK exit:0 sig:0 core:0 ret:0 time:147ms /usr/lib/ccache/gcc src/responses.c
+distcc  | distccd[13] (dcc_job_summary) client: 192.168.50.166:37902 COMPILE_OK exit:0 sig:0 core:0 ret:0 time:126ms /usr/lib/ccache/gcc src/responseutil.c
+distcc  | distccd[14] (dcc_job_summary) client: 192.168.50.166:37916 COMPILE_OK exit:0 sig:0 core:0 ret:0 time:121ms /usr/lib/ccache/gcc src/runner.c
+distcc  | distccd[15] (dcc_job_summary) client: 192.168.50.166:37920 COMPILE_OK exit:0 sig:0 core:0 ret:0 time:100ms /usr/lib/ccache/gcc src/setup.c
+distcc  | distccd[16] (dcc_job_summary) client: 192.168.50.166:37936 COMPILE_OK exit:0 sig:0 core:0 ret:0 time:143ms /usr/lib/ccache/gcc src/sitefile.c
+distcc  | distccd[17] (dcc_job_summary) client: 192.168.50.166:37952 COMPILE_OK exit:0 sig:0 core:0 ret:0 time:103ms /usr/lib/ccache/gcc src/sockets.c
+distcc  | distccd[18] (dcc_job_summary) client: 192.168.50.166:37956 COMPILE_OK exit:0 sig:0 core:0 ret:0 time:120ms /usr/lib/ccache/gcc src/util.c
+@</code></pre>
+
+<p><b>UPDATE: 2024-03-10 11:22 PM</b></p>
+
+<p>Just got DNS back up. I've also made zone signing dockerized.</p>
+
+<p><b>UPDATE: 2024-03-11 12:38 AM</b></p>
+
+<p>Real talk, I've been freaking out over MIT applications for the past month
+and a half. During my MIT interview, the interviewer told me that his son
+regretted going to Stanford because they weren't nerdy enough. Just think about
+that, there are people who go to Stanford because they got rejected from MIT.
+That's crazy.</p>
+
+<p>Anyways, I've been looking for distractions for quite a while. I wrote <a
+href=https://github.com/chessh-org>chessh</a>, went on bike rides, paced the
+same hallway over and over again during any downtime I had at school, etc. That
+anxiety has caused me to do so much exercise that it may have been beneficial to
+my health.</p>
+
+<p>This whole hacking scare is serving as a really nice distraction. The
+natechoe.dev architecture has been built over the course of several years, and I
+have to rebuild it in just a few days. Of course, a lot of the components I'm
+just moving over, but I'm also writing a lot of new code. I wrote that proxy, I
+dockerized compilation, and now I'm writing a custom certbot script.</p>
+
+<p>Despite all the profanity that I've placed in all of these updates, and the
+massive downtime that this has caused, I really do enjoy this sort of stuff.
+The thrill of seeing an absolute mess, breaking it up into a million different
+problems, and solving them one by one is an absolute blast.</p>
+
+<p>To that end, I have a bunch of philisophical design requirements in the
+natechoe.dev architecture. They're not written down anywhere, and they're more
+like suggestions or end goals than hard rules, but whenever I'm doing this sort
+of stuff they're always on my mind, and following them introduces some
+incredibly fun system administration puzzles to solve. The biggest rule is that
+a large portion of the code has to be custom-written. That started when I wrote
+swebs, and has continued to this day.  Writing a custom proxy is a part of
+that.</p>
+
+<p>While fixing everything I've introduced a new rule: everything connected to
+the internet should have automatic updates. That means I can't write my own
+docker containers unless they either don't need internet access, or have
+automatic updates. This has introduced a whole bunch of problems for me, since
+my networking stack is full of custom Docker containers.</p>
+
+<p>BIND9 was pretty easy to remove, my custom Docker image literally just
+installed and ran BIND9, there was no extra functionality. I just replaced it
+with an off-the-shelf image. After BIND9, the next easiest Docker container to
+remove is the reverse-proxy container. This image has two functions:</p>
+
+<ol>
+  <li>Act as a reverse proxy</li>
+  <li>Fetch TLS certificates</li>
+</ol>
+
+<p>Right now I'm working on the second part. <a
+href=https://certbot.eff.org/>Certbot</a> has a Docker image which can be run
+instead of installing the script on the host system (another soft design
+requirement is that I can't install things on the host system), and a mode to
+validate with DNS. I've written a very nice script to automatically request
+certificates, it looks like this:</p>
+
+<pre><code class=block>@\
+#!/usr/bin/env bash
+
+if [ $# -lt 2 ] ; then
+	echo "Usage: $0 [letsencrypt dir] [-d domain1] [-d domain2] ..."
+	exit 1
+fi
+
+TMPDIR="$(mktemp -d)"
+mkfifo "$TMPDIR/fifo"
+
+docker run -d --rm \
+	-v "$1":/etc/letsencrypt \
+	-v "$TMPDIR/fifo":/cmdfifo \
+	-v "/home/nate/setup-hook.sh":/setup-hook.sh \
+	-v "/home/nate/clean-hook.sh":/clean-hook.sh \
+	certbot/certbot certonly --dry-run --agree-tos -n --manual --manual-auth-hook "${@@:2}"
+
+tail -f "$TMPDIR/fifo" | while read line ; do
+	case "$line" in
+	1)
+		read CERTBOT_DOMAIN
+		read CERTBOT_VALIDATION
+		echo "_acme-challenge.$CERTBOT_DOMAIN. IN TXT $CERTBOT_VALIDATION" > /home/nate/docker-bind9/extra-records.zone
+		;;
+	2)
+		truncate --size 0 /home/nate/docker-bind9/extra-records.zone
+		break
+		;;
+	*)
+		echo "WARNING: Invalid command received: $line"
+		break
+		;;
+	esac
+done
+rm -r "$TMPDIR"
+@</code></pre>
+
+<p>The <code>/home/nate/*-hook.sh</code> scripts writes commands to the FIFO,
+then the host system reads those commands and updates DNS records. This is a
+really nice hack, and it satisfies every design requirement. It's not finished
+yet (it actually has several bugs, I took a break from working on this when it
+was 90% done to write this update), but I really like how it looks so far.</p>
+
+<p><b>UPDATE: 2024-03-11 2:03 AM</b></p>
+
+<p>Here's the final script</p>
+
+<pre><code class=block>@\
+#!/usr/bin/env bash
+
+if [ $# -lt 2 ] ; then
+	echo "Usage: $0 [letsencrypt dir] [-d domain1] [-d domain2] ..."
+	exit 1
+fi
+
+TMPDIR="$(mktemp -d)"
+mkfifo "$TMPDIR/host"
+mkfifo "$TMPDIR/container"
+
+while read line ; do
+	case "$line" in
+	1)
+		read CERTBOT_DOMAIN
+		read CERTBOT_VALIDATION
+		echo "_acme-challenge.$CERTBOT_DOMAIN. IN TXT $CERTBOT_VALIDATION" > /home/nate/docker-bind9/extra-records.zone
+		/home/nate/docker-bind9/signzone-complete.sh
+		# wait for everything to get signed
+		while [ "$(dig @localhost +short TXT _acme-challenge.natechoe.dev.)" != "\"$CERTBOT_VALIDATION\"" ] ; do
+			sleep 1
+		done
+		echo "nonce" > "$TMPDIR/container"
+		;;
+	2)
+		> /home/nate/docker-bind9/extra-records.zone
+		/home/nate/docker-bind9/signzone-complete.sh
+		echo "nonce" > "$TMPDIR/container"
+		echo 3 > "$TMPDIR/host"
+		;;
+	3)
+		rm -r "$TMPDIR"
+		exit 0
+		;;
+	*)
+		echo "ERROR: Invalid command received: $line"
+		echo 3 > "$TMPDIR/host"
+		;;
+	esac
+done < <(tail -f "$TMPDIR/host") &
+
+docker run --rm \
+	-v "$1":/etc/letsencrypt \
+	-v "$TMPDIR/host":/host \
+	-v "$TMPDIR/container":/container \
+	-v "/home/nate/cert-getter/setup-hook.sh":/setup-hook.sh \
+	-v "/home/nate/cert-getter/clean-hook.sh":/clean-hook.sh \
+	-- certbot/certbot certonly --dry-run --agree-tos -n \
+	--manual --manual-auth-hook /setup-hook.sh --manual-cleanup-hook /clean-hook.sh \
+	--preferred-challenges dns \
+	"${@@:2}"
+
+for job in $(jobs -p) ; do
+	wait $job
+done
+@</code></pre>
+
+<p>The original version had quite a few bugs, as I now know.</p>
+
+<p><b>UPDATE: 2024-03-11 2:20 AM</b></p>
+
+<p>I've set up everything for email, I'm ready to create Let's Encrypt
+certificates, but my Dad's DNS doesn''t point to the right location. I can set
+up everything at a moment's notice, though.</p>
+
+<p><b>UPDATE: 2024-03-11 3:29 AM</b></p>
+
+<p>Haven't updated in a while, I've set up nginx (but haven't tested it, again,
+no certificates) and downloaded all of the images that I created.</p>
+
+<p>I've moved all of my own images into a single directory and created a single
+master build script which compiles all of them at once. I've then put that build
+script into a cron job, so that any upstream upgrades automatically get patched
+in.</p>
+
+<p>I have to say, this new architecture is looking very different from before. I
+might have to create another update on the natechoe.dev architecture.</p>
+
+<p><b>UPDATE: 2024-03-11 3:44 AM</b></p>
+
+<p>Just did a dry run with plaintext HTTP, it seems to be working great!
+Everything's responding correctly, the Tor hidden service is up, I feel really
+good about this setup!</p>
+
+<p><b>UPDATE: 2024-03-11 3:57 AM</b></p>
+
+<p><a href=https://github.com/dockur/windows>This repo</a> creates a QEMU
+virtual machine running Windows. It doesn't work on rootless Docker, though. The
+image is based on <a href=https://github.com/qemus/qemu-docker>qemu-docker</a>,
+which I have contributed to, so I generally know how this project works.
+qemu-docker creates a TUN/TAP (I can't remember which) and binds qemu to it.
+Then, it creates an iptables rule to redirect all packets to that TUN/TAP
+interface.</p>
+
+<p>The problem with doing this on rootless Docker is that we don't have access
+to raw IP packets. This means that we can't create that TUN/TAP interface and
+can't access a network.</p>
+
+<p><b>UPDATE: 2024-03-11 4:35 AM</b></p>
+
+<p>Switched gears for a bit, updates are theoretically completely automated
+now. The host machine, as well as every local and remote image get update at
+around 3:00 am every day.</p>
+
+<p><b>UPDATE: 2024-03-11 4:42 AM</b></p>
+
+<p>I don't know what I was doing wrong before, but I tried that Windows repo
+again and it just worked. Neat!</p>
+
+<p><b>UPDATE: 2024-03-11 5:01 AM</b></p>
+
+<p>I'm getting an error that says "vhost_set_owner failed: Inappropriate ioctl
+for device". I think that means that qemu can't create a new network from the
+TUN/TAP device, probably due to lack of permissions. I guess that means that
+Windows doesn't work in the end. Thank goodness, Windows is trash.</p>
+
+<p><b>UPDATE: 2024-03-11 5:44 AM</b></p>
+
+<p>I'm pretty much done with server migration for now. I need to wait for my Dad
+to wake up so that I can get server certificates working, but other than that
+I'm chilling. Looking back through these updates, the one that I made at 12:38
+today is kind of weird. It's like it was written by AI, it starts off at one
+topic, then suddenly switches to another. I don't know what I was doing, and
+this was literally five hours ago. I should probably proof-read these updates.
+Oh well!</p>
+
+<p><b>UPDATE: 2024-03-11 12:10 PM</b></p>
+
+<p>I've just time-traveled (slept), and obtained my Dad's laptop. I can finally
+finish this migration.</p>
+
+<p><b>UPDATE: 2024-03-11 12:19 PM</b></p>
+
+<p>There are a lot of DNS recrods I have to migrate. I'm thinking about
+transitioning to regular-old HTTP-based Let's Encrypt. I could create a bind
+mount inside of nginx that certbot also sees.</p>
+
+<p><b>UPDATE: 2024-03-11 12:25 PM</b></p>
+
+<p>I spent like 3 hours writing that DNS authenticator for Let's Encrypt and
+thought about throwing it all away to save 6 minutes of work. That's that
+programmer mindset.</p>
+
+<p><b>UPDATE: 2024-03-11 2:46 PM</b></p>
+
+<p>Email is working! Only STARTTLS seems to be working for some reason, maybe
+nginx is automatically getting rid of TLS?</p>
+
+<p><b>UPDATE: 2024-03-11 3:43 PM</b></p>
+
+<p>As it turns out, the nginx proxy protocol is actually called the HAProxy
+protocol. Also, there's a thing TProxy which does exactly what my custom proxy
+does but at the packet and in the kernel. That's fun. Anyways, there are Postfix
+configuration options to use HAProxy, but they don't seem to be working.</p>
+
+<p><b>UPDATE: 2024-03-11 3:46 PM</b></p>
+
+<p>As it turns out, the HAProxy protocol is actually called <a
+href=https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt>the PROXY
+protocol</a>.</p>
+
+<p><b>UPDATE: 2024-03-11 3:55 PM</b></p>
+
+<p>Mail completely works now :) See <a
+href=https://docker-mailserver.github.io/docker-mailserver/latest/examples/tutorials/mailserver-behind-proxy/>this
+link</a> for the guide I followed.</p>
+
+<p><b>UPDATE: 2024-03-11 4:31 PM</b></p>
+
+<p>HTTP is back up too, with the exception of my Dad's websites, which run
+Windows. DNS records should propagate after an hour.</p>
+
+<p><b>UPDATE: 2024-03-11 5:27 PM</b></p>
+
+<p>Turns out Windows wasn't working because I didn't load a kernel module.
+Windows can boot now, but without KVM.</p>
+
+<p><b>UPDATE: 2024-03-11 5:53 PM</b></p>
+
+<p>I've found <a href=https://stackoverflow.com/questions/76683335/>this
+StackOverflow</a> forum where someone directly mapped group 20 (the dialout
+group) in /etc/subgid. That feels insecure, but it really isn't.</p>
+
+<p><b>UPDATE: 2024-03-11 7:28 PM</b></p>
+
+<p>My Dad has an 76 GB disk image which I need to transfer from our backup
+server to my server. This takes up all of my bandwidth, so while I'm waiting
+I've decided to write a retrospective look at this whole experience.</p>
+
+<p>I was freaking out at the beginning of this. I think this is the first time
+that I've used profanity on this website, and I think that it was justified. I
+had to shut down my email during college admissions season, when I need it the
+most. That's fucked up. I was also overreacting, though. My laptop was almost
+certainly fine the whole time, and setting up rootless Docker over multiple
+users is definitely overkill.</p>
+
+<p>This was also partially my fault. If you expose some port on your system,
+someone will try to access it. I know that, and I still screwed up.</p>
+
+<p>This was a very fun experience. As I've said before, I built this
+architecture up over several years, torn it all down, then rebuilt it in four
+days. I've reorganized all the containers, written some custom software, and
+consolidated everything that needs updating into four cron jobs. I could yap on
+for days about how stressful this was, and how my time is being stolen from me
+by these attackers, but I really love doing this sort of stuff. I was probably
+going to make all of these changes on my own anyways at some point anyways, this
+was just a nice excuse to finally get it done.</p>
+
+<p>The file transfer's just finished, I'm going to finish this migration now,
+and enjoy the rest of my spring break.</p>
+
 @%/site/tail.html@
