@@ -1,0 +1,81 @@
+@%/site/head.html@
+@=header It's time to manifest an MIT acceptance letter@
+
+@=mit-css <div id=container>
+  <div class=col>
+    <div class=l></div>
+  </div>
+  <div class=col>
+    <div class='l m'></div>
+  </div>
+  <div class=col>
+    <div class=l></div>
+  </div>
+  <div class=col>
+    <div class=i></div>
+    <div class=b></div>
+  </div>
+  <div class=col>
+  <div class=t></div>
+  <div class='b r'></div>
+  </div>
+</div>@
+
+<p>Check out this cool rendering I made with HTML and CSS</p>
+
+@!mit-css@
+
+<p>I hacked it together in like ten minutes, so the colors match but the spacing
+doesn't. Anyways, please accept me!</p>
+
+@!mit-css@<p></p>
+@!mit-css@<p></p>
+@!mit-css@<p></p>
+@!mit-css@<p></p>
+@!mit-css@<p></p>
+@!mit-css@
+
+<style>
+/* this css is trash, but that's okay */
+#container {
+  display: flex;
+}
+
+.col {
+  width: 50px;
+  height: 200px;
+  margin-right: 10px;
+}
+
+.l {
+  width: 100%;
+  height: 100%;
+  background: #993233;
+}
+.m {
+  height: 120px;
+}
+
+.i {
+  width: 100%;
+  height: 50px;
+  background: #993233;
+  margin-bottom: 10px;
+}
+.b {
+  width: 100%;
+  height: 140px;
+  background: #656565;
+}
+.t {
+  width: 110px;
+  height: 50px;
+  background: #993233;
+  margin-bottom: 10px;
+}
+.r {
+  background: #993233;
+}
+</style>
+
+@%/site/tail.html@

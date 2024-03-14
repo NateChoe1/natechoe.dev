@@ -1,6 +1,9 @@
 @%/site/head.html@
 @=header Welcome to natechoe.dev!@
 
+<p>I got hacked recently. Everything's fixed though. If you sent me an email
+between 2024-03-07 and 2024-03-11, it might not have gone through.</p>
+
 <p>Welcome college admissions evaluators! Please accept me! This website's tech
 stack was built by me from the ground up. I wrote the web server, the webpage
 generator, designed the templates, built the computer, and configured and

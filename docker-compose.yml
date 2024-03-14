@@ -4,26 +4,9 @@ services:
     image: natechoe/natechoe.dev
     container_name: natechoe.dev
     ports:
-      - "8000:80"
+      - "127.0.0.1:8000:80"
     volumes:
       - ./tor-data:/tor-data
     working_dir: "/site/"
     restart:
       always
-#    networks:
-#      vlan:
-#        ipv4_address: 192.168.50.244
-#  natechoe.dev-onion:
-#    image: natechoe/tor-relay
-#    container_name: natechoe.dev-onion
-#    volumes:
-#      - ./tor-data:/var/lib/tor/tor-data
-#      - ./torrc:/etc/tor/torrc
-#    environment:
-#      - RELAY_EXPERT=1
-#    restart:
-#      always
-#networks:
-#  vlan:
-#    external: true
-#

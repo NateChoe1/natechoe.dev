@@ -379,7 +379,7 @@ while read line ; do
 		echo "_acme-challenge.$CERTBOT_DOMAIN. IN TXT $CERTBOT_VALIDATION" > /home/nate/docker-bind9/extra-records.zone
 		/home/nate/docker-bind9/signzone-complete.sh
 		# wait for everything to get signed
-		while [ "$(dig @localhost +short TXT _acme-challenge.natechoe.dev.)" != "\"$CERTBOT_VALIDATION\"" ] ; do
+		while [ "$(dig @@localhost +short TXT _acme-challenge.natechoe.dev.)" != "\"$CERTBOT_VALIDATION\"" ] ; do
 			sleep 1
 		done
 		echo "nonce" > "$TMPDIR/container"
