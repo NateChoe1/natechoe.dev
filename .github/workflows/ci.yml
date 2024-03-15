@@ -1,0 +1,15 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: update
+      run: curl -X POST -H "Authorization: Bearer ${{ secrets.API_KEY }}" -H "Content-Type: application/json" -d '{"repo":"natechoe.dev"}' https://poll.natechoe.dev/gh/update-container
