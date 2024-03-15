@@ -1,6 +1,8 @@
 @%/site/head.html@
 @=header It's time to manifest an MIT acceptance letter@
 
+<p><b>UPDATE: I got rejected :)</b></p>
+
 @=mit-css <div id=container>
   <div class=col>
     <div class=l></div>
