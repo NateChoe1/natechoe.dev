@@ -1,0 +1,175 @@
+@%/site/head.html@
+@=header natechoe.dev has CI now!@
+
+<p>Here's the latest natechoe.dev hack, continuous integration with Github
+Actions!</p>
+
+<p>I have a dockerized node.js container which implements a very simple REST
+API. Then, whenever I push to Github, Github Actions calls that REST API. The
+node.js container sees this request and runs a script on the host machine which
+updates the natechoe.dev container.</p>
+
+<p>The node.js code</p>
+
+<pre><code class=block>@\
+const express = require('express')
+const bodyParser = require('body-parser')
+const app = express()
+const port = 3000
+
+app.use(bodyParser.json());
+
+const fs = require('node:fs');
+function readfile(file) {
+  try {
+    return fs.readFileSync(file).toString().trim();
+  }
+  catch (err) {
+    console.error(err);
+    process.exit();
+  }
+}
+const apikey = readfile('api-key.txt');
+
+app.post('/gh/*', (req, res, next) => {
+  function reject(msg) {
+    const body = `{"code":401,"elaboration":"${msg}"}`
+    res
+      .writeHead(401, {
+        'Content-Length': body.length,
+        'Content-Type': 'application/json',
+      })
+      .end(body);
+  }
+  if (typeof req.headers.authorization === 'undefined') {
+    reject("Request is missing Authorization header");
+    return;
+  }
+  headerParts = req.headers.authorization.split(' ');
+  if (headerParts.length != 2) {
+    reject("Invalid Authorization header");
+    return;
+  }
+  if (headerParts[0].toLowerCase() !== 'bearer') {
+    reject("Authorization header doesn't use Bearer authentication");
+    return;
+  }
+  if (headerParts[1] !== apikey) {
+    reject("Invalid API key");
+    return;
+  }
+  next();
+});
+
+app.post('/gh/update-container', (req, res) => {
+  function send(code, msg) {
+    const body = `{"code":${code},"elaboration":"${msg}"}`
+    res
+      .writeHead(code, {
+        'Content-Length': body.length,
+        'Content-Type': 'application/json',
+      })
+      .end(body);
+  }
+  const ip = req.headers["x-real-ip"];
+  if (typeof ip !== 'string') {
+    send(500, 'Failed to get client IP');
+    return;
+  }
+  const obj = req.body;
+  if (typeof obj.repo !== 'string') {
+    send(400, "Bad repo value in json");
+    return;
+  }
+  var ret = {
+    "ip": ip,
+    "repo": obj.repo,
+  };
+  try {
+    fs.writeFileSync('fifo', `${JSON.stringify(ret)}\n`);
+    send(200, "We did it reddit");
+    return;
+  }
+  catch {
+    send(500, "Failed to send update message");
+    return;
+  }
+});
+
+app.listen(port, () => {
+  console.log(`nodejs updater running on port ${port}`)
+})
+@</code></pre>
+
+<p>An excerpt from the docker-compose file that runs all of this</p>
+
+<pre><code class=block>@\
+nodejs-updater:
+  image: natechoe/nodejs-updater
+  container_name: nodejs-updater
+  volumes:
+    - ./nodejs/api-key.txt:/app/api-key.txt
+    - /home/nate/cron/update-notify:/app/fifo
+  restart: on-failure
+  stop_grace_period: 2s
+@</code></pre>
+
+<p>A script facilitating IPC between the container and host machine</p>
+
+<pre><code class=block>@\
+#!/bin/sh --
+set -e
+
+export XDG_RUNTIME_DIR="$HOME/.tmp"
+export DOCKER_HOST=unix://"$XDG_RUNTIME_DIR"/docker.sock
+
+while read line ; do
+        printf "%s\n" "$line" >> ~/logs
+        IP="$(echo "$line" | jq -r '.ip')"
+        REPO="$(echo "$line" | jq -r '.repo')"
+        "$HOME"/cron/update-ncd.sh "$REPO" "$IP"
+done < <(tail -f $HOME/cron/update-notify)
+@</code></pre>
+
+<p>The script that actually updates the container</p>
+
+<pre><code class=block>@\
+#!/bin/sh --
+set -e
+
+if [ $# -lt 2 ] ; then
+        echo "Usage: $0 [repo] [ip]"
+fi
+
+OLDDIR="$(pwd)"
+
+NEWDIR="$(realpath "/home/nate/my-images/natechoe.dev/$1")"
+
+send_email() {
+        cat "$3" | sed -e "s/__IP__/$2/g" -e "s/__PATH__/$1/g" | docker exec -i mailserver sendmail nate@natechoe.dev
+}
+
+if ! printf "%s\n" "$NEWDIR" | grep -q "^/home/nate/my-images/natechoe.dev/" ; then
+        send_email "$1" "$2" /home/nate/cron/malicious.mail
+        exit 1
+fi
+if [ ! -d "$NEWDIR" ] ; then
+        send_email "$1" "$2" /home/nate/cron/malicious.mail
+        exit 1
+fi
+
+send_email "$1" "$2" /home/nate/cron/update.mail
+cd "$NEWDIR"
+./build.sh
+cd /home/nate/http
+docker compose up -d natechoe.dev
+cd "$OLDDIR"
+@</code></pre>
+
+<p>node.js writes to a file, a script reads that file and calls another script,
+and that final script updates the container and sends me an email. Neat!</p>
+
+<p>By the way, this blog post is really just an excuse to test this whole system
+in the wild.</p>
+
+@%/site/tail.html@
