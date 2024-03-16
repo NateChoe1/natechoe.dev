@@ -146,7 +146,7 @@ OLDDIR="$(pwd)"
 NEWDIR="$(realpath "/home/nate/my-images/natechoe.dev/$1")"
 
 send_email() {
-        cat "$3" | sed -e "s/__IP__/$2/g" -e "s/__PATH__/$1/g" | docker exec -i mailserver sendmail nate@natechoe.dev
+        cat "$3" | sed -e "s/__IP__/$2/g" -e "s/__PATH__/$1/g" | docker exec -i mailserver sendmail nate@@natechoe.dev
 }
 
 if ! printf "%s\n" "$NEWDIR" | grep -q "^/home/nate/my-images/natechoe.dev/" ; then
