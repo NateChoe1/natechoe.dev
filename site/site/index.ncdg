@@ -13,4 +13,8 @@ compiled all the software.</p>
 
 <p>Tor hidden service: @$/site/get-tor-hostname.sh@</p>
 
+<a href="https://www.abuseipdb.com/user/88209" title="AbuseIPDB is an IP address blacklist for webmasters and sysadmins to report IP addresses engaging in abusive behavior on their networks">
+  <img src="https://www.abuseipdb.com/contributor/88209.svg" alt="AbuseIPDB Contributor Badge" style="width: 100%;">
+</a>
+
 @%/site/tail.html@
