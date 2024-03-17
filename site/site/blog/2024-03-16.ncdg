@@ -13,7 +13,7 @@ href=https://linux.die.net/man/>die.net man pages</a>, and so many other little
 resources that I use to get information on a regular basis.</p>
 
 <p>When I see a website without CSS I know that I can trust it, because it was
-made by somebody who has better things to do that learn CSS. It was made by
+made by somebody who has better things to do than learn CSS. It was made by
 someone who doesn't care what their website looks like because they're using <a
 href=https://lynx.invisible-island.net/>lynx</a> anyways. It was made by someone
 who has 30 years of experience, and you can tell because their website is from
@@ -24,9 +24,9 @@ feel like I'm about to get a popup asking me to accept cookies, with an
 autoplaying video in the bottom right and 2000 words of SEO before the actual
 content of the article. It feels like the website is owned by a company who
 hires writers and outsourced the web design to some third party, rather than the
-work of a single person who is genuinely passionate about the stuff on the
-website. The web design has no soul. Anyways, expect a redesign sometime in the
-next couple of weeks. If you're reading this after the redesign, just run a git
-reset and host this website yourself to see what I'm talking about.</p>
+work of a single person who is genuinely passionate about the stuff on it. The
+web design has no soul. Expect a redesign sometime in the next couple of weeks.
+If you're reading this after the redesign, just run a git reset and host this
+website yourself to see what I'm talking about.</p>
 
 @%/site/tail.html@
