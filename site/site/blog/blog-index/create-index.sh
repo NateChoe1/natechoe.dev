@@ -38,4 +38,6 @@ for x in $(seq $LIMIT) ; do
 	rm $PREV_FILE $NEXT_FILE
 done
 
+touch update-check
+
 rm *.tmp

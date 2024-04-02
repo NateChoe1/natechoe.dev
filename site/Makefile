@@ -11,14 +11,14 @@ site/blog/posts: site/blog/create-posts.sh $(BLOG)
 	cd ./site/blog
 	./site/blog/create-posts.sh
 
-site/sitemap.txt: $(HTML) site/blog/blog-index/index.html
-	find site -name '*.html' | sed "s/^site/https:\/\/natechoe.dev/g" > $@
+site/sitemap.txt: $(HTML) site/blog/blog-index/update-check
+	find site -name '*.html' | sed "s/^\.\/site/https:\/\/natechoe.dev/g" > $@
 	echo "https://natechoe.dev/" >> $@
 
-site/blog/blog-index/index.html: site/blog/blog-index/create-index.sh site/blog/posts
+site/blog/blog-index/update-check: site/blog/blog-index/create-index.sh site/blog/posts /tor-data/natechoe-dev-onion/hostname
 	$<
 
-%.html: %.ncdg
+%.html: %.ncdg /tor-data/natechoe-dev-onion/hostname
 	ncdg $< $@
 
 favicon.ico: favicon.asm
