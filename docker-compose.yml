@@ -9,5 +9,5 @@ services:
       - ./tor-data:/tor-data
       - ./site:/site
     working_dir: "/site/"
-    restart: on-failure
+    restart: always
     stop_grace_period: 2s
