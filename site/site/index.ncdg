@@ -1,9 +1,6 @@
 @%/site/head.html@
 @=header Welcome to natechoe.dev!@
 
-<p>I got hacked recently. Everything's fixed though. If you sent me an email
-between 2024-03-07 and 2024-03-11, it might not have gone through.</p>
-
 <p>Welcome college admissions evaluators! Please accept me! This website's tech
 stack was built by me from the ground up. I wrote the web server, the webpage
 generator, designed the templates, built the computer, and configured and
@@ -12,6 +9,8 @@ compiled all the software.</p>
 <p><a href=/resume.html>My resume can be found here</a></p>
 
 <p>Tor hidden service: @$/site/get-tor-hostname.sh@</p>
+
+<p>Cloudflare entry point: <a href=https://natechoe.com>natechoe.com</a></p>
 
 <a href="https://www.abuseipdb.com/user/88209" title="AbuseIPDB is an IP address blacklist for webmasters and sysadmins to report IP addresses engaging in abusive behavior on their networks">
   <img src="https://www.abuseipdb.com/contributor/88209.svg" alt="AbuseIPDB Contributor Badge" style="width: 100%;">
