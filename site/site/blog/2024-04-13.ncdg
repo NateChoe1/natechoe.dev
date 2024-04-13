@@ -3,7 +3,7 @@
 @=header TIL about little-o notation@
 
 <p>I've just read <a href=https://mathworld.wolfram.com/LandauSymbols.html>this
-Wolfram MahtWorld article</a>, apparently, big O notation is actually one of two
+Wolfram MathWorld article</a>, apparently, big O notation is actually one of two
 "Landau symbols". A Landau symbol is a function that takes a function as a
 parameter, so \(O(n)\) is equivalent to \(O(\phi)\) where \(\phi(n) = n\).
 The formal definition is that given some function \(f(x)\) (such as the runtime
