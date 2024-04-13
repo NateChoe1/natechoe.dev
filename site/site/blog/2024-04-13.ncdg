@@ -1,0 +1,38 @@
+@%/site/head.html@
+@%/site/katex.html@
+@=header TIL about little-o notation@
+
+<p>I've just read <a href=https://mathworld.wolfram.com/LandauSymbols.html>this
+Wolfram MahtWorld article</a>, apparently, big O notation is actually one of two
+"Landau symbols". A Landau symbol is a function that takes a function as a
+parameter, so \(O(n)\) is equivalent to \(O(\phi)\) where \(\phi(n) = n\).
+The formal definition is that given some function \(f(x)\) (such as the runtime
+of an algorithm) and some other function \(\phi(x)\) (such as the asymptotic
+complexity class of an algorithm),</p>
+
+<div>\(\displaystyle f = O(\phi) \iff |f(x)| &lt; A \phi(x)\)
+
+<p>for all values of \(x\) where \(A\) is some constant. In other words, \(f\)
+will never grow faster than \(\phi\).</p>
+
+<p>There's also little-o notation, which implies that \(f/\phi\) approaches
+0. In other words, \(\phi\) grows much faster than \(f\). For example, we could
+say that bubble sort runs in \(o(n^3)\) time because it runs in much fewer than
+\(n^3\) steps.</p>
+
+<p>Actually, the mathematical definition of big-O notation would seem to imply
+that \(f = o(\phi) \implies f = O(\phi)\), since \(f\) will never grow faster than
+\(\phi\). If that's right, then we could for example call bubble-sort an
+\(O(n^3)\) algorithm because it will never take longer than \(n^3\) time. Of
+course, it also won't take longer than \(n^2\) time, which is more impressive,
+but the first statement is still technically true.</p>
+
+<p>I can't be bothered to find an example right now, but some computer science
+problems ask for "the most restrictive time-complexity in big-O notation" rather
+than "the time complexity in big-O notation", I guess that's why.</p>
+
+<p>By the way, you probably shouldn't trust these blogs as an authoritative
+source on anything, I'm just some kid from Texas who likes computer science and
+math.</p>
+
+@%/site/tail.html@
