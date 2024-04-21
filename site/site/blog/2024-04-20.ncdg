@@ -1,0 +1,408 @@
+@%/site/head.html@
+@=header We have Cloudflare as secondary DNS at home@
+
+<p>I host natechoe.dev. That's a core part of the identity of this website;
+everything that you see on the page was created by me, some random teenager from
+Texas. This website began because I wrote a web server a few years ago and
+wanted to host a website with it, and it's sort of just grown from there. At
+some point I began hosting DNS using BIND9 (although I'm currently writing a new
+DNS server from scratch in Go) which has prevented me from using Cloudflare.
+Ideally I'd delegate some subdomain (such as <a
+href=https://cdn.natechoe.dev>cdn.natechoe.dev</a>) to Cloudflare's DNS and
+redirect that to the main natechoe.dev instance, but Cloudflare uses the <a
+href=https://publicsuffix.org/>Public Suffix List</a> to verify domain
+ownership, so they reject my requests to add that as its own domain.</p>
+
+<p>I can't just put the entire domain on Cloudflare because that would break the
+core philosophy of this website. I also can't delegate a subdomain to Cloudflare
+because Cloudflare doesn't let me. Cloudflare does provide a <a
+href=https://developers.cloudflare.com/dns/zone-setups/zone-transfers/cloudflare-as-secondary/>secondary
+DNS service</a>, so theoretically I could host my own DNS and let Cloudflare
+mirror my zone with some subdomain being proxied through Cloudflare, but that's
+only available to enterprise consumers and I refuse to spend money to solve an
+interesting technical challenge.</p>
+
+<p>Then I had an idea. You use Cloudflare by setting custom nameservers for your
+domain. For example, <a href=https://natechoe.com>natechoe.com</a> uses the
+"will" and "faye" nameservers to get Cloudflare services.</p>
+
+<pre><code class=block>@\
+nate@@nate-x230 ~ $ dig @@1.1.1.1 NS natechoe.com
+
+; <<>> DiG 9.16.48 <<>> @@1.1.1.1 NS natechoe.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 41166
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;natechoe.com.                  IN      NS
+
+;; ANSWER SECTION:
+natechoe.com.           86400   IN      NS      faye.ns.cloudflare.com.
+natechoe.com.           86400   IN      NS      will.ns.cloudflare.com.
+
+;; Query time: 21 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1)
+;; WHEN: Sat Apr 20 23:12:57 CDT 2024
+;; MSG SIZE  rcvd: 93
+@</code></pre>
+
+<p>When you ask for the IP address of natechoe.com, Cloudflare inserts their own
+IP addresses and redirects any HTTP requests to my real IP address.</p>
+
+<pre><code class=block>@\
+nate@@nate-x230 ~ $ dig @@faye.ns.cloudflare.com natechoe.com
+
+; <<>> DiG 9.16.48 <<>> @@faye.ns.cloudflare.com natechoe.com
+; (6 servers found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 31276
+;; flags: qr aa rd; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;natechoe.com.                  IN      A
+
+;; ANSWER SECTION:
+natechoe.com.           300     IN      A       104.21.92.105
+natechoe.com.           300     IN      A       172.67.191.232
+
+;; Query time: 391 msec
+;; SERVER: 2606:4700:50::a29f:26b4#53(2606:4700:50::a29f:26b4)
+;; WHEN: Sat Apr 20 23:14:03 CDT 2024
+;; MSG SIZE  rcvd: 73
+@</code></pre>
+
+<p>Note that 104.21.92.105 is Cloudflare's IP address, not mine. Cloudflare
+forwards any requests to these IP addresses to my real IP address, and caches
+any responses it gets.</p>
+
+<p>There's nothing stopping me from adding even more nameservers, though. If I
+really wanted to I could have three NS records, two for Cloudflare and one for
+my own DNS server.</p>
+
+<pre><code class=block>@\
+nate@@nate-x230 ~ $ dig @@1.1.1.1 NS natechoe.dev
+
+; <<>> DiG 9.16.48 <<>> @@1.1.1.1 NS natechoe.dev
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 51775
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;natechoe.dev.                  IN      NS
+
+;; ANSWER SECTION:
+natechoe.dev.           3600    IN      NS      ns1.natechoe.dev.
+natechoe.dev.           3600    IN      NS      faye.ns.cloudflare.com.
+natechoe.dev.           3600    IN      NS      will.ns.cloudflare.com.
+
+;; Query time: 51 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1)
+;; WHEN: Sat Apr 20 23:16:32 CDT 2024
+;; MSG SIZE  rcvd: 114
+@</code></pre>
+
+<p>Of course, this is useless if Cloudflare doesn't have a copy of my zone file
+to return records from. Luckily, Cloudflare provides a <a
+href=https://developers.cloudflare.com/api/>very powerful API</a> that I can use
+to sync our records whenever I change things. Unfortunately, this API only
+allows me to add and delete records. If I upload an entire zone file Cloudflare
+isn't going to remove any existing records. Let's say I have this zone file:</p>
+
+<pre><code class=block>@\
+natechoe.dev.		3600 IN MX	0 mail.natechoe.dev.
+mail.natechoe.dev.	3600 IN CNAME	natechoe.dev.
+@</code></pre>
+
+<p>I give that to Cloudflare, and they have these records:</p>
+
+<pre><code class=block>@\
+natechoe.dev.		3600 IN MX	0 mail.natechoe.dev.
+mail.natechoe.dev.	3600 IN CNAME	natechoe.dev.
+@</code></pre>
+
+<p>Maybe in the future I decide to move my email server to a different host, so
+I change my zone file to this:</p>
+
+<pre><code class=block>@\
+natechoe.dev.		3600 IN MX	0 mail.natechoe.dev.
+mail.natechoe.dev.	3600 IN A	10.3.1.4
+@</code></pre>
+
+<p>I send that to Cloudflare, whose records now look like this:</p>
+
+<pre><code class=block>@\
+natechoe.dev.		3600 IN MX	0 mail.natechoe.dev.
+mail.natechoe.dev.	3600 IN CNAME	natechoe.dev.
+natechoe.dev.		3600 IN MX	0 mail.natechoe.dev.
+mail.natechoe.dev.	3600 IN A	10.3.1.4
+@</code></pre>
+
+<p>They haven't deleted any of their old records, they've just appended my new
+records to the ones that they already had. This zone file is actually illegal,
+because we have a CNAME record and some other data, which isn't allowed.</p>
+
+<p>I could delete all of Cloudflare's records before uploading my new zone file,
+but that's really inefficient. Every time I change a single record I'd have to
+delete and reupload every single record in my zone. Instead, I have a shell
+script and several python scripts that detect differences between Cloudflare's
+records and my own records, and makes the minimum number of required changes to
+sync everything.</p>
+
+<p>It all begins with this shell script, which does the actual sync
+operation:</p>
+
+<pre><code class=block>@\
+TMPDIR="$(mktemp -d "/tmp/signzone.XXXXXX")"
+cd zonediff
+. ./bin/activate
+
+# Get Cloudflare's data
+curl -X GET \
+     -H 'Content-Type: multipart/form-data' \
+     -H 'Authorization: Bearer [REDACTED]' \
+     --url 'https://api.cloudflare.com/client/v4/zones/[REDACTED]/dns_records?per_page=5000000' | \
+     jq 'del(.result[]|select(.name|test("cdn\\.natechoe\\.dev$"))).result' \
+     > "$TMPDIR/cloudflare.json"
+
+# Get my authoritative data
+cd zonediff
+./zone2json.py ../../db.natechoe.dev.base natechoe.dev. \
+     > "$TMPDIR/authority.json"
+
+# Find any differences
+./jsondiff.py "$TMPDIR/cloudflare.json" "$TMPDIR/authority.json" name type content ttl \
+     > "$TMPDIR/diff.json"
+
+head -n1 "$TMPDIR/diff.json" > "$TMPDIR/todelete.json"
+tail -n1 "$TMPDIR/diff.json" > "$TMPDIR/toadd.json"
+
+# Delete outdated records
+cat "$TMPDIR/todelete.json" | jq '.[].id' | tr -d '"' | \
+while read RECORD_ID ; do
+	echo "$RECORD_ID"
+	curl -X DELETE \
+	     -H 'Content-Type: multipart/form-data' \
+	     -H 'Authorization: Bearer [REDACTED]' \
+	     --url "https://api.cloudflare.com/client/v4/zones/[REDACTED]/dns_records/${RECORD_ID}"
+	echo
+done
+
+# Add new records
+./json2zone.py "$TMPDIR/toadd.json" > "$TMPDIR/toadd.zone"
+
+curl -X POST \
+     -H 'Content-Type: multipart/form-data' \
+     -H 'Authorization: Bearer [REDACTED]' \
+     -F "file=@@$TMPDIR/toadd.zone" \
+     -F 'proxied=false' \
+     --url https://api.cloudflare.com/client/v4/zones/[REDACTED]/dns_records/import
+echo
+
+deactivate
+rm -r "$TMPDIR"
+@</code></pre>
+
+<p>This script relies on several python scripts to handle zone files and manage
+json data. The first (zone2json.py) converts zone file data into json with a
+similar schema to Cloudflare's API using dnspython.</p>
+
+<pre><code class=block>@\
+#!/usr/bin/env python3
+
+import re
+import sys
+import json
+import dns.zone
+
+if len(sys.argv) != 3:
+    print("Usage: zone2json.py [zone file] [origin]")
+    exit(1)
+
+zone = dns.zone.from_file(sys.argv[1], sys.argv[2], relativize=False)
+dns_out = []
+
+for node in zone.nodes:
+    data = zone.nodes[node]
+    name = node.to_text()
+    for record in data:
+        record_marshalled = {}
+        record_marshalled["name"] = str(node)[:-1]
+        record_marshalled["type"] = dns.rdatatype.to_text(record.rdtype)
+        record_marshalled["ttl"] = int(record.ttl)
+        record_marshalled["content"] = re.sub("^([^ ]+ ){3}", "", record.to_text())
+
+        # the cloudflare api doesn't return the trailing dot on cname records
+        if record_marshalled["type"] in set(["NS", "CNAME"]):
+            record_marshalled["content"] = record_marshalled["content"][:-1]
+
+        dns_out.append(record_marshalled)
+
+print(json.dumps(dns_out))
+@</code></pre>
+
+<p>This is pretty simple stuff. The only interesting thing detail is that
+Cloudflare's API doesn't return the trailing dot in hostnames (as in
+"natechoe.dev."), but dnspython does, so I have to modify certain records. This
+also doesn't work with MX records because dnspython adds a priority value to the
+text data itself (as in "0 mail.natechoe.dev.") while Cloudflare adds it in as a
+separate json key value (as in
+<code>{"priority":0,"content":"mail.natechoe.dev"</code>. This means that this
+system will always treat authoritative MX data and Cloudflare's MX data as
+different, even when they're the exact same data. As of now the natechoe.dev
+zone has only one MX record so I'm fine with the extra useless operations.</p>
+
+<p>So we've got our authoritative data and Cloudflare's outdated version of that
+data as json files, now we have to compare them. Cloudflare's "DELETE" API call
+accepts a Cloudflare-specific record ID as a parameter, so ideally we only
+compare a set of important keys, such as the record name, type, TTL, and
+content, but preserve everything else, such as the record IDs.</p>
+
+<pre><code class=block>@\
+#!/usr/bin/env python3
+
+import sys
+import json
+
+if len(sys.argv) < 3:
+    print("Usage: zone2json.py [file1.json] [file2.json] [key 1] [key 2] [key 3] ...")
+    exit(1)
+
+# read the two inputs
+with open(sys.argv[1], "r") as file:
+    data1 = json.loads(file.read())
+with open(sys.argv[2], "r") as file:
+    data2 = json.loads(file.read())
+
+# data1 and data2 should be arrays of objects, each containing the important keys
+
+def minify_object(value, keys):
+    ret = {}
+    for key in keys:
+        if not key in value:
+            continue
+        ret[key] = value[key]
+    return ret
+
+def create_index(data, keys):
+    ret = set()
+    for value in data:
+        ret.add(json.dumps(minify_object(value, keys)))
+    return ret
+
+# index each of our lists so that we can easily compare things
+
+index1 = create_index(data1, sys.argv[3:])
+index2 = create_index(data2, sys.argv[3:])
+
+in1 = []
+in2 = []
+
+for obj in data1:
+    minified = minify_object(obj, sys.argv[3:])
+    if not json.dumps(minified) in index2:
+        in1.append(obj)
+
+for obj in data2:
+    minified = minify_object(obj, sys.argv[3:])
+    if not json.dumps(minified) in index1:
+        in2.append(obj)
+
+print(json.dumps(in1))
+print(json.dumps(in2))
+@</code></pre>
+
+<p>This code has some duplication which I really don't like, but it works and
+that's all that matters. We create an index that we can use to keep track of
+only the important keys, and output the full objects whenever we see a match for
+the simplified versions. I think that this script could be really useful for
+tasks other than this goofy little experiment, but I don't know how.</p>
+
+<p>So now we've got a set of records to delete and a set of records to add. We
+can process the "to delete" records with <a
+href=https://github.com/jqlang/jq>jq</a>, but the "to add" records are a bit
+more complicated.</p>
+
+<p>Cloudflare has two different APIs to upload DNS records. You can <a
+href=https://developers.cloudflare.com/api/operations/dns-records-for-a-zone-create-dns-record>"create
+a DNS record"</a>, which accepts a record in a json string with some little
+nuances for each record type, or you can <a
+href=https://developers.cloudflare.com/api/operations/dns-records-for-a-zone-import-dns-records>"import
+DNS records"</a>, which basically just means uploading a zone file. I actually
+wrote this entire system to use "import DNS records" before realizing that
+"create a DNS record" existed, but I think it was the right call anyways. For
+one, "import DNS records" allows one request to upload several records at once.
+Also, "create a DNS record" would require me to do tons of little implementation
+details for each record type. The zone2json.py script had something like that,
+but when that fails I just make a few more API calls. If I do something similar
+here and something goes wrong, things could break. Anyways, here's the script
+that converts json files to zone files.</p>
+
+<pre><code class=block>@\
+#!/usr/bin/env python3
+
+import sys
+import json
+
+if len(sys.argv) != 2:
+    print("Usage: json2zone.py [json file]")
+    exit(1)
+
+with open(sys.argv[1], "r") as file:
+    records = json.loads(file.read())
+
+for record in records:
+    print("%s. IN %d %s %s" % (record["name"], record["ttl"], record["type"], record["content"]))
+@</code></pre>
+
+<p>You may have noticed that I exclude cdn.natechoe.dev subdomains from that
+initial pull. That's what this line in the original shell script does:</p>
+
+<pre><code class=block>@\
+jq 'del(.result[]|select(.name|test("cdn\\.natechoe\\.dev$"))).result' \
+@</code></pre>
+
+<p>In my Cloudflare dashboard I've set up cdn.natechoe.dev as a CNAME for
+natechoe.dev to be proxied through Cloudflare. Now, we've got redundant DNS and
+Cloudflare on a natechoe.dev subdomain. I think that's really cool.</p>
+
+<p>This entire system has some interesting implications on the DNS. For example,
+my nameserver and Cloudflare's nameservers both think that they're the primary
+nameservers. That means that they each have different SOA records for
+natechoe.dev, so the DNS isn't internally consistent. That shouldn't matter
+though because any sane resolver would just pick one and not have to ask the
+other.</p>
+
+<p>It gets worse. When you ask ns1.natechoe.dev. for cdn.natechoe.dev., I can't
+provide that IP address. That's Cloudflare's job. To fix this, I've set up
+ns1.natechoe.dev. to pretend like cdn.natechoe.dev. is a separate zone which
+uses the Cloudflare nameservers. This means that there is a phantom DNS zone,
+acknowledged by an authoritative nameserver but not acknowledged by the person
+running it. This should be fine because the cdn.natechoe.dev. subdomain doesn't
+run any critical infrastructure, so DNS failures there don't really matter.</p>
+
+<p>It gets worse still. Cloudflare doesn't like it when you have NS records
+other than their own on the root, so I've got three nameservers and two of them
+don't acknowledge the third. It's fine, though, because the dev. resolver gives
+you all three nameservers and any sane resolver would cache those results
+without having to ask the Cloudflare nameserver. Besides, there's really no
+reason for a resolver to randomly ask for an NS record that they already have
+when they're trying to connect to a domain.</p>
+
+<p>It's amazing that this system works at all, but every DNS resolver I've tried
+seems to resolve these domains without complaints. By the way, if you're from
+Cloudflare and I've just broken something important, sorry about that!</p>
+
+@%/site/tail.html@
