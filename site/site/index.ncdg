@@ -7,10 +7,25 @@
 
 <p>Tor hidden service: @$/site/get-tor-hostname.sh@</p>
 
-<p>Cloudflare entry point: <a href=https://natechoe.com>natechoe.com</a></p>
+<p>Cloudflare entry point: <a href=https://cdn.natechoe.dev>cdn.natechoe.dev</a></p>
 
 <a href="https://www.abuseipdb.com/user/88209" title="AbuseIPDB is an IP address blacklist for webmasters and sysadmins to report IP addresses engaging in abusive behavior on their networks">
-  <img src="https://www.abuseipdb.com/contributor/88209.svg" alt="AbuseIPDB Contributor Badge" style="width: 100%;">
+  <img src="https://www.abuseipdb.com/contributor/88209.svg" alt="AbuseIPDB Contributor Badge" style="width: 50%; display: block; margin: 0 auto;">
 </a>
+<div style="text-align: center;">
+  <a href=https://natechoe.dev><img src=/resources/88x31.bmp alt="natechoe.dev 88x31 button"></a>
+  <a href=https://www.mozilla.org/en-US/firefox/><img src=/buttons/firefox.gif alt="Firefox 88x31 button"></a>
+  <a href=https://www.alpinelinux.org/><img src=/buttons/alpine.png alt="Alpine 88x31 button"></a>
+  <a href=https://www.docker.com/><img src=/buttons/docker.png alt="Docker 88x31 button"></a>
+  <img src=/buttons/gnu-linux.gif alt="GNU/Linux 88x31 button">
+  <a href=https://lynx.invisible-island.net/><img src=/buttons/lynx.gif alt="Lynx compatibility 88x31 button"></a>
+  <a href=https://www.vim.org/><img src=/buttons/vim.gif alt="Vim 88x31 button"></a>
+  <img src=/buttons/microsoft_stop.gif alt="Stop Microsoft 88x31 button">
+  <img src=/buttons/nocookie.gif alt="No cookies 88x31 button">
+  <a href=https://www.torproject.org/><img src=/buttons/tor.gif alt="Tor 88x31 button"></a>
+  <a href=https://duckduckgo.com/><img src=/buttons/ddg.gif alt="DuckDuckGo 88x31 button"></a>
+  <a href=https://www.wikipedia.org/><img src=/buttons/wikipedia.gif alt="Support Wikipedia 88x31 button"></a>
+  <a href=https://cyber.dabamos.de/88x31/><img src=/buttons/88x31.gif alt="Use 88x31 buttons 88x31 meta-button"></a>
+</div>
 
 @%/site/tail.html@

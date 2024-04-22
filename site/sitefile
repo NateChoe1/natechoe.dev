@@ -27,6 +27,9 @@ read /info/public.key /site/site/info/public.key
 set type image/png
 read .*\\.png /site/site/
 
+set type image/gif
+read .*\\.gif /site/site/
+
 set type audio/wav
 read .*\\.wav /site/site/
 
@@ -36,3 +39,6 @@ read .*\\.js /site/site/
 
 set type image/vnd.microsoft.icon
 linked /favicon\\.ico
+
+set type image/bmp
+linked /resources/88x31.bmp

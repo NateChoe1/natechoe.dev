@@ -10,4 +10,4 @@ services:
       - ./site:/site
     working_dir: "/site/"
     restart: always
-    stop_grace_period: 2s
+    stop_grace_period: 0s
