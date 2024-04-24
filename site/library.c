@@ -23,7 +23,7 @@ static int getcolors(Request *request, Response *response);
  * brightness */
 #define BINARY_COLORS \
 	X(getfavicon, "/site/favicon.ico", 326, 62, 25, 255) \
-	X(getbutton, "/site/site/resources/88x31.bmp", 410, 30, 25, 255)
+	X(getbutton, "/site/site/resources/88x31.bmp", 1450, 54, 0, 255)
 
 #define X(funcname, filename, filelen, coloff, sat, bri) \
 	static int funcname(Request *request, Response *response);
@@ -141,6 +141,10 @@ static int funcname(Request *request, Response *response) { \
 		int color = getcolor(today); \
 		if (injectcolor(fd, coloff, color, sat, bri)) { \
 			BINARY_COLORS_LAST_UPDATE_##funcname = today; \
+		} \
+		else { \
+			response->type = DEFAULT; \
+			return 500; \
 		} \
 	} \
 \

@@ -1,0 +1,26 @@
+@%/site/head.html@
+@=header I need image editing software@
+
+<p>I've created two separate images in a text editor by manually altering the
+binary of an image file. It's an absolute pain, and I hate doing it. If you know
+any extremely lightweight image editing tools on Linux that are extremely
+similar to MS Paint, please let me know.</p>
+
+<p>On a related note, natechoe.dev has an 88x31 button now! It changes colors
+every day, just like the natechoe.dev favicon; that's why I had to use a text
+editor, I needed full control over the image format.</p>
+
+<p>If you want to embed the button, just put this HTML to your website:</p>
+
+<pre><code class=block>@\
+<a href=https://natechoe.dev><img src=https://natechoe.dev/resources/88x31.bmp></a>
+@</code></pre>
+
+<p>That should look like this</p>
+
+<a href=https://natechoe.dev><img src=https://natechoe.dev/resources/88x31.bmp></a>
+
+<p>The color of the button changes every day, so if you host it on your own
+server it will slowly get out of sync.</p>
+
+@%/site/tail.html@
