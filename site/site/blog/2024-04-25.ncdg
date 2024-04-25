@@ -1,0 +1,35 @@
+@%/site/head.html@
+@=header Computer Science Shower Thoughts: Breaking a plaintext OTP with LLMs@
+
+<p>I tried to explain the <a
+href=https://en.wikipedia.org/wiki/Vigen%C3%A8re_cipher>Vigen&egrave;re
+cipher</a> for this article, I'm not good enough at computer science
+communication to do that. Just read the Wikipedia article, you'll be fine.</p>
+
+<p>An interesting note about the Vigen&egrave;re cipher is that if the key and
+data are the same length, it's equivalent to a <a
+href=https://en.wikipedia.org/wiki/One-time_pad>one-time pad</a> (again, just
+read the Wikipedia article).</p>
+
+<p>Of course, this assumes that each letter of the key is randomly generated,
+which they usually aren't with Vigen&egrave;re ciphers. This leads to an
+interesting puzzle: Can you break a one-time pad with the knowledge that
+<i>both</i> the key and data are English text?</p>
+
+<p>The big problem here is that we're combining two documents into a single new
+document. If I have 1 megabyte of encrypted data, 2 megabytes of unencrypted
+data went into it: 1 megabyte for the original data, and 1 megabyte for the key.
+There are <a href=http://prize.hutter1.net/>competitions for designing plaintext
+compression programs</a> that get far better compression factors, so
+theoretically this isn't impossible, but our scheme is designed for encryption,
+not compression.</p>
+
+<p>I think that this is a perfect use for LLMs. We generate some plausible
+key, see what the corresponding plaintext <i>would be</i>, then see if that
+<i>plaintext</i> would be plausible. The traditional tools of cryptography would
+not work here. I'd wager that even the best frequency analysis would get you
+less than 0.1% of the original data, most likely signifcantly less. You'd need
+some way to interpolate between the pieces that you have, and I think that AI is
+the best tool for that.</p>
+
+@%/site/head.html@
