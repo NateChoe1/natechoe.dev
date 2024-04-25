@@ -32,4 +32,4 @@ less than 0.1% of the original data, most likely signifcantly less. You'd need
 some way to interpolate between the pieces that you have, and I think that AI is
 the best tool for that.</p>
 
-@%/site/head.html@
+@%/site/tail.html@
