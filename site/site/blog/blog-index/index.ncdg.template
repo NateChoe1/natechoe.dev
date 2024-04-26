@@ -2,6 +2,8 @@
 @=header Welcome to my awesome blog!@
 @=title The blog@
 
+<a href=/blog/blog.rss><img src=/resources/rss.png></a>
+
 @$ /site/create-hub.sh $TMP_FILE "blog posts"@
 <div style=display:flex>
   <div style=flex:1>@$ cat $PREV_FILE @</div>

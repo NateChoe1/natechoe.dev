@@ -37,6 +37,9 @@ set type text/javascript
 read .*\\.js /site/site/
 # Ew javascript.
 
+set type application/xml
+read .*\\.rss /site/site/
+
 set type image/vnd.microsoft.icon
 linked /favicon\\.ico
 

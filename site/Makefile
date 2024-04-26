@@ -2,7 +2,7 @@ SRCS = $(shell find -name *.ncdg)
 BLOG = $(shell find site/blog | grep -E "[0-9]{4}-[0-9]{2}-[0-9]{2}")
 HTML = $(subst .ncdg,.html,$(SRCS))
 
-all: $(HTML) asm site/sitemap.txt library.so site/blog/posts
+all: $(HTML) asm site/blog/blog.rss site/sitemap.txt library.so site/blog/posts
 
 asm: favicon.ico site/resources/88x31.bmp
 
@@ -17,8 +17,11 @@ site/sitemap.txt: $(HTML) site/blog/blog-index/update-check
 	find site -name '*.html' | sed "s/^\.\/site/https:\/\/natechoe.dev/g" > $@
 	echo "https://natechoe.dev/" >> $@
 
-site/blog/blog-index/update-check: site/blog/blog-index/create-index.sh site/blog/posts /tor-data/natechoe-dev-onion/hostname
+site/blog/blog-index/update-check: site/blog/blog-index/create-index.sh site/blog/posts /tor-data/natechoe-dev-onion/hostname $(wildcard site/blog/blog-index/*.tempate)
 	$<
+
+site/blog/blog.rss: site/blog/rss.xncdg site/blog/posts
+	ncdg $< $@
 
 %.html: %.ncdg /tor-data/natechoe-dev-onion/hostname
 	ncdg $< $@

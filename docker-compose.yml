@@ -1,4 +1,3 @@
-version: "3"
 services:
   natechoe.dev:
     image: natechoe/natechoe.dev

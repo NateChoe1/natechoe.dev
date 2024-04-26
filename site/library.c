@@ -19,13 +19,11 @@
 
 static int getcolors(Request *request, Response *response);
 
-/* function name, file name, file length, BGR color offset, 255-saturation,
- * brightness */
 #define BINARY_COLORS \
-	X(getfavicon, "/site/favicon.ico", 326, 62, 25, 255) \
-	X(getbutton, "/site/site/resources/88x31.bmp", 1450, 54, 0, 255)
+	X(getfavicon, "/site/favicon.ico", 326, C(62, 25, 255, 0)) \
+	X(getbutton, "/site/site/resources/88x31.bmp", 1450, C(54, 0, 255, 0) C(62, 0, 255, 180))
 
-#define X(funcname, filename, filelen, coloff, sat, bri) \
+#define X(funcname, filename, filelen, colors) \
 	static int funcname(Request *request, Response *response);
 BINARY_COLORS
 #undef X
@@ -127,31 +125,33 @@ static int injectcolor(int fd, int fileoffset, int hue, int satmin, int brightne
 	return 1;
 }
 
-#define X(funcname, filename, filelen, coloff, sat, bri) \
+#define X(funcname, filename, filelen, colors) \
 static int funcname(Request *request, Response *response) { \
 	static long BINARY_COLORS_LAST_UPDATE_##funcname = -1; \
 	int fd = open(filename, O_RDWR); \
 	if (fd == -1) { \
-		response->type = DEFAULT; \
-		return 500; \
+		goto error_500; \
 	} \
 \
 	long today = getday(); \
 	if (BINARY_COLORS_LAST_UPDATE_##funcname != today) { \
 		int color = getcolor(today); \
-		if (injectcolor(fd, coloff, color, sat, bri)) { \
-			BINARY_COLORS_LAST_UPDATE_##funcname = today; \
-		} \
-		else { \
-			response->type = DEFAULT; \
-			return 500; \
-		} \
+		colors \
+		BINARY_COLORS_LAST_UPDATE_##funcname = today; \
 	} \
 \
 	response->type = FILE_KNOWN_LENGTH; \
 	response->response.file.fd = fd; \
 	response->response.file.len = filelen; \
 	return 200; \
+error_500: \
+	response->type = DEFAULT; \
+	return 500; \
 }
+#define C(offset, sat, bri, angle) \
+	if (!injectcolor(fd, offset, (color+angle)%360, sat, bri)) { \
+		goto error_500; \
+	}
 BINARY_COLORS
 #undef X
+#undef C
