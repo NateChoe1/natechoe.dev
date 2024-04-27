@@ -1,0 +1,162 @@
+@%/site/head.html@
+@=header How references work@
+
+<p>Here's the biggest secret about Java: there's no such thing as pass by
+reference.</p>
+
+<p>This might sound weird; after all, this code seems to clearly demonstrate a
+pass by reference:</p>
+
+<pre><code class=block>@\
+public class Main {
+	private static class SomeClass {
+		int x;
+	}
+
+	public static void passByReference(SomeClass arg) {
+		arg.x = 5;
+	}
+
+	public static void main(String[] args) {
+		SomeClass var = new SomeClass();
+		passByReference(var);
+		System.out.println(var.x); // this prints "5"
+	}
+}
+@</code></pre>
+
+<p>But then again, this code seems to demonstrate that Java doesn't have pass by
+reference:</p>
+
+<pre><code class=block>@\
+public class Main {
+	private static class SomeClass {
+		int x;
+	}
+
+	public static void passByReference(SomeClass arg) {
+		arg = null;
+	}
+
+	public static void main(String[] args) {
+		SomeClass var = new SomeClass();
+		passByReference(var);
+		System.out.println(var == null); // this prints "false"
+	}
+}
+@</code></pre>
+
+<p>This really comes down to what the <code>arg</code> parameter <i>means</i> in
+both examples. Java hides this fact through some abstractions, but there's a
+distinction between the "object", and the "reference to that object". The object
+is the actual data; at some place in memory, there is a 32 bit value which
+contains the value of <code>arg.x</code>. You can change that value, and you can
+read it. If you change that value, it changes for every other function reading
+from that same location in memory.</p>
+
+<p>Of course, we don't actually know where that value is. That information is
+given to us through the "reference". The reference is just some really big
+number that tells us "Hey, by the way, the data for <code>arg</code> is at byte
+number 0x12345678".</p>
+
+<blockquote>
+<p>SIDENOTE: As of 2024, this number is usually 64 bits, but some systems still
+have 32 bit memory addresses. This is why software usually comes in a 32 bit and
+64 bit version; different computers have different sized references which change
+a whole bunch of things in the lower levels of your program.  Luckily for us,
+you don't have to worry about any of this in Java; just remember that
+internally, references are just numbers.</p> </blockquote>
+
+<p>Because references are just numbers, we can change them just like any other
+primitive argument. Let's go back to those other examples and see what's really
+happening in them:</p>
+
+<pre><code class=block>@\
+public class Main {
+	private static class SomeClass {
+		int x;
+	}
+
+	public static void passByReference(SomeClass arg) {
+		// `arg` is a reference pointing to some data (in this case, a
+		// single integer called `x`). We change the value of `x` from
+		// whatever it was before to 5.
+		arg.x = 5;
+	}
+
+	public static void main(String[] args) {
+		SomeClass var = new SomeClass();
+
+		// Both `var` and `arg` point to the same data, so when `arg`'s
+		// data changes, `var`'s does too.
+		passByReference(var);
+
+		System.out.println(var.x);
+	}
+}
+@</code></pre>
+
+<pre><code class=block>@\
+public class Main {
+	private static class SomeClass {
+		int x;
+	}
+
+	public static void passByReference(SomeClass arg) {
+		// `arg` is a reference pointing to some data (in this case, a
+		// single integer called `x`). We change the reference itself to
+		// null. This does not change the value of `var` in the parent
+		// function, since the reference was passed by value.
+		arg = null;
+	}
+
+	public static void main(String[] args) {
+		SomeClass var = new SomeClass();
+		passByReference(var);
+		System.out.println(var == null);
+	}
+}
+@</code></pre>
+
+<p>This is also how arrays work. Arrays are just references to some location in
+memory with a bunch of data.</p>
+
+<pre><code class=block>@\
+public class Main {
+	public static void passByReference(int[] arg) {
+		// `arg` is a reference pointing to a bunch of integers. In this
+		// function, we're setting the first one to 5.
+		arg[0] = 5;
+	}
+
+	public static void main(String[] args) {
+		int[] var = new int[10];
+
+		// Both `var` and `arg` point to the same data, so when `arg`'s
+		// data changes, `var`'s does too.
+		passByReference(var);
+
+		System.out.println(var[0]);
+	}
+}
+@</code></pre>
+
+<pre><code class=block>@\
+public class Main {
+	public static void passByReference(int[] arg) {
+		// `arg` is a reference pointing to some data (in this case, a
+		// bunch of integers). We change the reference itself to null.
+		// This does not change the value of `var` in the parent
+		// function, since the reference was passed by value.
+		arg = null;
+	}
+
+	public static void main(String[] args) {
+		int[] var = new int[10];
+		passByReference(var);
+		System.out.println(var == null);
+	}
+}
+@</code></pre>
+
+@%/site/tail.html@

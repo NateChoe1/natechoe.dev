@@ -23,6 +23,9 @@ site/blog/blog-index/update-check: site/blog/blog-index/create-index.sh site/blo
 site/blog/blog.rss: site/blog/rss.xncdg site/blog/posts
 	ncdg $< $@
 
+site/misc/index.html: site/misc/index.ncdg site/misc/links
+site/misc/comp/index.html: site/misc/comp/index.ncdg site/misc/comp/links
+
 %.html: %.ncdg /tor-data/natechoe-dev-onion/hostname
 	ncdg $< $@
 

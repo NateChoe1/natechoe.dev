@@ -2,7 +2,7 @@
 @=header Welcome to my awesome blog!@
 @=title The blog@
 
-<a href=/blog/blog.rss><img src=/resources/rss.png></a>
+<a href=/blog/blog.rss><img src=/resources/rss.png alt="RSS feed URL"></a>
 
 @$ /site/create-hub.sh $TMP_FILE "blog posts"@
 <div style=display:flex>

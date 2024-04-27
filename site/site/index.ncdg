@@ -3,8 +3,6 @@
 
 <p>Hi, I'm Nate (he/him)! Welcome to my website!</p>
 
-<p><a href=/resume.html>My resume can be found here</a></p>
-
 <p>Tor hidden service: @$/site/get-tor-hostname.sh@</p>
 
 <p>Cloudflare entry point: <a href=https://cdn.natechoe.dev>cdn.natechoe.dev</a></p>

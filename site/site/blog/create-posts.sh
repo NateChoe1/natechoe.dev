@@ -16,6 +16,6 @@ create_entry() {
 	fi
 }
 
-ls -1 | grep -E "^[0-9]{4}-[0-9]{2}-[0-9]{2}\." | sort -r | while read file ; do
+ls -1 | grep -E "^[0-9]{4}-[0-9]{2}-[0-9]{2}" | sort -r | while read file ; do
 	create_entry "$file"
 done > posts

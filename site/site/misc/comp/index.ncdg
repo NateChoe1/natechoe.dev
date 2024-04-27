@@ -1,0 +1,6 @@
+@%/site/head.html@
+@=header Nate's guide to UIL Computer Science@
+
+@$ /site/create-hub.sh /site/site/misc/comp/links "articles"@
+
+@%/site/tail.html@
