@@ -17,12 +17,14 @@ getdata() {
 	while read LINE ; do
 		eval set -- "$LINE"
 		echo "<a class=hubitem href=$1>$2<div class=rightarrow></div></a>"
-		COUNT=$(eval "$COUNT" + 1)
+		COUNT=$(expr "$COUNT" + 1)
 	done
-	exit "$COUNT"
+	echo "$COUNT"
 }
 
-DATA="$(cat "$FILE" | getdata)"
+RAW_DATA="$(cat "$FILE" | getdata)"
+DATA="$(printf "%s\n" "$RAW_DATA" | head -n-1)"
+ITEMCOUNT="$(printf "%s\n" "$RAW_DATA" | tail -n1)"
 
-echo "<div class=hubtitle><b>$? "$ITEMS"</b></div>"
+echo "<div class=hubtitle><b>$ITEMCOUNT "$ITEMS"</b></div>"
 printf "%s" "$DATA"
