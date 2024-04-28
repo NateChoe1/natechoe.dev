@@ -1,6 +1,7 @@
 SRCS = $(shell find -name *.ncdg)
 BLOG = $(shell find site/blog | grep -E "[0-9]{4}-[0-9]{2}-[0-9]{2}")
 HTML = $(subst .ncdg,.html,$(SRCS))
+CDEPS = /tor-data/natechoe-dev-onion/hostname /site/head.html /site/tail.html
 
 all: $(HTML) asm site/blog/blog.rss site/sitemap.txt library.so site/blog/posts
 
@@ -23,10 +24,10 @@ site/blog/blog-index/update-check: site/blog/blog-index/create-index.sh site/blo
 site/blog/blog.rss: site/blog/rss.xncdg site/blog/posts
 	ncdg $< $@
 
-site/misc/index.html: site/misc/index.ncdg site/misc/links
-site/misc/comp/index.html: site/misc/comp/index.ncdg site/misc/comp/links
+site/misc/index.html: site/misc/index.ncdg site/misc/links $(CDEPS)
+site/misc/comp/index.html: site/misc/comp/index.ncdg site/misc/comp/links $(CDEPS)
 
-%.html: %.ncdg /tor-data/natechoe-dev-onion/hostname
+%.html: %.ncdg $(CDEPS)
 	ncdg $< $@
 
 favicon.ico: favicon.asm

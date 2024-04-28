@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash --
 
 # Creates a table of contents (hub) for your page.
 
@@ -12,8 +12,17 @@ fi
 FILE="$1"
 ITEMS="$2"
 
-echo "<div class=hubtitle><b>$(wc -l < "$FILE") "$ITEMS"</b></div>"
-while read LINE ; do
-	eval set -- "$LINE"
-	echo "<a class=hubitem href=$1>$2<div class=rightarrow></div></a>"
-done <"$FILE"
+getdata() {
+	COUNT=0
+	while read LINE ; do
+		eval set -- "$LINE"
+		echo "<a class=hubitem href=$1>$2<div class=rightarrow></div></a>"
+		COUNT=$(eval "$COUNT" + 1)
+	done
+	exit "$COUNT"
+}
+
+DATA="$(cat "$FILE" | getdata)"
+
+echo "<div class=hubtitle><b>$? "$ITEMS"</b></div>"
+printf "%s" "$DATA"
