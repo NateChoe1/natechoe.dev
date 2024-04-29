@@ -12,4 +12,9 @@ switching back to hosting my own nameservers.</p>
 Cloudflare checks so that they'll keep my service going, but that definitely
 feels like a violation of their TOS.</p>
 
+<p><b>UPDATE: 1:54 PM</b></p>
+
+<p>So it turns out ns1.natechoe.dev wasn't working this whole time. I think I've
+fixed everything, though.</p>
+
 @%/site/tail.html@
