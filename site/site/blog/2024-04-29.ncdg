@@ -1,0 +1,15 @@
+@%/site/head.html@
+@=header Sorry Cloudflare!@
+
+<p>In <a href=/blog/2024-04-20.ncdg>a previous blog post</a>, I talked about
+setting up Cloudflare as a "secondary DNS" with their API. It turns out,
+Cloudflare really doesn't like when you use nameservers other than their own
+without letting them know. Cloudflare recently sent me an automated email asking
+me to change my nameservers back to the regular Cloudflare nameservers. I'll be
+switching back to hosting my own nameservers.</p>
+
+<p>I could set up a script to change my name servers every week whenever
+Cloudflare checks so that they'll keep my service going, but that definitely
+feels like a violation of their TOS.</p>
+
+@%/site/tail.html@
