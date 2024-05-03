@@ -34,7 +34,7 @@ file.</p>
 parsing with <a
 href=https://pkg.go.dev/golang.org/x/tools/cmd/goyacc>goyacc</a>, but this and
 various other problems we'll get into made it very difficult to write a valid
-tokenizer. IT's very difficult to keep track of whitespace at the beginning of a
+tokenizer. It's very difficult to keep track of whitespace at the beginning of a
 line but ignore it everywhere else. It's possible with some specially written
 yacc rules that merge whitespace with a previous token, but it makes the code a
 lot messier.</p>
@@ -44,8 +44,8 @@ record in our zone file MUST have a type. This leads to even more problems with
 the tokenizer. Consider, for example, this zone file:</p>
 
 <pre><code class=block>@\
-@ IN MX MX  ; line 1
-@ IN MX IN  ; line 2
+@@ IN MX MX  ; line 1
+@@ IN MX IN  ; line 2
 @</code></pre>
 
 <p>In line 1, how can we use yacc to distinguish the "MX" (resource type) from
@@ -61,13 +61,13 @@ resource can be thought of as a series of "tokens". Our example zone file, for
 example, could be rewritten as</p>
 
 <pre><code class=block>@\
-["@", "IN", "MX", "MX"]
-["@", "IN", "MX", "IN"]
+["@@", "IN", "MX", "MX"]
+["@@", "IN", "MX", "IN"]
 @</code></pre>
 
 <p>Thankfully, the standard gives us some pretty simple rules for parsing these
 tokens. Any character can be escaped by a backslash, digits are escaped in
-groups of three (as in "\DDD"), parentheses allow for the tokens within a record
+groups of three (as in "\065"), parentheses allow for the tokens within a record
 to span multiple lines, and semicolons indicate comments. We can quite easily
 write a tokenizer by hand with these rules to generate these resource records as
 lists of strings. In my DNS server, the tokenizer doesn't actually process the
@@ -87,7 +87,8 @@ is just something I made up because it seemed close enough to the standard and I
 couldn't find any decent counterexamples. I feel like there could be a security
 vulnerability here, similar to the <a
 href=https://nvd.nist.gov/vuln/detail/CVE-2023-24329>Python url parsing
-vulnerability discovered last year</a>, but I'm too lazy to figure out what it
-is.</p>
+vulnerability discovered last year</a>, where my algorithm is slightly different
+to everybody else's which allows attackers to slip a malicious payload by my
+checker, but I'm too lazy to figure out what it is.</p>
 
 @%/site/tail.html@
