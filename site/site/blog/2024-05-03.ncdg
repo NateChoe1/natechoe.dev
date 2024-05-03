@@ -1,0 +1,93 @@
+@%/site/head.html@
+@=header How to parse zone files@
+
+<p>For the past few weeks I've been writing a DNS server in Go. Currently I'm
+working on zone file parsing, and I've noticed that <a
+href=https://www.rfc-editor.org/rfc/rfc1035.html>the standards</a> are pretty
+unclear on how exactly zone files should be parsed. I think I've figured it out
+though, so this article will explain exactly how to parse them.</p>
+
+<p>DNS zone files are described in <a
+href=https://www.rfc-editor.org/rfc/rfc1035.html>RFC 1035</a> section 5, "Master
+Files". The term "master file" is so incredibly vague, though, so for the rest
+of this article I'll be calling them "zone files". Zone files contain a set of
+"records", which a DNS server can provide to a client when asked. Each record
+consists of five pieces of information:</p>
+
+<ol>
+  <li>The domain name</li>
+  <li>The time to live (AKA TTL, used for caching)</li>
+  <li>The resource's class (this is almost always IN, for "Internet")</li>
+  <li>The resource's type</li>
+  <li>The resource's data</li>
+</ol>
+
+<p>In the standard, the domain name can be replaced by a
+<code>&lt;blank&gt;</code>, which is not a <a
+href=https://www.rfc-editor.org/rfc/rfc5234>standard ABNF token</a>, although
+it's fine because the DNS was standardized before ABNF was. This really just
+means that the domain name MUST occur at the beginning of a line, and if it
+doesn't, then it's assumed to be the same as the previous record in the
+file.</p>
+
+<p>This creates some interesting problems for parsers. I originally tried
+parsing with <a
+href=https://pkg.go.dev/golang.org/x/tools/cmd/goyacc>goyacc</a>, but this and
+various other problems we'll get into made it very difficult to write a valid
+tokenizer. IT's very difficult to keep track of whitespace at the beginning of a
+line but ignore it everywhere else. It's possible with some specially written
+yacc rules that merge whitespace with a previous token, but it makes the code a
+lot messier.</p>
+
+<p>The TTL and resource class are also optional, but the type isn't. Every
+record in our zone file MUST have a type. This leads to even more problems with
+the tokenizer. Consider, for example, this zone file:</p>
+
+<pre><code class=block>@\
+@ IN MX MX  ; line 1
+@ IN MX IN  ; line 2
+@</code></pre>
+
+<p>In line 1, how can we use yacc to distinguish the "MX" (resource type) from
+"MX" (resource value)? And in line 2, how can we use yacc to distinguish the
+"IN" (resource class) from "IN" (resource value)? I'm not a yacc expert, but I'm
+pretty sure that with a simple lex+yacc configuration this is literally
+impossible. yacc isn't smart enough to conditionally convert a token generated
+by lex, and lex isn't smart enough to conditionally scan a token based on the
+current yacc state.</p>
+
+<p>We have to parse these files manually. This actually isn't too bad. Each
+resource can be thought of as a series of "tokens". Our example zone file, for
+example, could be rewritten as</p>
+
+<pre><code class=block>@\
+["@", "IN", "MX", "MX"]
+["@", "IN", "MX", "IN"]
+@</code></pre>
+
+<p>Thankfully, the standard gives us some pretty simple rules for parsing these
+tokens. Any character can be escaped by a backslash, digits are escaped in
+groups of three (as in "\DDD"), parentheses allow for the tokens within a record
+to span multiple lines, and semicolons indicate comments. We can quite easily
+write a tokenizer by hand with these rules to generate these resource records as
+lists of strings. In my DNS server, the tokenizer doesn't actually process the
+things that it's escaping, it just reads the characters and leaves escape code
+handling for the parser.</p>
+
+<p>In the parser, we can rely on the fact that every record MUST have a resource
+type, and that <a
+href=https://www.iana.org/assignments/dns-parameters/dns-parameters.xhtml>there
+is a known list of valid resource types</a>. We just go through each token in
+our record, find the first valid resource type, assume that everything before
+then is a part of the domain name, class, and TTL, and assume that everything
+after that is a part of the resource data.</p>
+
+<p>The standard makes no mention of these special tokens or this algorithm, this
+is just something I made up because it seemed close enough to the standard and I
+couldn't find any decent counterexamples. I feel like there could be a security
+vulnerability here, similar to the <a
+href=https://nvd.nist.gov/vuln/detail/CVE-2023-24329>Python url parsing
+vulnerability discovered last year</a>, but I'm too lazy to figure out what it
+is.</p>
+
+@%/site/tail.html@
