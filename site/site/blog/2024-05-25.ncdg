@@ -2,8 +2,8 @@
 @=header I'm on mastodon now!@
 
 <p>I've set up mastodon at <a
-href=mastodon.natechoe.dev>mastodon.natechoe.dev</a>. I've done some magic and
-managed to make my tag @@nate@@natechoe.dev, which I think is pretty cool. Also,
-I graduated high school.</p>
+href=https://mastodon.natechoe.dev>mastodon.natechoe.dev</a>. I've done some
+magic and managed to make my tag @@nate@@natechoe.dev, which I think is pretty
+cool. Also, I graduated high school.</p>
 
 @%/site/tail.html@
