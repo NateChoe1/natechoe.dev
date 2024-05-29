@@ -1,0 +1,28 @@
+@%/site/head.html@
+@=header I made a chiptune song generator@
+
+<p>I hacked together a <a href=https://github.com/NateChoe1/chiptune>chiptune
+song generator</a> in Go. I really like Go, it feels like a modernized version
+of C.</p>
+
+<p>It supports the standard chiptune sounds, such as triangle waves, square
+waves, sawtooth waves, and white noise. Here's a sample tune to demonstrate
+triangle waves and white noise:</p>
+
+<audio
+src=https://github.com/NateChoe1/chiptune/raw/main/examples/contemplate.wav
+controls type=audio/wav>
+</audio>
+<br>
+
+<p>I also added some basic sampling, which allows you to make drums. I kind of
+screwed up by sampling the melody as well and accidentally made a hip hop
+beat.</p>
+
+<audio
+src=https://github.com/NateChoe1/chiptune/raw/main/examples/pcm.wav
+controls type=audio/wav>
+</audio>
+<br>
+
+@%/site/tail.html@
