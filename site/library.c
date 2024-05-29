@@ -21,7 +21,7 @@ static int getcolors(Request *request, Response *response);
 
 #define BINARY_COLORS \
 	X(getfavicon, "/site/favicon.ico", 326, C(62, 25, 255, 0)) \
-	X(getbutton, "/site/site/resources/88x31.bmp", 1450, C(54, 0, 255, 0) C(62, 0, 255, 180))
+	X(getbutton, "/site/site/resources/88x31.bmp", 1434, C(54, 0, 255, 0) C(62, 0, 255, 180))
 
 #define X(funcname, filename, filelen, colors) \
 	static int funcname(Request *request, Response *response);
