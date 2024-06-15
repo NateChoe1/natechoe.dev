@@ -92,7 +92,7 @@ img {
 }
 .hubitem {
 	display: block;
-	color: var(--textcol);
+	color: var(--textcol) !important;
 	text-decoration: none;
 }
 .hubitem:hover {
