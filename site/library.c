@@ -59,7 +59,7 @@ static int getcolor(long day) {
 
 static int getcolors(Request *request, Response *response) {
 	static long lastcolorupdate = -1;
-	static char colorbuff[300];
+	static char colorbuff[1000];
 	static int colorlen = 0;
 
 	long today = getday();;
@@ -73,12 +73,27 @@ static int getcolors(Request *request, Response *response) {
 ":root{"
 	"--backcol:hsl(%d,93%%,84%%);"
 	"--doccol:hsl(%d,92%%,75%%);"
-	"--shadowcol:#444444;"
-	"--codeback:#d3d3d3;"
-	"--codecol:#000000;"
+	"--shadowcol:#444;"
+	"--codeback:#ddd;"
+	"--codecol:#000;"
 	"--barcol:hsl(%d,96%%,68%%);"
-	"--textcol:#000000;"
-"} /*%ld %ld*/", color, color, color, lastcolorupdate, today
+	"--textcol:#000;"
+	"--linkcol:#00f;"
+	"--viscol:#f0f;"
+"}"
+"@media(prefers-color-scheme:dark){"
+":root{"
+	"--backcol:#15191d;"
+	"--doccol:#212529;"
+	"--shadowcol:#000;"
+	"--codeback:#313b4b;"
+	"--codecol:#bfbfbf;"
+	"--barcol:#313b4b;"
+	"--textcol:#bfbfbf;"
+	"--linkcol:#b0a700;"
+	"--viscol:#9300b0;"
+"}"
+"}", color, color, color
 		);
 	}
 	response->type = BUFFER_NOFREE;

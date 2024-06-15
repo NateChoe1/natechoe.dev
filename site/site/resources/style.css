@@ -4,6 +4,15 @@ html {
 
 body {
 	margin: 0px;
+  color: var(--textcol);
+}
+
+a:link {
+  color: var(--linkcol);
+}
+
+a:visited {
+  color: var(--viscol);
 }
 
 #content {
@@ -58,7 +67,7 @@ header {
 }
 
 header>a {
-	color: var(--textcol);
+	color: var(--textcol) !important;
 	text-decoration: none;
 	font-size: 20px;
 	font-family: monospace;
