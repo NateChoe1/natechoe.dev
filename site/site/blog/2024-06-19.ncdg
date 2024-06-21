@@ -1,5 +1,5 @@
 @%/site/head.html@
-@%header A struct trilemma@
+@=header A struct trilemma@
 
 <p>A lot of times a structure will have two different properties that are very
 closely related to each other. For example, you might have a
@@ -156,7 +156,7 @@ class Rectangle {
 Rectangle r = new Rectangle(5, 4);
 r.setWidth(6);
 System.out.printf("Rectangle area: %d\n", r.getArea());
-</code></pre>
+@</code></pre>
 
 <p>This seems to work, so I commit and don't realize that there's a bug in
 production code.</p>
