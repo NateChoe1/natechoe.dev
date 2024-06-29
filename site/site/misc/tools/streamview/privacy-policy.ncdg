@@ -1,5 +1,5 @@
 @%/site/head.html@
-@=header The official, legally binding streamview TOS and privacy policy@
+@=header The official, legally binding streamviewer TOS and privacy policy@
 
 <h2>Preamble</h2>
 
@@ -37,11 +37,19 @@ derivations refer to the streamviewer program.</p>
 <p>I'm not an evil person, I don't want your data. Please don't send it to
 me.</p>
 
-<p>When you visit this (or any) website, you give me your IP address. This
-information may be used to get some information about your location. Your IP
-address may be logged in some places, although I will never share your IP
-address or give it to someone else unless I either get hacked or am required to
-do so by United States law.</p>
+<p>When you visit this (or any) website, you give me (or the website owner) your
+IP address. This information may be used to get some information about your
+location, such as the city that you're visiting from. Your IP address may be
+logged in some places, although I will never share your IP address or give it to
+someone else unless I either get hacked or am required to do so by United States
+law.</p>
+
+<p>By the way, I have been hacked before. I documented the entire thing, you can
+read all about it at <a
+href=https://natechoe.dev/blog/2024-03-07.html>https://natechoe.dev/blog/2024-03-07.html</a>.
+I've made my entire website a lot more secure since that incident, but I'm just
+letting you know that it has happened before, and that it could happen
+again. If it does happen again, please don't sue me.</p>
 
 <p>Google hires thousands of the smartest software engineers on the planet.
 Despite this, it remains impossible to view a Youtube stream chat outside of the
@@ -55,7 +63,7 @@ be able to view anything about any other Google services you use.</p>
 
 <p>Cookies are small text strings stored on your local browser. Cookies are
 bullshit, and we don't use them. Google does, though, but you already agreed to
-<i>that</i> TOS when you made your Google account.</p>
+that when you made your Google account.</p>
 
 <p>With the way that this program is written, I don't know if I'm able to figure
 out which Google accounts are using it. I might be able to, but I'm too lazy to
@@ -68,6 +76,9 @@ and appendix, in the exact same wording. If you do redistribute this code, you
 must provide a copy of the original code and any changes you've made in the
 original forms that they were developed in (so no minification or precompiled
 binaries). You must also clearly distinguish your changes from my code.</p>
+
+<p>Streamviewer is copyright of Nate Choe, 2024. It is not public domain
+software.</p>
 
 <h2>End TOS and privacy policy</h2>
 

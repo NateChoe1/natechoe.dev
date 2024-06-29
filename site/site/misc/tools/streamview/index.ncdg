@@ -81,10 +81,17 @@ function oauthSignIn() {
 function login() {
   var msg = document.createElement("p");
   var button = document.createElement("button");
+  var tos = document.createElement("p");
+  var tosLink = document.createElement("a");
+  tosLink.textContent = "By using this program, you agree to the terms of service.";
+  tosLink.href = "privacy-policy.html";
+  tos.appendChild(tosLink);
+  console.log(tos);
   msg.textContent = "Press this button to sign in with Google";
   button.addEventListener("click", oauthSignIn);
   button.textContent = "Sign in with Google";
   var contentDiv = document.getElementById("content");
+  contentDiv.appendChild(tos);
   contentDiv.appendChild(msg);
   contentDiv.appendChild(button);
 }
