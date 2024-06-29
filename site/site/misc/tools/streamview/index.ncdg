@@ -58,7 +58,7 @@ function oauthSignIn() {
 
   // Parameters to pass to OAuth 2.0 endpoint.
   var params = {'client_id': '788686907287-5hut5u9ipkocve103pns263cs7os9roa.apps.googleusercontent.com',
-                'redirect_uri': 'https://natechoe.dev/misc/tools/streamview.html',
+                'redirect_uri': 'https://natechoe.dev/misc/tools/streamview/index.html',
                 'response_type': 'token',
                 'scope': 'https://www.googleapis.com/auth/youtube.readonly',
                 'include_granted_scopes': 'true',
