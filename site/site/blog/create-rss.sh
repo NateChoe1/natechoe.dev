@@ -12,6 +12,7 @@ while read LINE ; do
 <title>$2</title>
 <author>nate@natechoe.dev (Nate Choe)</author>
 <link>https://natechoe.dev$1</link>
+<guid>https://natechoe.dev$1</guid>
 </item>
 EOF
 done <"$1"

@@ -3,6 +3,7 @@
   <channel>
     <title>natechoe.dev blog</title>
     <link>https://natechoe.dev/blog/index.html</link>
+    <atom:link href="https://natechoe.dev/blog/blog.rss" rel="self" type="application/rss+xml" />
     <description>The personal blog of Nate Choe</description>
     <language>en-us</language>
     <managingEditor>nate@@natechoe.dev (Nate Choe)</managingEditor>
@@ -13,8 +14,8 @@
       <!-- RSS specifies that this _has_ to be either a png, jpg, or gif. I'm
            too lazy to do image conversion, so bmp it is. -->
       <url>https://natechoe.dev/resources/88x31.bmp</url>
-      <title>natechoe.dev 88x31 button</title>
-      <link>https://natechoe.dev</link>
+      <title>natechoe.dev blog</title>
+      <link>https://natechoe.dev/blog/index.html</link>
     </image>
     @$/site/site/blog/create-rss.sh /site/site/blog/posts@
   </channel>
