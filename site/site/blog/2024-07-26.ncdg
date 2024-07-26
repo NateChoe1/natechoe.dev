@@ -1,0 +1,178 @@
+@%/site/head.html@
+@=header Some possible fronts for criminal organizations@
+
+<p><a href=https://www.abuseipdb.com/>AbuseIPDB</a> is a database of abusive IP
+address, that <a href=https://www.abuseipdb.com/user/88209>I contribute to</a>.
+Basically, a bunch of system administrators (people that run servers) have
+scripts that detect and report any malicious activity. For my system, I have <a
+href=https://en.wikipedia.org/wiki/Fail2ban>Fail2ban</a> set up so that any IP
+addresses that make a single failed login get banned for 24 hours and
+reported.</p>
+
+<p>This is a really strict Fail2ban policy, and probably wouldn't be acceptable
+for most use cases. I can only use it because I'm the only person accessing my
+own servers, so if something goes wrong it's my fault. I first adopted this
+policy after realizing that I was reporting <a
+href=https://www.abuseipdb.com/check/194.169.175.17>the same IP address hundreds
+of times</a>. This IP address (194.169.175.17) belongs to <a
+href=https://emanuelhosting.info/>Emanuel Hosting</a>, a web service provider
+offering some really good rates. Never mind the fact that their servers are in
+the UK but their address is New Hampshire, or that they always seem to be out of
+stock, or that trying to buy bare metal servers leads to a 404, or that their
+terms of service, privacy policy, and acceptable use policy all lead to a 404,
+or that they never responded to my abuse complaint, despite claiming that they
+"respond within 12 hours", or that they claim to have 89,099 deployed servers
+despite the fact that their autonomus system (AS394711) only has 6656 IP
+addresses.</p>
+
+<p>Everything seems to point to Emanuel Hosting being a badly designed front for
+some criminal organization. I'm not going to claim outright that they actually
+are, I'm just saying is that the log in and support buttons lead to the Emanuel
+Hosting homepage, and not to their actual pages. Also, I'm a legal adult now,
+and Emanuel Hosting could actually sue me for defamation if I'm wrong about
+this.</p>
+
+<p>These sorts of sites aren't too hard to find, just go to your email's spam
+folder and look for a link. Here's a spam email that I received at the beginning
+of this month.</p>
+
+<pre><code class=block>@\
+Return-Path: <info@@sonyliv.com>
+Delivered-To: nate@@natechoe.dev
+Received: from mail.natechoe.dev
+        by mail.natechoe.dev with LMTP
+        id 5h3rID9/hGZYUwAAYcI5WQ
+        (envelope-from <info@@sonyliv.com>)
+        for <nate@@natechoe.dev>; Tue, 02 Jul 2024 17:29:19 -0500
+Received: from localhost (localhost [127.0.0.1])
+        by mail.natechoe.dev (Postfix) with ESMTP id 8435026AA6F6
+        for <nate@@natechoe.dev>; Tue,  2 Jul 2024 17:29:19 -0500 (CDT)
+X-Virus-Scanned: Yes
+X-Spam-Flag: YES
+X-Spam-Score: 6.447
+X-Spam-Level: ******
+X-Spam-Status: Yes, score=6.447 tagged_above=2 required=6.31
+        tests=[BODY_URI_ONLY=0.001, FSL_BULK_SIG=0.001, HTML_MESSAGE=0.001,
+        HTTPS_HTTP_MISMATCH=0.1, MIME_HTML_ONLY=0.1, PDS_OTHER_BAD_TLD=1.999,
+        PYZOR_CHECK=1.985, RCVD_IN_ZEN_BLOCKED_OPENDNS=0.001, RDNS_NONE=1.274,
+        SPF_HELO_NONE=0.001, SPF_SOFTFAIL=0.972, T_PDS_SHORT_SPOOFED_URL=0.01,
+        URIBL_BLOCKED=0.001, URIBL_DBL_BLOCKED_OPENDNS=0.001]
+        autolearn=no autolearn_force=no
+Authentication-Results: mail.natechoe.dev; dmarc=none (p=none dis=none) header.from=sonyliv.com
+Received-SPF: Softfail (mailfrom) identity=mailfrom; client-ip=85.26.189.171; helo=visitbeijing.com.cn; envelope-from=info@@sonyliv.com; receiver=natechoe.dev
+Received: from visitbeijing.com.cn (unknown [85.26.189.171])
+        by mail.natechoe.dev (Postfix) with ESMTPS id A8DE126AA7CF
+        for <nate@@natechoe.dev>; Tue,  2 Jul 2024 17:29:13 -0500 (CDT)
+Message-ID: <0f7fb813cb0eaaa186eca50ed3577c62b653ea@@sonyliv.com>
+From: Moses Vaughan <info@@sonyliv.com>
+To: nate@@natechoe.dev
+Subject: Re: your photos
+Date: Wed, 3 Jul 2024 01:28:36 +0300
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+[-- Autoview using lynx -dump '/var/tmp/mutt.html' --]
+   Hello! You asked where I saw your photos, in this link -
+   [1]https://google.com/pics/293e9e
+
+References
+
+   1. https://un22pry.bigbonusleader.life/df3prg9?m=1
+@</code></pre>
+
+<p>There's a lot to unpack here. Let's actually start with the headers. This
+email is "from" info@@sonyliv.com, but SPF failed and there's no DKIM headers,
+which strongly indicates that someone is badly forging the "from" header. In
+2024, any decent email provider should mark these emails as spam, which means
+that spammers have to buy a domain and set up SPF and DKIM just to reach their
+mark. These protections don't make spam impossible, but they definitely raise
+the bar to entry.</p>
+
+<p>Another interesting note is that the IP address that actually sent this email
+is in Russia, but whoever sent it is pretending to be the Chinese website
+visitbeijing.com.cn and spoofing the email of an Indian company.</p>
+
+<p>The Google link doesn't actually lead anywhere, it's actually just disguising
+some other fishy URL. The original HTML source code looks like this:</p>
+
+<pre><code class=block>@\
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body bgColor="#ffffff">
+<div align=left><font size=2 face=Arial>Hello! You asked where I saw your photos, in this link - <a href="https://un22pry.bigbonusleader.life/df3prg9?m=1">https://google.com/pics/293e9e</a><br></font></div></body></html>
+@</code></pre>
+
+<p>You can actually disguise any URL as any other URL in HTML. For example, try
+clicking this link to <a
+href=https://www.youtube.com/watch?v=dQw4w9WgXcQ>https://natechoe.dev</a>. The
+email uses this trick to disguise the real url,
+https://un22pry.bigbonusleader.life/df3prg9?m=1. The base URL
+bigbonusleader.life just says "Under construction". The page in the email seems
+to have some spammy "Hot Singles in YOUR AREA!" type HTML, but it then redirects
+to some page in search.weekmomeet.live. This redirects to various other pages in
+a chain of 4 websites. There seem to be some checks in there to redirect you to
+google.com if you're making too many connections or you're taking too long to
+access each page, although I'm not entirely sure how to replicate this.</p>
+
+<p>The chain eventually ends in a subdomain of deviceconnectnetwork.co.in, which
+has a fake captcha screen.</p>
+
+<img src=/resources/deviceconnect-base.png alt="Fake captcha displayed on deviceconnectnetwork.co.in">
+
+<p>Clicking on the captcha leads the page to ask for notifications.</p>
+
+<img src=/resources/deviceconnect-notif.png alt="deviceconnectnetwork.co.in
+asking for notifications">
+
+<p>I stopped here because I didn't want some random spammer sending me
+notifications. I don't think they'd send anything interesting for a while
+anyways.</p>
+
+<p>It's interesting that they put the captcha before asking for notifications.
+Modern javascript is really, really powerful. In the early 2000s, after
+javascript became powerful but before browser developers made it secure, you
+could basically embed malware in a website. The infamous <a
+href=https://youareanidiot.cc/>"you are an idiot"</a> trojan would, as the name
+suggests, call you an idiot. When you tried to close the website, however, it
+would spawn six new copies of itself. Closing one of those copies would spawn
+six more, and so on. Eventually you'd have hundreds of browser windows open and
+be forced to shut down your computer.</p>
+
+<p>Nowadays, there are protections against this sort of stuff. For example, in
+most web browsers, you can only create one popup per click or key press, which
+makes javascript a lot safer to run. I assume that's why that spammy website had
+that initial "I am not a robot" button; they have to make the user click to ask
+for permissions.</p>
+
+<p>A lot of times, spammers will take over some legitimate website and use their
+infrastructure to host malicious stuff. deviceconnectnetwork.co.in is probably
+not one of these cases. The base deviceconnectnetwork.co.in domain has a website
+that was very, very obviously generated by an LLM. They claim to be "A Blog
+about Everything" and to have "5,000 Articles Published", despite the fact that
+they have three articles on the entire site. They claim that they've had "10
+Years of Storytelling", despite the fact that the deviceconnectnetwork.co.in
+domain was registered in March of this year. The domain is
+deviceconnectnetwork.co.in, but the top bar on their website says "Evocative
+Musings", and the home page says "Eclectic Musings".</p>
+
+<p>Again, maybe I'm wrong about this. All I'm saying is that the Facebook,
+Twitter, Instagram, and LinkedIn logos at the bottom of the site don't actually
+lead anywhere, and that the headers in their privacy policy aren't properly
+formatted.</p>
+
+<p>The existence of these criminal-looking organizations isn't really a secret.
+If you host a server on the internet and check the logs in an hour, you'll
+probably find some malicious activity. These people's modus operandi is to
+attack as many systems as they can completely automatically. These people don't
+want to hack you specifically, they want to hack as many people as they can,
+including you. They set up fake websites and organizations to (badly) disguise
+themselves and scripts to target the entire internet. On a global level, we
+protect against this with checks like SPF, DKIM, and javascript restrictions. On
+an individual level we protect against this with common sense, like "don't click
+on random links in your spam folder", and "keep all your software up to date".
+These people will never go away, but we can at least keep them at bay.</p>
+
+@%/site/tail.html@
