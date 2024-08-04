@@ -8,12 +8,12 @@
     <div id=rednum class="signifier right"></div>
   </div>
   <div id=greendiv class=slider>
-    <div class="signifier left">Blue:</div>
+    <div class="signifier left">Green:</div>
     <input class=picker type=range min=0 max=255 value=255 class=slider id=green>
     <div id=greennum class="signifier right"></div>
   </div>
   <div id=bluediv class=slider>
-    <div class="signifier left">Green:</div>
+    <div class="signifier left">Blue:</div>
     <input class=picker type=range min=0 max=255 value=255 class=slider id=blue>
     <div id=bluenum class="signifier right"></div>
   </div>
