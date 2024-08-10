@@ -1,0 +1,414 @@
+@%/site/head.html@
+@=header A neat fizzbuzz implementation@
+
+<p>I'll start with the code so that people who already understand fizzbuzz can
+read it, exhale a bit of air out of their nose, go "neat", and move on.</p>
+
+<pre><code class=block>@\
+#include <stdio.h>
+int main() {
+	for (int i = 1; i <= 100; ++i) {
+		switch ((i % 3 == 0) << 1 | (i % 5 == 0)) {
+		case 0: printf("%d\n", i); break;
+		case 1: puts("buzz"); break;
+		case 2: puts("fizz"); break;
+		case 3: puts("fizzbuzz"); break;
+		}
+	}
+	return 0;
+}
+@</code></pre>
+
+<p>Fizzbuzz is a classic programming interview problem. It's based on a game,
+which goes like this:</p>
+
+<ol>
+<li>Players take turns counting. Player 1 says "one", player 2 says "two", and
+so on.</li>
+<li>For multiples of three, instead of saying the number, players say the word
+"fizz".</li>
+<li>For multiples of five, instead of saying the number, players say the word
+"buzz".</li>
+<li>For multiples of both three and five, instead of saying the number, players
+say the word "fizzbuzz".</li>
+</ol>
+
+<p>So in this game, players would say 1, 2, fizz, 4, buzz, fizz, 7, 8, fizz,
+buzz, 11, fizz, 13, 14, fizzbuzz, and so on.</p>
+
+<p>Playing fizzbuzz is a classic interview problem. A candidate might start by
+writing a program to print numbers without any special rules, like this:</p>
+
+<pre><code class=block>@\
+#include <stdio.h>
+int main() {
+	for (int i = 1; i <= 100; ++i) {
+		printf("%d\n", i);
+	}
+	return 0;
+}
+@</code></pre>
+
+<p>Then the candidate might realize that they could impress the interviewer by
+writing a subroutine, like this:</p>
+
+<pre><code class=block>@\
+#include <stdio.h>
+
+void print_fizzbuzz(int n) {
+	printf("%d\n", n);
+}
+
+int main() {
+	for (int i = 1; i <= 100; ++i) {
+		print_fizzbuzz(i);
+	}
+	return 0;
+}
+@</code></pre>
+
+<p>Next they might implement the rules for 3 and 5 using the modulo
+operator.</p>
+
+<pre><code class=block>@\
+#include <stdio.h>
+
+void print_fizzbuzz(int n) {
+	if (n % 3 == 0) {
+		puts("fizz");
+	}
+	else if (n % 5 == 0) {
+		puts("buzz");
+	}
+	else {
+		printf("%d\n", n);
+	}
+}
+
+int main() {
+	for (int i = 1; i <= 100; ++i) {
+		print_fizzbuzz(i);
+	}
+	return 0;
+}
+@</code></pre>
+
+<p>Now they want to implement the "fizzbuzz" rule. They suddenly realize that
+they <i>have</i> to put this rule in the beginning of this <code>if else</code>
+chain so that it actually has a chance to execute.</p>
+
+<pre><code class=block>@\
+#include <stdio.h>
+
+void print_fizzbuzz(int n) {
+	if (n % 3 == 0 && n % 5 == 0) {
+		puts("fizzbuzz");
+	}
+	else if (n % 3 == 0) {
+		puts("fizz");
+	}
+	else if (n % 5 == 0) {
+		puts("buzz");
+	}
+	else {
+		printf("%d\n", n);
+	}
+}
+
+int main() {
+	for (int i = 1; i <= 100; ++i) {
+		print_fizzbuzz(i);
+	}
+	return 0;
+}
+@</code></pre>
+
+<p>Then, the interviewer asks the candidate to extend the game, so that you say
+"bash" for multiples of 7.</p>
+
+<p>The interviewee looks at their code in shame. Extending this out would be an
+absolute pain. They also realize that the <code>print_fizzbuzz</code> function
+is pretty much useless because it always outputs to standard output, so it's
+really only suited to this one specific task. They tear it down and begin
+rewriting it like this:</p>
+
+<blockquote>Ideally, the <code>print_fizzbuzz</code> function actually returns a
+string, but in C it's actually suprisingly hard to just return a dynamically
+generated string, so for brevity I've made the code output to a
+file.</blockquote>
+
+<pre><code class=block>@\
+#include <stdio.h>
+
+void print_fizzbuzz(int n, FILE *out) {
+	if (n % 3 == 0) {
+		fputs("fizz", out);
+	}
+	if (n % 5 == 0) {
+		fputs("buzz", out);
+	}
+	if (n % 7 == 0) {
+		fputs("bash", out);
+	}
+	/* TODO: Print regular numbers??? */
+	fputc('\n', out);
+}
+
+int main() {
+	for (int i = 1; i <= 100; ++i) {
+		print_fizzbuzz(i, stdout);
+	}
+	return 0;
+}
+@</code></pre>
+
+<p>Now they realize that they have to print regular numbers, so they add a
+boolean flag.</p>
+
+<pre><code class=block>@\
+#include <stdio.h>
+#include <stdbool.h>
+
+void print_fizzbuzz(int n, FILE *out) {
+	bool print_number = true;
+	if (n % 3 == 0) {
+		fputs("fizz", out);
+		print_number = false;
+	}
+	if (n % 5 == 0) {
+		fputs("buzz", out);
+		print_number = false;
+	}
+	if (n % 7 == 0) {
+		fputs("bash", out);
+		print_number = false;
+	}
+	if (print_number) {
+		fprintf(out, "%d", n);
+	}
+	fputc('\n', out);
+}
+
+int main() {
+	for (int i = 1; i <= 100; ++i) {
+		print_fizzbuzz(i, stdout);
+	}
+	return 0;
+}
+@</code></pre>
+
+<p>Now we've got a bunch of duplicate code for each condition, so the candidate
+separates them out.</p>
+
+<pre><code class=block>@\
+#include <stdio.h>
+#include <stdbool.h>
+
+/* I love X-macros */
+#define FIZZBUZZ_CONDITIONS \
+	X(3, "fizz") \
+	X(5, "buzz") \
+	X(7, "bash")
+
+void print_fizzbuzz(int n, FILE *out) {
+	bool print_number = true;
+#define X(modulus, string) \
+	if (n % modulus == 0) { \
+		fputs(string, out); \
+		print_number = false; \
+	}
+	FIZZBUZZ_CONDITIONS
+#undef X
+	if (print_number) {
+		fprintf(out, "%d", n);
+	}
+	fputc('\n', out);
+}
+
+#undef FIZZBUZZ_CONDITIONS
+
+int main() {
+	for (int i = 1; i <= 100; ++i) {
+		print_fizzbuzz(i, stdout);
+	}
+	return 0;
+}
+@</code></pre>
+
+<p>If you actually wrote this code in an interview, the interviewer would
+probably look at you like you've just committed a violent crime. X-macros are
+kind of like regex; they're really powerful, but whenever you use them you feel
+like you're practicing the dark arts.</p>
+
+<p>Anyways, then the interviewer might ask you to capitalize the first letter of
+each line. This leads to a problem: we can print "Fizz", we can print "Buzz",
+and we can print "FizzBuzz", but we can't print "Fizzbuzz".</p>
+
+<p>We can reuse the <code>print_number</code> variable to see if we're at the
+beginning of the line and extend our X-macro to accept a lowercase and uppercase
+form of our letters, though, like this:</p>
+
+<pre><code class=block>@\
+#include <stdio.h>
+#include <stdbool.h>
+
+/* I love X-macros */
+#define FIZZBUZZ_CONDITIONS \
+	X(3, "fizz", "Fizz") \
+	X(5, "buzz", "Buzz") \
+	X(7, "bash", "Bash")
+
+void print_fizzbuzz(int n, FILE *out) {
+	bool print_number = true;
+#define X(modulus, lower, upper) \
+	if (n % modulus == 0) { \
+		if (print_number) { \
+			fputs(upper, out); \
+		} \
+		else { \
+			fputs(lower, out); \
+		} \
+		print_number = false; \
+	}
+	FIZZBUZZ_CONDITIONS
+#undef X
+	if (print_number) {
+		fprintf(out, "%d", n);
+	}
+	fputc('\n', out);
+}
+
+#undef FIZZBUZZ_CONDITIONS
+
+int main() {
+	for (int i = 1; i <= 100; ++i) {
+		print_fizzbuzz(i, stdout);
+	}
+	return 0;
+}
+@</code></pre>
+
+<blockquote>There are definitely cleaner ways to do this in other languages, but
+this is the cleanest thing I could think of that doesn't use dynamic memory
+allocation or assume a certain string length limit.</blockquote>
+
+<p>Now the interviewer asks you to print "Buzzfizz" instead of "Fizzbuzz", but
+to keep printing "Fizzbuzzbash" whenever that shows up.</p>
+
+<p>That's not too bad, we can just create a special case in our function.</p>
+
+<pre><code class=block>@\
+#include <stdio.h>
+#include <stdbool.h>
+
+/* I love X-macros */
+#define FIZZBUZZ_CONDITIONS \
+	X(3, "fizz", "Fizz") \
+	X(5, "buzz", "Buzz") \
+	X(7, "bash", "Bash")
+
+void print_fizzbuzz(int n, FILE *out) {
+	bool print_number = true;
+	if (n % 3 == 0 && n % 5 == 0) {
+		fputs("Buzzfizz\n", out);
+		return;
+	}
+#define X(modulus, lower, upper) \
+	if (n % modulus == 0) { \
+		if (print_number) { \
+			fputs(upper, out); \
+		} \
+		else { \
+			fputs(lower, out); \
+		} \
+		print_number = false; \
+	}
+	FIZZBUZZ_CONDITIONS
+#undef X
+	if (print_number) {
+		fprintf(out, "%d", n);
+	}
+	fputc('\n', out);
+}
+
+#undef FIZZBUZZ_CONDITIONS
+
+int main() {
+	for (int i = 1; i <= 100; ++i) {
+		print_fizzbuzz(i, stdout);
+	}
+	return 0;
+}
+@</code></pre>
+
+<p>Then the interviewer gives a bunch more edge cases. Eventually, the
+interviewer just hands you a table, and says "This is what we want.</p>
+
+<table>
+  <tr>
+    <th>Multiple of 3</th>
+    <th>Multiple of 5</th>
+    <th>Multiple of 7</th>
+    <th>Output</th>
+  </tr>
+  <tr>
+    <td>No</td>
+    <td>No</td>
+    <td>No</td>
+    <td>The number itself</td>
+  </tr>
+  <tr>
+    <td>Yes</td>
+    <td>No</td>
+    <td>No</td>
+    <td>"Fizz"</td>
+  </tr>
+  <tr>
+    <td>No</td>
+    <td>Yes</td>
+    <td>No</td>
+    <td>"Buzz"</td>
+  </tr>
+  <tr>
+    <td>Yes</td>
+    <td>Yes</td>
+    <td>No</td>
+    <td>"Banana"</td>
+  </tr>
+  <tr>
+    <td>No</td>
+    <td>No</td>
+    <td>Yes</td>
+    <td>"Bash"</td>
+  </tr>
+  <tr>
+    <td>Yes</td>
+    <td>No</td>
+    <td>Yes</td>
+    <td>"Bonanza"</td>
+  </tr>
+</table>
+
+<p>And so on, for every single case. This is the most generalized form of
+fizzbuzz that you can possibly get, and can only be solved with the most
+generalized code that you can possibly write:</p>
+
+<pre><code class=block>@\
+#include <stdio.h>
+int main() {
+	for (int i = 1; i <= 100; ++i) {
+		switch ((i % 3 == 0) << 1 | (i % 5 == 0)) {
+		case 0: printf("%d\n", i); break;
+		case 1: puts("buzz"); break;
+		case 2: puts("fizz"); break;
+		case 3: puts("fizzbuzz"); break;
+		}
+	}
+	return 0;
+}
+@</code></pre>
+
+<p>Just use bitmaps to assign each case a number, and manually handle each case
+in a switch statement.</p>
+
+@%/site/tail.html@
