@@ -20,7 +20,7 @@ motherboard 1, and so on. With this system, I can test all of my parts with just
 CPU and AMD graphics card work just fine, but when put in the same computer they
 refuse to work with each other. Maybe my smallest motherboard and heaviest GPU
 are fine on their own, but when put together the weight difference breaks one or
-both components. Maybe my weakest power can't power my strongest CPU, even when
+both components. Maybe my weakest PSU can't power my strongest CPU, even when
 both components work individually.</p>
 
 <p>What I'd really like to do is test every pair of components, not just every
@@ -45,9 +45,8 @@ such that the union of all elements in S is the universe.</p>
 literally nobody knows how to solve the set cover problem quickly. Since the set
 cover problem is NP-complete, there's <a
 href=https://en.wikipedia.org/wiki/Millennium_Prize_Problems>a million dollar
-prize to anybody who can solve it</a>, and nobody's been able to so far.</p>
-
-<p>Luckily, we don't have to find the absolute smallest test set. I think most
+prize to anybody who can solve it</a>, and nobody's been able to so far.
+Luckily, we don't have to find the absolute smallest test set. I think most
 people would be fine with doing one or two extra tests to save 5 million years
 of compute time.</p>
 
@@ -58,33 +57,33 @@ pairs. Now, we have 359 rigs and 113 pairs. We repeat this process until we have
 no pairs left. This isn't guaranteed to get the absolute best solution, but it
 runs pretty quickly and seems to get pretty good results.</p>
 
-<p>The actual code actually uses this approach to solve n-wise testing, meaning
-that you can also cover all triplets, quadruplets, or even n-lets of items. The
-general idea is still the same though. You create the set of all n-lets and
-possible tests, and greedily eliminate them.</p>
+<p>The actual code uses this approach to solve n-wise testing, meaning that you
+can also cover all triplets, quadruplets, or even n-lets of items. The general
+idea is still the same though. You create the set of all n-lets and possible
+tests, and greedily eliminate them.</p>
 
 <p>There could be a better solution. The set-cover problem is NP-complete, but
 n-wise testing is <a
 href=https://en.wikipedia.org/wiki/Bijection,_injection_and_surjection>injective</a>
 with the set-cover problem. That means that any solution to the set-cover
-problem would solve this problem, but you don't necessarily need a solution to
-the set cover problem.</p>
+problem would solve this problem, but there could be some completely new way of
+thinking about things that doesn't involve the set-cover problem at all.</p>
 
-<p>The final version of the code does accept a validator function that allows
-you exclude certain test cases, so if you already know that a certain set of
-test cases always fails or always passes, you can just exclude them to cover new
-ground. This addition makes n-wise testing bijective to a set cover problem.</p>
+<p>I'm not too stressed though, because the final version of the code does
+accepts a validator function that allows you exclude certain test cases; so if
+you already know that a certain set of test cases always fails or always passes,
+you can just exclude them to cover new ground.This addition makes n-wise
+testing bijective to a set cover problem.</p>
 
 <p>Imagine that instead of 2 way or 3 way testing, we do 1 way testing. This is
 like that naive solution from the beginning of this article. Also, imagine that
-every single choice has exactly two options: 0 and 1.</p>
+every choice has exactly two options: 0 and 1.</p>
 
 <p>With this system, each choice represents one item in the universe, and each
-test case represents one subset. Since our validator function can arbitrarily
-filter test cases, we can just pick whatever subsets we want and encode them in
-the validator function. A 1 indicates that a subset contains that item, and a 0
-indicates that the subset doesn't contain that item. That might look like
-this:</p>
+test case represents one subset. A 1 indicates that a subset contains that item,
+and a 0 indicates that the subset doesn't contain that item. We can use our
+validator function to exclude everything except some special set of subsets.
+That might look like this:</p>
 
 <pre><code class=block>@\
 5 choices, each with two options using 1-wise testing.
@@ -98,10 +97,7 @@ Valid test cases (everything else is rejected by the validator):
 @</code></pre>
 
 <p>We have to try option 1 for every choice, meaning that we have to find the
-minimum set of test cases such the ones cover every choice. This is exactly
+minimum set of test cases such that the ones cover every choice. This is exactly
 equivalent to a set cover problem.</p>
-
-<p>My Dad asked me to solve this problem, so I guess this logic is technically
-being used in production at Amazon. Cool!</p>
 
 @%/site/tail.html@
