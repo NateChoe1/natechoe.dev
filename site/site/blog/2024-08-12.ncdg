@@ -1,0 +1,107 @@
+@%/site/head.html@
+@=header All pairs testing@
+
+<p>Imagine that I own a computer company. I have 4 types of CPUs, 6 types of
+motherboards, 3 types of GPUs, and 5 power supplies. With these components I
+could make 360 different types of computers. Some of these hypothetical
+computers could work, but some won't. My job is to test all of these rigs to
+figure out which ones are which.</p>
+
+<p>Testing 360 rigs would take a lot of time, though, so I decide to just test
+the "most important" set of rigs, whatever that means.</p>
+
+<p>One idea is to just test each component individually. I build a computer with
+CPU 0, motherboard 0, GPU 0, and power supply 0. If that works, then I know that
+all of those parts are good. Then I build a second computer with CPU 1,
+motherboard 1, and so on. With this system, I can test all of my parts with just
+6 computers.</p>
+
+<p>Unfortunately, computer problems aren't always that simple. Maybe my Intel
+CPU and AMD graphics card work just fine, but when put in the same computer they
+refuse to work with each other. Maybe my smallest motherboard and heaviest GPU
+are fine on their own, but when put together the weight difference breaks one or
+both components. Maybe my weakest power can't power my strongest CPU, even when
+both components work individually.</p>
+
+<p>What I'd really like to do is test every pair of components, not just every
+component individually. This is called <a
+href=https://en.wikipedia.org/wiki/All-pairs_testing>all-pairs testing</a>, and
+a few months ago I wrote <a
+href=https://gist.github.com/NateChoe1/65809afa76f786c33df865de75c32eee>a Python
+program to solve it</a>.</p>
+
+<p>To solve this problem, we should start by formalizing what exactly we're
+trying to do in mathematical language. In our example above, there are 360 rigs
+that have to cover 119 pairs. Each rig covers a few of those pairs, and we're
+trying to cover every pair using as few rigs as possible.</p>
+
+<p>The generic form of this problem is called the <a
+href=https://en.wikipedia.org/wiki/Set_cover_problem>set cover problem</a>.
+Formally, the set of pairs is called the "universe", and each rig is represented
+as a subset of that universe. We're trying to find S, the minimal set of subsets
+such that the union of all elements in S is the universe.</p>
+
+<p>The mathematical language there doesn't matter as much as the fact that
+literally nobody knows how to solve the set cover problem quickly. Since the set
+cover problem is NP-complete, there's <a
+href=https://en.wikipedia.org/wiki/Millennium_Prize_Problems>a million dollar
+prize to anybody who can solve it</a>, and nobody's been able to so far.</p>
+
+<p>Luckily, we don't have to find the absolute smallest test set. I think most
+people would be fine with doing one or two extra tests to save 5 million years
+of compute time.</p>
+
+<p>For my solution, I use a greedy algorithm. We create a list of all 360 rigs
+and 119 pairs. Then, we find the rig that covers the most pairs. At first, every
+rig covers 6 pairs. We add that rig to the final solution and get rid of those 6
+pairs. Now, we have 359 rigs and 113 pairs. We repeat this process until we have
+no pairs left. This isn't guaranteed to get the absolute best solution, but it
+runs pretty quickly and seems to get pretty good results.</p>
+
+<p>The actual code actually uses this approach to solve n-wise testing, meaning
+that you can also cover all triplets, quadruplets, or even n-lets of items. The
+general idea is still the same though. You create the set of all n-lets and
+possible tests, and greedily eliminate them.</p>
+
+<p>There could be a better solution. The set-cover problem is NP-complete, but
+n-wise testing is <a
+href=https://en.wikipedia.org/wiki/Bijection,_injection_and_surjection>injective</a>
+with the set-cover problem. That means that any solution to the set-cover
+problem would solve this problem, but you don't necessarily need a solution to
+the set cover problem.</p>
+
+<p>The final version of the code does accept a validator function that allows
+you exclude certain test cases, so if you already know that a certain set of
+test cases always fails or always passes, you can just exclude them to cover new
+ground. This addition makes n-wise testing bijective to a set cover problem.</p>
+
+<p>Imagine that instead of 2 way or 3 way testing, we do 1 way testing. This is
+like that naive solution from the beginning of this article. Also, imagine that
+every single choice has exactly two options: 0 and 1.</p>
+
+<p>With this system, each choice represents one item in the universe, and each
+test case represents one subset. Since our validator function can arbitrarily
+filter test cases, we can just pick whatever subsets we want and encode them in
+the validator function. A 1 indicates that a subset contains that item, and a 0
+indicates that the subset doesn't contain that item. That might look like
+this:</p>
+
+<pre><code class=block>@\
+5 choices, each with two options using 1-wise testing.
+
+Valid test cases (everything else is rejected by the validator):
+[0, 0, 0, 0, 0]
+[1, 1, 1, 0, 0]
+[0, 1, 0, 1, 0]
+[0, 0, 1, 1, 0]
+[0, 0, 0, 1, 1]
+@</code></pre>
+
+<p>We have to try option 1 for every choice, meaning that we have to find the
+minimum set of test cases such the ones cover every choice. This is exactly
+equivalent to a set cover problem.</p>
+
+<p>My Dad asked me to solve this problem, so I guess this logic is technically
+being used in production at Amazon. Cool!</p>
+
+@%/site/tail.html@
