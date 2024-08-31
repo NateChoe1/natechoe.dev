@@ -1,0 +1,481 @@
+@%/site/head.html@
+@=header An analysis of some of the most insane code I've ever written@
+
+<p><b>NOTE: Some of the examples I show in this blog post may change by the time
+you read it.</b><p>
+
+<p>I'm in college now, which means that I have to be organized. Luckily, in my
+senior year of high school, I wrote <a href=https://github.com/NateChoe1/nrem>a
+calendar in C</a>. At the time I saw nrem (the calendar system) as more of an
+academic project to create some interesting systems from scratch and never got
+around to designing a decent UX or writing documentation on how to use it.
+Today I decided to dust off some of the cobwebs and see if I could make it
+actually work well, and holy crap I completely forgot how unhinged this code
+was.</p>
+
+<h2>The trie</h2>
+
+<p>nrem (the calendar system, which is always in lowercase) stores event data in
+a <a href=https://en.wikipedia.org/wiki/Trie>trie</a>. To encode an event
+happening at some time, we take the UNIX timestamp of the event, convert into a
+64 bit binary integer, and find the binary tree node that corresponds with that
+timestamp. From the root node, every time we see a 0 in the timestamp, we go
+left, and every time we see a 1, we go right.</p>
+
+<p>For example, to encode an event that happened on January 1, 2006 at 3:04:05
+PM in the -0700 time zone, we:</p>
+
+<ol>
+<li>Take the UNIX timestamp of that event (1136239445)</li>
+
+<li>Convert it to binary
+(1000000000000000000000000000000001000011101110011010001101010101)
+<blockquote>
+Note that this is the inverse of twos complement, for positive integers the
+first bit is a 1 rather than a 0.
+</blockquote>
+</li>
+
+<li><p>Find the corresponding node on the binary tree</p>
+
+<p>For every 0 in the binary timestamp, we go left, and for every 1, we go
+right. In this case, we go right, left, left, left, ..., left, right, left,
+left, left, left, right, right, right, left, ...</p>
+</li>
+
+<li>Add the event data to that node.</li>
+</ol>
+
+<p>This allows us to quickly search for events happening within a time frame
+while avoiding the imbalances that come from standard binary search trees and
+the complex reshufflings that come from red-black trees.</p>
+
+<h2>The subnet problem</h2>
+
+<p>What if I want to schedule an event from 3:00PM to 4:00PM? I could store it
+in the 3:00 PM node and add some metadata saying that the event takes place over
+an hour, but if I search for events happening from "now" until "now+2w" at 3:01
+PM, I won't even realize that I've completely missed the start of my event.</p>
+
+<p>We could try creating 3600 separate events - one for every second - and add
+some metadata to each one saying "this is all the same event", but that's really
+inefficient.</p>
+
+<p>We could cheat by combining multiple nodes together. If an event takes place
+between 01100 and 01101, we could just put the event in the 0110 node and
+implicitly understand that the event actually takes place over all timestamps
+that begin with 0110, including 01100 and 01101.</p>
+
+<p>Unfortunately, most events won't fit neatly into some binary prefix of a UNIX
+timestamp, so we'll still have to encode events over multiple nodes. Our goal
+now is to find the smallest set of nodes that completely cover some time range
+without going over.</p>
+
+<p>I call this the "subnet problem", since this method of encoding a range of
+numbers through a binary prefix is used in <a
+href=https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing>Classless
+Inter-Domain Routing</a>. Mathematically, we're basically finding the smallest
+set of CIDR prefixes such that the union of all the prefixes entirely
+encompasses some range.</p>
+
+<p>The actual function I wrote to solve the subnet problem is 122 lines of code,
+but 58 of those lines are actually just a really long comment explaining my
+algorithm. I did a pretty good job explaining things then, so here's the comment
+converted into HTML with some extra notes where they're needed.</p>
+
+<blockquote>
+<p>Some dark magic I thought of at midnight while trying to go to sleep. This
+code generates the smallest possible set of binary string prefixes that fully
+encompasses a range. Here's how it works:</p>
+
+<p>Let's simplify this problem and try to find the smallest set of prefixes that
+goes from some number <code>n</code> to <code>0xffffff...</code> <b>EDITOR'S
+NOTE: I really mean "from <code>n</code> to infinity", or "from <code>n</code>
+to the largest possible number".</b> Let's say, for example,
+<code>n=0b00110100</code></p>
+
+<p>You can find the lower bound of a binary string prefix by setting all the
+non-captured bits to zero and the upper bound by setting all the non-captured
+bits to one. Since we only care about the lower bound, we want the largest
+possible prefix where all the non-captured bits are already zero. In this case,
+<code>0b00110100/6</code></p>
+
+<p>That string captures <code>0b00110100-0b00110111</code> inclusive. Now the
+goal is to find the set of prefixes that capture
+<code>0b00111000-0b11111111</code>. In this case, that's
+<code>0b00111000/5</code>.</p>
+
+<p><b>I really mean that the largest prefix (the one with the most encompassed
+values) that includes the lower end of this range without going under is
+<code>0b00111000/5</code>.</b></p>
+
+<p>We can continue on like this forever. That last group captures
+<code>0b00111000-0b00111111</code>, so our next prefix has to start at
+<code>0b01000000</code>. Algorithmically, the next prefix is always the least
+precise prefix where the non-captured bits of the lower bound are all zero.
+Then, we fill the non-captured bits with ones, add one, and that's the new lower
+bound. That code looks like this:</p>
+
+<pre><code class=block>@\
+uint64_t lower = start;
+for (;;) {
+	uint64_t bit = 1;
+	int precision = 64;
+
+	// While the iterated bit is zero
+	while (lower ^ bit > lower) {
+		// For efficiency, we fill the uncaptured bits
+		// with ones as we check them
+		lower ^= bit;
+
+		// Iterate to the next bit
+		bit <<= 1;
+		--precision;
+	}
+	
+	report_prefix(lower, precision);
+	++lower;
+}
+@</code></pre>
+
+<p><b>This code could be rewritten a bit more elegantly with ands and ors
+instead of xors, but I think this version is slightly more friendly to
+optimizing compilers.</b></p>
+
+<p>The code below is just a golfed version of this with a check to make sure we
+don't go too big. The separate <code>bit</code> and <code>precision</code>
+variables are combined, and the while loop is turned to a for.</p>
+
+<p>This code runs in <code>O(b^2)</code> time where <code>b</code> is the width
+of the integer. This is because for each prefix we may loop <code>b</code>
+times, and there may be <code>b</code> prefixes. This can be seen in the
+prefixes for <code>0x1-0xffffff...</code></p>
+
+<p>In theory this could be reduced to <code>O(b log b)</code> by using binary
+search to find the maximum precision of a prefix, or even <code>O(b)</code> by
+memoizing the precision of the previous prefix, but that would make the code far
+more complicated.</p>
+
+<p><b>The actual code</b></p>
+
+<pre><code class=block>@\
+while (lower <= end) {
+	int precision;
+	for (precision = 0; /* For each bit */
+			/* Make sure we're not leaving uncaptured
+			 * ones */
+			(lower ^ (1llu << precision)) > lower &&
+			/* Make sure we don't go too high */
+			(lower ^ (1llu << precision)) <= end;
+			++precision) {
+		/* Fill uncaptured bits with ones */
+		lower ^= (1llu << precision);
+	}
+	/* Report a prefix */
+	if (dateaddbit(file, lower, 64-precision,
+				id, nextsmptr, &nextsmptr)) {
+		return -1;
+	}
+	/* Update lower bound */
+	++lower;
+}
+@</code></pre>
+
+<h2>Date parsing</h2>
+
+<p>Here's an actual piece of C code I wrote. As you read through this,
+understand that this is the exact same language as much every other code block
+in this article.</p>
+
+<pre><code class=block>@\
+DECLARE(date)
+DECLARE(absolute_time)
+DECLARE(absolute_time_parse)
+DECLARE(offsets)
+DECLARE(offset)
+DECLARE(offset_value)
+DECLARE(iso_date)
+DECLARE(time)
+DECLARE(digit)
+DECLARE(hour_minute)
+DECLARE(number)
+DECLARE(digseq)
+DECLARE(value)
+DECLARE(digit)
+
+T(date,
+	R(absolute_time, R(offsets, noop, noop), E))
+
+T(absolute_time,
+	R(absolute_time_parse,
+		ret->time = mktime(&ret->tm), E))
+
+TS(absolute_time_parse, if (getlocaltime(&ret->tm)) { E },
+	L("now", noop, ret->tm.tm_isdst = -1;
+	R(iso_date,
+		L(",",
+		R(time, noop, E), noop),
+	R(time, noop, E))))
+
+T(iso_date,
+	R(number, ret->tm.tm_year = ret->num - 1900;
+	L("-",
+	R(number, ret->tm.tm_mon = ret->num-1; /* Jan = 0 */
+	L("-",
+	R(number, ret->tm.tm_mday = ret->num, E), E), E), E), E))
+
+T(time,
+	R(hour_minute,
+		L("AM", noop,
+		L("PM", ret->tm.tm_hour += 12, noop)), E))
+
+T(hour_minute, ret->tm.tm_hour = ret->tm.tm_min = ret->tm.tm_sec = 0;
+	       R(number, ret->tm.tm_hour = ret->num;
+	L(":", R(number, ret->tm.tm_min = ret->num;
+	L(":", R(number, ret->tm.tm_sec = ret->num, E), noop), E), noop), E))
+
+T(offsets,
+	R(offset, R(offsets, noop, noop), noop))
+
+T(offset,
+	L("+", R(offset_value, ret->time += ret->num, E),
+	L("-", R(offset_value, ret->time -= ret->num, E), E)))
+
+T(offset_value,
+	R(number, R(value, ret->num = tosec(ret->value) * ret->num, E), E))
+
+TS(number, ret->num = 0,
+	R(digseq, noop, E))
+
+T(digseq,
+	R(digit, R(digseq, noop, noop), E))
+
+T(value,
+	L("w", ret->value = WEEK,
+	L("d", ret->value = DAY,
+	L("h", ret->value = HOUR,
+	L("m", ret->value = MINUTE,
+	L("s", ret->value = SECOND, E))))))
+
+T(digit,
+	L("0", ret->num = ret->num * 10 + 0,
+	L("1", ret->num = ret->num * 10 + 1,
+	L("2", ret->num = ret->num * 10 + 2,
+	L("3", ret->num = ret->num * 10 + 3,
+	L("4", ret->num = ret->num * 10 + 4,
+	L("5", ret->num = ret->num * 10 + 5,
+	L("6", ret->num = ret->num * 10 + 6,
+	L("7", ret->num = ret->num * 10 + 7,
+	L("8", ret->num = ret->num * 10 + 8,
+	L("9", ret->num = ret->num * 10 + 9, E)))))))))))
+@</code></pre>
+
+<p>You may quite reasonably ask, "Hey Nate, what is this garbage?" Perhaps this
+will help contextualize things:</p>
+
+<pre><code class=block>@\
+static char *literal(char *s, char *r) {
+	while (r[0] != '\0') {
+		if (s[0] != r[0]) {
+			return NULL;
+		}
+		++s;
+		++r;
+	}
+	return s;
+}
+
+#define DECLARE(token) \
+static char *match_##token(char *s, TYPE *ret);
+
+#define TS(name, start, process) \
+static char *match_##name(char *s, TYPE *ret) { \
+	start; \
+	process; \
+}
+
+#define T(name, process) \
+	TS(name,, process)
+
+#define G(rule, match, nomatch) \
+	TYPE backup; \
+	char *olds = s; \
+	memcpy(&backup, ret, sizeof backup); \
+	if ((s = rule) != NULL) { \
+		match; \
+		return s; \
+	} \
+	else { \
+		memcpy(ret, &backup, sizeof backup); \
+		s = olds; \
+		nomatch; \
+		return s; \
+	} \
+
+#define R(rule, match, nomatch) \
+	G(match_##rule(s, ret), match, nomatch)
+
+#define L(litval, match, nomatch) \
+	G(literal(s, litval), match, nomatch)
+
+#define E return NULL;
+#define noop ;
+@</code></pre>
+
+<p>This is a top-down parser generator implemented entirely in the C
+preprocessor. You begin by assigning some data type associated with each node in
+the parse tree, similar to the <code>%union</code> declaration in yacc.</p>
+
+<pre><code class=block>@\
+typedef struct {
+	union {
+		struct tm tm;
+		time_t time;
+	};
+	enum VALUE value;
+	int64_t num;
+} TYPE;
+@</code></pre>
+
+<p>You then declare all of the symbols that you're going to use:</p>
+
+<pre><code class=block>@\
+DECLARE(date)
+DECLARE(absolute_time)
+DECLARE(absolute_time_parse)
+DECLARE(offsets)
+DECLARE(offset)
+DECLARE(offset_value)
+DECLARE(iso_date)
+DECLARE(time)
+DECLARE(digit)
+DECLARE(hour_minute)
+DECLARE(number)
+DECLARE(digseq)
+DECLARE(value)
+DECLARE(digit)
+@</code></pre>
+
+<p>Each symbol declaration expands to a function prototype, which might look
+like this:</p>
+
+<pre><code class=block>@\
+static char *match_absolute_time(char *s, TYPE *ret);
+@</code></pre>
+
+<p>Each of these functions will assume that <code>s</code> begins with its
+respective token and process it. If <code>s</code> doesn't actually begin with
+that token, then it returns <code>NULL</code>. Otherwise, it returns the rest of
+<code>s</code>. Along the way, they may store some extra data in
+<code>ret</code>.</p>
+
+<p>We then define all the rules to parse tokens. Let's look at a relatively
+simple rule to start:</p>
+
+<pre><code class=block>@\
+T(date,
+	R(absolute_time, R(offsets, noop, noop), E))
+@</code></pre>
+
+<p>This rule translates to the following code:</p>
+
+<pre><code class=block>@\
+static char *match_date(char *s, TYPE *ret) {
+	;
+	TYPE backup;
+	char *olds = s;
+	memcpy(&backup, ret, sizeof backup);
+	if ((s = match_absolute_time(s, ret)) != NULL) {
+		TYPE backup;
+		char *olds = s;
+		memcpy(&backup, ret, sizeof backup);
+		if ((s = match_offsets(s, ret)) != NULL) {
+			;;
+			return s;
+		}
+		else {
+			memcpy(ret, &backup, sizeof backup);
+			s = olds;
+			;;
+			return s;
+		};
+		return s;
+	}
+	else {
+		memcpy(ret, &backup, sizeof backup);
+		s = olds;
+		return NULL;
+		;
+		return s;
+	};
+}
+@</code></pre>
+
+<p>There are a bunch of extra semicolons and some unreachable code here, those
+should get fixed by any decent compiler. The initial <code>R</code> directive
+tries to match an absolute time. If that works, then we continue with the first
+argument. Otherwise, we continue with the second argument. In this case, we try
+to match an <code>absolute_time</code>. If we don't have one, then we
+immediately return <code>NULL</code>. If we do have one, then we create a backup
+of the current state and try to match an <code>offsets</code>. If that works,
+then we immediately return. Otherwise, we restore from the backup and return
+from there.</p>
+
+<p>This is a stupidly effective solution, outside of just using yacc or doing
+these expansions by hand, I'm not aware of a simpler way to write a parser in
+C.</p>
+
+<h2>File structures</h2>
+
+<p>Oh boy more preprocessor magic!</p>
+
+<pre><code class=block>@\
+#define NAMESPACE df_
+#define STRUCTS \
+	X(header, \
+		Y(PADDING, magic, 8) \
+		Y(PTR, bit1, node) \
+		Y(U8, bitn, ~) \
+		Y(PADDING, reserved, 16) \
+	) \
+	X(node, \
+		Y(PTR, child0, node) \
+		Y(PTR, child1, node) \
+		Y(PTR, event, event) \
+		Y(PADDING, reserved, 16) \
+	) \
+	X(event, \
+		Y(PTR, next, event) \
+		Y(PTR, prev, event) \
+		Y(PTR, nextsm, event) \
+		Y(PTR, ptr, event_data) \
+		Y(PADDING, reserved, 16) \
+	) \
+	X(event_data, \
+		Y(U64, functions, ~) \
+		Y(PTR, firstev, event) \
+		Y(I64, start, ~) \
+		Y(I64, end, ~) \
+		Y(STR, name, ~) \
+	)
+
+#include "filestruct.h"
+#undef STRUCTS
+#undef NAMESPACE
+@</code></pre>
+
+<p>This code automatically defines several structures, as well as several
+functions to read, write, free, and defragment them. If you understand <a
+href=https://en.wikipedia.org/wiki/X_macro>X-macros</a> then the actual
+implementation of <code>filestruct.h</code> should be trivial but tedious.</p>
+
+<h2>Why?</h2>
+
+<p>nrem is not a product of software development, it's a product of computer
+science. It's a parser generator, it's a solution to the subnet problem, it's a
+set of really interesting ideas, but it's not at all practical. If I wanted to
+use a calendar, I would have used SQL and Python, or used one of the million
+already existing calendar programs. I didn't just want a calendar, I wanted a
+really cool calendar, and that's what nrem is.</p>
+
+@%/site/tail.html@
