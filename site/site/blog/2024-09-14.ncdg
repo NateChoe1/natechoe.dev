@@ -1,0 +1,120 @@
+@%/site/head.html@
+@%/site/katex.html@
+@=header Fitting polynomials@
+
+<p>A few months ago I wrote about <a href=/blog/2024-05-18.html>"doped Pascal's
+triangles"</a>, a neat math trick I discovered to find polynomials to fit
+sequences of integers. Since then I've thought about this idea a bit more and
+have some new interesting results.</p>
+
+<p>Note that this article serves as a continuation of the original blog post,
+and will assume that you've already read it.</p>
+
+<h2>Interesting result #1: doped Pascal's triangles can fit any polynomial</h2>
+
+<p>I did know about this result before publishing that original blog post, I was
+just too lazy to finish writing it out. The original article analyzes this doped
+Pascal's triangle:</p>
+
+<div>
+\(\displaystyle
+\begin{array}{cc}
+  &amp;   &amp;   &amp;   &amp;   &amp;   &amp; 1 \\
+  &amp;   &amp;   &amp;   &amp;   &amp; 2 &amp;   &amp; 1 \\
+  &amp;   &amp;   &amp;   &amp; 2 &amp;   &amp; 3 &amp;   &amp; 1 \\
+  &amp;   &amp;   &amp; 2 &amp;   &amp; 5 &amp;   &amp; 4 &amp;   &amp; 1 \\
+  &amp;   &amp; 2 &amp;   &amp; 7 &amp;   &amp; 9 &amp;   &amp; 5 &amp;   &amp; 1 \\
+  &amp; 2 &amp;   &amp; 9 &amp;   &amp; 16&amp;   &amp; 14&amp;   &amp; 6 &amp;   &amp; 1 \\
+2 &amp;   &amp; 11&amp;   &amp; 25&amp;   &amp; 30&amp;   &amp; 20&amp;   &amp; 7 &amp;   &amp; 1
+\end{array}
+\)
+</div>
+
+<p>The choice to replace that one random value with a 2 was arbitrary. If we
+wanted to, we could have just as easily started with the sequence we wanted to
+derive and worked backwards from there.</p>
+
+<div>
+\(\displaystyle
+\begin{array}{cc}
+  &amp;    &amp; 2 &amp;   &amp; 5 &amp;   &amp; 4  &amp;   &amp; 1 \\
+  &amp; 2  &amp;   &amp; 7 &amp;   &amp; 9 &amp;    &amp; 5 \\
+2 &amp;    &amp; 9 &amp;   &amp; 16&amp;   &amp; 14 \\
+  &amp; 11 &amp;   &amp; 25&amp;   &amp; 30 \\
+  &amp;    &amp; 36&amp;   &amp; 55 \\
+  &amp;    &amp;   &amp; 91
+\end{array}
+\)
+</div>
+
+<p>In this case, we started with the right-most diagonal and derived backwards
+until we hit a constant diagonal. Now the top row describes a new doped Pascal's
+"triangle" with four peaks instead of just one. This trick works with any
+polynomial. To go up one diagonal, we just use this equation:</p>
+
+<div>
+\(\displaystyle
+f_u(x) = f_l(x+1) - f_l(x)
+\)
+</div>
+
+<p>Where \(f_u(x)\) is the upper diagonal and \(f_l(x)\) is the lower diagonal.
+If \(f_l(x)\) is a polynomial of order \(n\), then all of the \(x^n\) terms of
+\(f_l(x+1)\) and \(f_l(x)\) cancel out, leaving us with a polynomial of order
+\(n-1\). Every time we go up by a diagonal, the order of the polynomial that
+describes that diagonal decreases by one, until we're left with an order 0
+polynomial, i.e. a constant.</p>
+
+<p>Intuitively, I think about it like this:</p>
+
+<div>
+\(\displaystyle
+f_l(x) = x^n + \text{some polynomial of order } n-1 \\
+f_u(x) = f_l(x+1) - f_l(x) \\
+f_u(x) = (x+1)^n - x^n - \text{some polynomial of order } n-1 \
+\)
+</div>
+
+<p>From here, the \(x^n\) terms cancel out, leaving us with some polynomial of
+order \(n-1\). If we keep doing this, eventually we're left with a constant.</p>
+
+<p>By starting with our target function, we can create a doped Pascal's triangle
+to fit any polynomial function we want, so long as we have some sequential list
+of values from the polynomial.</p>
+
+<h2>Interesting result #2: This is a specific case of a much more general
+algorithm</h2>
+
+<p>The \(r\)th diagonal of Pascal's triangle can be modeled by the following
+equation:</p>
+
+<div>
+\(\displaystyle
+f_r(n) = \frac{n(n-1)(n-2)...(n-r+1)}{r!}
+\)
+</div>
+
+<p>Doped Pascal's triangles work because this equation has zeroes at \(0, 1, 2,
+..., r-1\). If we have an equation \(f_1(x)\) that fits \(n-1\) points and we
+want to find some new equation \(f_2(x)\) that fits \(n\) points, we can just
+find some third equation \(f_3(x) = f_2(x) - f_1(x)\), where \(f_3(0) = f_3(1) =
+... = 0\) and \(f_3(n) = f_2(n) - f_1(n)\).</p>
+
+<p>Doped Pascal's triangles are a very roundabout way of finding \(f_3(x)\). We
+could just declare \(f_3(x) = Cx(x-1)(x-2)...(x-r+1)\) where \(C\) is some
+calculated constant.</p>
+
+<p>By directly calculating \(f_3(x)\), we can fit any polynomial from any set of
+points instead of a sequence of values.</p>
+
+<h2>Interesting result #3: This more general algorithm has been known for
+hundreds of years</h2>
+
+<p>When I wrote that original blog post about doped Pascal's triangles, I was
+constantly thinking "Man, someone like Gauss probably thought of this exact idea
+hundreds of years ago and I just don't know what to search for". It turns out, I
+was right. <a href=https://bueler.github.io/M310F11/polybasics.pdf>Newton and
+Lagrange discovered this exact general algorithm hundreds of years ago</a>. Oh
+well.</p>
+
+@%/site/tail.html@

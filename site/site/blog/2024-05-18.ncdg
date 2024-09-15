@@ -75,10 +75,13 @@ we just add up all the numbers in the diagonal above it.</p>
   &amp;   &amp;   &amp; 2 &amp;   &amp; 5 &amp;   &amp; 4 &amp;   &amp; 1 \\
   &amp;   &amp; 2 &amp;   &amp; 7 &amp;   &amp; 9 &amp;   &amp; 5 &amp;   &amp; 1 \\
   &amp; 2 &amp;   &amp; 9 &amp;   &amp; 16&amp;   &amp; 14&amp;   &amp; 6 &amp;   &amp; 1 \\
-2 &amp;   &amp; 11&amp;   &amp; 25&amp;   &amp; 36&amp;   &amp; 20&amp;   &amp; 7 &amp;   &amp; 1
+2 &amp;   &amp; 11&amp;   &amp; 25&amp;   &amp; 30&amp;   &amp; 20&amp;   &amp; 7 &amp;   &amp; 1
 \end{array}
 \)
 </div>
+
+<p><b>EDIT:</b> This article originally contained a typo, where the 30 at the
+bottom of the pyramid was written as 36. I've since corrected this.</p>
 
 <p>The first diagonal is mostly twos, the second is the odd numbers, <a
 href=https://redirect.invidious.io/watch?v=U6VBV4QUMu0>the third is the
