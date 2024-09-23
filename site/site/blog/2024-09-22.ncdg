@@ -1,0 +1,384 @@
+@%/site/head.html@
+@=header How the C/C++ preprocessor works@
+
+<blockquote>
+	<i>
+	<p>I also need to question the complexity of this code. This is
+	professional level coding far above what would be expected of students.
+	Please explain why I am seeing this.</p>
+
+	<p>- My actual CS professor referring to my code.</p>
+	</i>
+</blockquote>
+
+<p>Thanks prof! Allow me to explain!</p>
+
+<p>In Java, if I want to make two classes comparable, I just implement the
+<code>Comparable</code> interface and write a single <code>compareTo</code>
+function. For something like the <code>Integer</code> wrapper class, that might
+look like this:</p>
+
+<pre><code class=block>@\
+public class Integer implements Comparable<Integer> {
+	private int value;
+
+	// NOTE: This code breaks in cases of integer overflow. I like this code
+	// because it makes the logic a lot clearer, but if you were actually
+	// writing this class you should absolutely take that into
+	// consideration.
+	public int compareTo(Integer other) {
+		return this.value - other.value;
+	}
+}
+@</code></pre>
+
+<p>Just one function to do this one operation of "comparison".</p>
+
+<p>In C++, on the other hand, you have to overload six separate operators for
+each of the possible comparison operations:</p>
+
+<pre><code class=block>@\
+class Integer {
+private:
+	int value;
+public:
+	bool operator==(Integer& other) {
+		return value == other.value;
+	}
+	bool operator!=(Integer& other) {
+		return value != other.value;
+	}
+	bool operator<(Integer& other) {
+		return value < other.value;
+	}
+	bool operator>(Integer& other) {
+		return value > other.value;
+	}
+	bool operator<=(Integer& other) {
+		return value <= other.value;
+	}
+	bool operator>=(Integer& other) {
+		return value >= other.value;
+	}
+};
+@</code></pre>
+
+<p>This sucks. I don't want to have to write out six different functions for one
+operation. Luckily, we have the C preprocessor:</p>
+
+<pre><code class=block>@\
+class Integer {
+private:
+	int value;
+public:
+#define OPERATION(op) \
+	bool operator op (Integer& other) { \
+		return val op other.value; \
+	}
+	OPERATION(==)
+	OPERATION(!=)
+	OPERATION(<)
+	OPERATION(>)
+	OPERATION(<=)
+	OPERATION(>=)
+#undef OPERATION
+};
+@</code></pre>
+
+<p>Now, I can write out the logic of a single comparator in a macro and have the
+preprocessor do the busy work of copying it over six times. I can go even
+farther by putting those macro expansions into their own macro, like this:</p>
+
+<pre><code class=block>@\
+#define OPERATIONS OPERATION(==) OPERATION(!=) OPERATION(<) OPERATION(>) OPERATION(<=) OPERATION(>=)
+class Integer {
+private:
+	int value;
+public:
+#define OPERATION(op) \
+	bool operator op (Integer& other) { \
+		return val op other.value; \
+	}
+	OPERATIONS
+#undef OPERATION
+};
+@</code></pre>
+
+<p>There we go, we've reinvented <a href=https://en.wikipedia.org/wiki/X_macro>X
+macros</a>.</p>
+
+<blockquote>
+	<i>
+	<p>That is not the proper way to overloaded operators. I'm expecting
+	that you use C++ rather than C. That is one of the goals of this class
+	is for you to learn C++</p>
+
+	<p>My CS professor, after I explained this to him (albeit in much less
+	detail).</p>
+	</i>
+</blockquote>
+
+<p>Even though it comes from C, the C preprocessor is a part of C++. It's an
+older part of C++ sure, but so are pointers. Still, to understand the
+preprocessor, you have to understand that it does not come from C++. In fact, it
+doesn't even come from C, code preprocessors originally came from assemblers.
+The preprocessor has absolutely no understanding of the logic of your code. It's
+basically just copy-paste on steroids.</p>
+
+<p>The clearest example of this is with the <code>#include</code> directive.
+<code>#include</code> literally just takes one file and pastes it into another.
+That's why this code works:</p>
+
+<pre><code class=block>@\
+// main.cpp
+
+#include <iostream>
+
+int main() {
+#include "main-body.cpp"
+}
+@</code></pre>
+
+<pre><code class=block>@\
+// main-body.cpp
+
+std::cout << "Hello world!" << std::endl;
+return 0;
+@</code></pre>
+
+<p>The preprocessor sees <code>#include "main-body.cpp"</code>, and copies that
+file into that location, giving us this:</p>
+
+<pre><code class=block>@\
+// main.cpp
+
+#include <iostream>
+
+int main() {
+// main-body.cpp
+
+std::cout << "Hello world!" << std::endl;
+return 0;
+}
+@</code></pre>
+
+<p><code>iostream</code> is another file on disk. On my system, expanding that
+out completely gives me 33,732 lines of code, so I've elected not to do that in
+this small example.</p>
+
+<pre><code class=block>@\
+$ echo '#include <iostream>' > nonce.cpp
+$ c++ -E nonce.cpp | wc -l
+33732
+@</code></pre>
+
+<p><code>#include</code> is really just the tip of the iceberg. By far the most
+powerful directive in the entire preprocessor is <code>#define</code>.</p>
+
+<p><code>#define</code> defines a text replacement macro. That might look like
+this:</p>
+
+<pre><code class=block>@\
+#define msg "Hello world!"
+int main() {
+	std::cout << msg << std::endl;
+	return 0;
+}
+@</code></pre>
+
+<p>The macro in line one tells the preprocessor to replace every instance of
+<code>msg</code> with <code>"Hello world!"</code>, resulting in this
+expansion:</p>
+
+<pre><code class=block>@\
+int main() {
+	std::cout << "Hello world!" << std::endl;
+	return 0;
+}
+@</code></pre>
+
+<p>That's literally it. The preprocessor does not understand anything beyond
+this basic copy-paste. In C (at least on my system, this is really
+implementation defined behavior), the NULL pointer isn't a variable <i>or</i> a
+keyword. It's actually defined using this macro:</p>
+
+<pre><code class=block>@\
+#define NULL ((void *)0)
+@</code></pre>
+
+<p>These sorts of basic macros can also be used for header guards, like
+this:</p>
+
+<pre><code class=block>@\
+#ifndef SOMECLASS_H
+#define SOMECLASS_H
+
+class SomeClass {
+	// ...
+};
+
+#endif
+@</code></pre>
+
+<p>By sandwiching your header files in those three magic lines, you prevent
+mistakes like this from breaking your code:</p>
+
+<pre><code class=block>@\
+#include "SomeClass.h"
+#include "SomeClass.h"
+@</code></pre>
+
+<p>After the first time you include a file, the preprocessor will detect any
+future attempts to include the file again and ignore them. Keep in mind that
+this is not some built-in feature of C++ like <code>if/else</code>, but a
+pattern that comes as a side effect of several existing features. Most compilers
+have added a sort of built-in header guard with the <code>#pragma once</code>
+directive, but this has yet to be standardized.</p>
+
+<pre><code class=block>@\
+#pragma once
+
+class SomeClass {
+	// ...
+};
+@</code></pre>
+
+<p>This code will work almost everywhere, but only almost.</p>
+
+<p>Macros can also have arguments. Here's a super classic example of that:</p>
+
+<pre><code class=block>@\
+#define SQUARE(x) x*x
+int main() {
+	std::cout << SQUARE(5) << std::endl;
+	return 0;
+}
+@</code></pre>
+
+<p>The preprocessor sees <code>SQUARE</code>, understands that that's a macro
+expansion, and does a text replacement where <code>x</code> is
+<code>5</code>.</p>
+
+<pre><code class=block>@\
+#define SQUARE(x) x*x
+int main() {
+	std::cout << 5*5 << std::endl;
+	return 0;
+}
+@</code></pre>
+
+<p>This specific macro is a classic example because it has a fatal flaw:</p>
+
+<pre><code class=block>@\
+#define SQUARE(x) x*x
+int main() {
+	std::cout << SQUARE(5+3) << std::endl;
+	return 0;
+}
+@</code></pre>
+
+<p>This code should print out 64, but instead it prints out 23. This is because
+the expansion of <code>SQUARE(5+3)</code> creates this:</p>
+
+<pre><code class=block>@\
+int main() {
+	std::cout << 5+3*5+3 << std::endl;
+	return 0;
+}
+@</code></pre>
+
+<p>Now, because multiplication has higher precedence than addition, we actually
+calculate 5+15+3 = 23.</p>
+
+<p>For this reason, it's recommended that macros with arguments use a lot of
+paranthesis whenever necessary:</p>
+
+<pre><code class=block>@\
+#define SQUARE(x) ((x)*(x))
+@</code></pre>
+
+<p>This still breaks with code like <code>SQUARE(++i)</code> (which causes
+undefined behavior), but it's definitely a lot better.</p>
+
+<p>Macros can also have variadic arguments.</p>
+
+<pre><code class=block>@\
+#include <stdio.h>
+
+#define IGNORE_FIRST_ARG(first_arg, ...) __VA_ARGS__
+
+int main() {
+	printf("%d\n", IGNORE_FIRST_ARG("this is ignored", 5));
+	return 0;
+}
+@</code></pre>
+
+<p>The <code>IGNORE_FIRST_ARG</code> macro can take anywhere from 1 to infinity
+arguments. Anything beyond the first argument is substituted into
+<code>__VA_ARGS__</code>.</p>
+
+<p>This is usually used when you want to call an actual function with variadic
+arguments, like <code>printf</code>.</p>
+
+<pre><code class=block>@\
+int fprintf(FILE *stream, const char *pattern, ...)
+#define printf(...) fprintf(stdout, __VA_ARGS__)
+@</code></pre>
+
+<p>If we're implementing the C standard library, we can just implement
+<code>fprintf</code> and get <code>printf</code> for free.</p>
+
+<p>There are some other really cool things we can do though, like argument
+counting:</p>
+
+<pre><code class=block>@\
+#include <stdio.h>
+
+#define FIFTH(a, b, c, d, e, ...) e
+#define COUNT_ARGS(...) FIFTH(__VA_ARGS__, 4, 3, 2, 1, 0)
+
+int main() {
+	printf("%d\n", COUNT_ARGS(a, b));
+	printf("%d\n", COUNT_ARGS(a, b, c));
+	return 0;
+}
+@</code></pre>
+
+<p>Or even macro overloading:</p>
+
+<pre><code class=block>@\
+#include <stdio.h>
+
+// a##b concatenates two arguments, so if a is "OVERLOAD_" and b is "1", then
+// a##b is "OVERLOAD_1"
+#define CAT_RAW(a, b) a##b
+
+// we need this hack to avoid blue paint
+// https://en.wikipedia.org/wiki/Painted_blue
+#define CAT(a, b) CAT_RAW(a, b)
+
+#define FIFTH(a, b, c, d, e, ...) e
+#define OVERLOAD(...) CAT(OVERLOAD_, FIFTH(__VA_ARGS__, 4, 3, 2, 1, 0))(__VA_ARGS__)
+
+// #a turns an argument into a string, and C allows you to implicitly
+// concatenate strings
+#define OVERLOAD_2(a, b) "arg 1: " #a ", arg 2: " #b
+#define OVERLOAD_3(a, b, c) "arg 1: " #a ", arg 2: " #b ", arg 3: " #c
+
+int main() {
+	printf("%s\n", OVERLOAD(a, b));
+	printf("%s\n", OVERLOAD(a, b, c));
+	return 0;
+}
+@</code></pre>
+
+<p>Don't actually use this trick. It's cool, but it's also very dirty. X macros
+are pushing the bounds on what I'd call "clean code", this is just way too
+far.</p>
+
+<p>That's about as far as I'm willing to write for this bit. If you really want
+to learn more about the preprocessor, check out <a
+href=https://jadlevesque.github.io/PPMP-Iceberg/>the fantastic preprocessor
+iceberg meme</a>, which goes into a lot more detail than even this.</p>
+
+@%/site/tail.html@
