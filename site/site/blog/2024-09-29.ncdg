@@ -220,12 +220,12 @@ there are some weird cases like this, where the compiler would have to do
 several passes to get all of the declarations correct:</p>
 
 <pre><code class=block>@\
-typedef type4 type5
-typedef type3 type4
-typedef type2 type3
-typedef type1 type2
-typedef type0 type1
-typedef int type0
+typedef type4 type5;
+typedef type3 type4;
+typedef type2 type3;
+typedef type1 type2;
+typedef type0 type1;
+typedef int type0;
 @</code></pre>
 
 <p>I really feel like that wouldn't be too hard to fix though. Unfortunately,
