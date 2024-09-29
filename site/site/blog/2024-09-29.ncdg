@@ -1,0 +1,272 @@
+@%/site/head.html@
+@=header How the C/C++ build process works@
+
+<p>Here are two "Hello world!" programs, written in C++</p>
+
+<pre><code class=block>@\
+#include <iostream>
+
+int main() {
+	std::cout << "Hello world!" << std::endl;
+	return 0;
+}
+@</code></pre>
+
+<pre><code class=block>@\
+#include <algorithm>
+#include <any>
+#include <array>
+#include <atomic>
+#include <barrier>
+#include <bit>
+#include <bitset>
+#include <cassert>
+#include <ccomplex>
+#include <cctype>
+#include <cerrno>
+#include <cfenv>
+#include <cfloat>
+#include <charconv>
+#include <chrono>
+#include <cinttypes>
+#include <ciso646>
+#include <climits>
+#include <clocale>
+#include <cmath>
+#include <codecvt>
+#include <compare>
+#include <complex>
+#include <concepts>
+#include <condition_variable>
+#include <csetjmp>
+#include <csignal>
+#include <cstdalign>
+#include <cstdarg>
+#include <cstdbool>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctgmath>
+#include <ctime>
+#include <cuchar>
+#include <cwchar>
+#include <cwctype>
+#include <deque>
+#include <exception>
+#include <execution>
+#include <expected>
+#include <filesystem>
+#include <forward_list>
+#include <fstream>
+#include <functional>
+#include <future>
+#include <initializer_list>
+#include <iomanip>
+#include <ios>
+#include <iosfwd>
+#include <iostream>
+#include <istream>
+#include <iterator>
+#include <latch>
+#include <limits>
+#include <list>
+#include <locale>
+#include <map>
+#include <memory>
+#include <memory_resource>
+#include <mutex>
+#include <new>
+#include <numbers>
+#include <numeric>
+#include <optional>
+#include <ostream>
+#include <queue>
+#include <random>
+#include <ranges>
+#include <ratio>
+#include <regex>
+#include <scoped_allocator>
+#include <semaphore>
+#include <set>
+#include <shared_mutex>
+#include <source_location>
+#include <span>
+#include <spanstream>
+#include <sstream>
+#include <stack>
+#include <stacktrace>
+#include <stdexcept>
+#include <stop_token>
+#include <streambuf>
+#include <string>
+#include <string_view>
+#include <syncstream>
+#include <system_error>
+#include <thread>
+#include <tuple>
+#include <type_traits>
+#include <typeindex>
+#include <typeinfo>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <valarray>
+#include <variant>
+#include <vector>
+#include <version>
+
+int main() {
+	std::cout << "Hello world!" << std::endl;
+	return 0;
+}
+@</code></pre>
+
+<p>Both pieces of code are basically identical, for the second one I just
+included every header file on my system. According to <a
+href=/blog/2024-09-22.html>my CS professor</a>, the second version should be
+much, much larger than the first one. Let's compile them and see what
+happens:</p>
+
+<pre><code class=block>@\
+$ c++ small.cpp -o small
+$ c++ large.cpp -o large
+$ wc -c small
+16544 small
+$ wc -c large
+17848 large
+@</code></pre>
+
+<p>So the second version was around a kilobyte larger. That's definitely a lot
+less than I would expect, an 8% increase in size to include every single header
+that I have definitely seems weird.</p>
+
+<p>This works because C++ is a well-designed language. The standard C++ build
+process originated from C, and follows this general process:</p>
+
+<pre><code class=block>@\
+For each source file
+  Run the code through the preprocessor
+  Compile each source file into their own object file
+Link all object files into a final executable
+@</code></pre>
+
+<p>We can run through this process manually if we really want to:</p>
+
+<pre><code class=block>@\
+$ # Run our code through the preprocessor
+$ cpp -L /usr/include/c++/12 small.cpp > small.processed.cpp
+$ 
+$ # Compile our code
+$ c++ -c small.processed.cpp -o small.o
+$ 
+$ # Link our code
+$ /usr/lib/gcc/x86_64-linux-gnu/12/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/12/liblto_plugin.so "-plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/12/lto-wrapper" "-plugin-opt=-fresolution=/tmp/cc71DwMD.res" "-plugin-opt=-pass-through=-lgcc_s" "-plugin-opt=-pass-through=-lgcc" "-plugin-opt=-pass-through=-lc" "-plugin-opt=-pass-through=-lgcc_s" "-plugin-opt=-pass-through=-lgcc" --build-id --eh-frame-hdr -m elf_x86_64 "--hash-style=gnu" --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie /usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/12/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/12 -L/usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/12/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/12/../../.. small.o "-lstdc++" -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/12/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu/crtn.o -o small
+$ 
+$ # Run our code
+$ ./small 
+Hello world!
+@</code></pre>
+
+<p>When you run the C++ compiler, it's really just doing all of this behind the
+scenes. Note that each file is compiled separately. If I have two files,
+<code>file1.cpp</code> and <code>file2.cpp</code>, they have no knowledge of
+each other. Something in one file cannot be used in the other unless the
+compiler is explicitly informed of its existence.</p>
+
+<pre><code class=block>@\
+// file1.cpp
+
+int globalVar = 1;
+@</code></pre>
+
+<pre><code class=block>@\
+// file2.cpp
+
+#include <iostream>
+
+// Inform the compiler that there is a variable called "globalVar", and that
+// it's defined somewhere else.
+//
+// The `extern` keyword is unnecessary for functions.
+extern int globalVar;
+
+int main() {
+	std::cout << globalVar << std::endl;
+}
+@</code></pre>
+
+<p>That's the real purpose of header files. Header files take all of these
+declarations and put them into one centralized place.</p>
+
+<p>By the way, C++ could absolutely handle forward references, there's really no
+reason that something like this should break:</p>
+
+<pre><code class=block>@\
+#include <iostream>
+
+int main() {
+	std::cout << globalVar << std::endl;
+}
+
+extern int globalVar;
+@</code></pre>
+
+<p>This is probably one of my least favorite things about the C family. It would
+not be that hard to have the compiler do two passes, where the first pass reads
+all of the declarations and the second does the actual compilation. I suppose
+there are some weird cases like this, where the compiler would have to do
+several passes to get all of the declarations correct:</p>
+
+<pre><code class=block>@\
+typedef type4 type5
+typedef type3 type4
+typedef type2 type3
+typedef type1 type2
+typedef type0 type1
+typedef int type0
+@</code></pre>
+
+<p>I really feel like that wouldn't be too hard to fix though. Unfortunately,
+Dennis Ritchie got lazy half a century ago while designing the language, and now
+we have to deal with the consequences.</p>
+
+<p>This is really why our final executable grew by so little. The standard
+library is going to be linked in anyways, regardless of which header files we
+use (in real life it would probably be <a
+href=https://en.wikipedia.org/wiki/Dynamic_linker>dynamically linked</a>, but
+that's beyond the scope of this article). Including another header file will
+only increase the size of our executable if there's actual code in it, which
+(seemingly) most headers don't.</p>
+
+<p>This does also mean that code included in a header file gets duplicated in
+every single source file you use, so if I have five source files that all
+reference the same header file, the code in that header file will be compiled
+five separate times. The linker is smart enough to remove this duplication, so
+if you have five separate definitions of the same function the linker will just
+pick one and run with it, so the overall binary size won't increase.</p>
+
+<p>Compiling all of that code still takes time, though. The "Hello world!"
+program with all of those extra headers took four times longer to compile than
+the one without them:</p>
+
+<pre><code class=block>@\
+$ time c++ small.cpp
+
+real	0m0.498s
+user	0m0.451s
+sys	0m0.046s
+$ time c++ large.cpp
+
+real	0m2.195s
+user	0m2.066s
+sys	0m0.126s
+@</code></pre>
+
+<p>This is the real reason why you shouldn't add too much code to header files
+or include anything you don't need. Most of the time, even in the extreme cases,
+it won't make your final executables larger or make your code bloated, but it
+will definitely make development take longer.</p>
+
+@%/site/tail.html@
