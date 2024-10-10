@@ -5,7 +5,7 @@ CDEPS = /tor-data/natechoe-dev-onion/hostname /site/head.html /site/tail.html
 
 all: $(HTML) asm site/blog/blog.rss site/sitemap.txt library.so site/blog/posts
 
-asm: favicon.ico site/resources/88x31.bmp
+asm: favicon.ico site/resources/88x31.bmp site/resources/88x31-bw.png
 
 library.so: library.c
 	$(CC) $< -o $@ -shared -O2 -Wall -Wpedantic
@@ -38,6 +38,9 @@ favicon.ico: favicon.asm
 
 site/resources/88x31.bmp: site/resources/88x31.asm
 	nasm -f bin $< -o $@
+	chown swebs:swebs $@
+site/resources/88x31-bw.png: site/resources/88x31-bw.pbm
+	convert $< $@
 	chown swebs:swebs $@
 
 .PHONY: all asm
