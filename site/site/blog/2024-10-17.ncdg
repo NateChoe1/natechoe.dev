@@ -158,8 +158,8 @@ programs:</p>
 0 1       # initialize stack
 500 ss    # set stopping point
 [
-  sq      # get small number
-  sw      # get large number
+  sq      # get large number
+  sw      # get small number
   lq      # set new small number
   lqlw +  # calculate new large number
   p       # print the new parge number
@@ -173,8 +173,8 @@ salax     # store the loop in the `a` register and execute it
 @</code></pre>
 
 <p>The <code>&gt;</code> command pops the top two values in the stack. If the
-top is greater than the second, then executes the macro. From there, it's pretty
-easy to show that dc is turing complete.</p>
+first is greater than the second, then executes the macro. From there, it's
+pretty easy to show that dc is turing complete.</p>
 
 <pre><code class=block>@\
 # this macro gets the nth bit of a number
