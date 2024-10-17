@@ -1,9 +1,9 @@
 @%/site/head.html@
 @=header dc is pretty cool@
 
-<p><a href=https://en.wikipedia.org/wiki/Dc_(computer_program)>dc</a> was one of
-the first computer programs ever written. It's supposedly <a
-href=https://youtu.be/EY6q5dv_B-o?t=1767>the first program ever written on a
+<p><a href=https://en.wikipedia.org/wiki/Dc_(computer_program)>dc</a> (desk
+calculator) was one of the first computer programs ever written. It's supposedly
+<a href=https://youtu.be/EY6q5dv_B-o?t=1767>the first program ever written on a
 PDP-11</a>, and is still widely used today. If you're on a Unix system, there's
 a decent chance that you can run the <code>dc</code> command on a terminal right
 now.</p>
