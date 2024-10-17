@@ -1,0 +1,301 @@
+@%/site/head.html@
+@=header dc is pretty cool@
+
+<p><a href=https://en.wikipedia.org/wiki/Dc_(computer_program)>dc</a> was one of
+the first computer programs ever written. It's supposedly <a
+href=https://youtu.be/EY6q5dv_B-o?t=1767>the first program ever written on a
+PDP-11</a>, and is still widely used today. If you're on a Unix system, there's
+a decent chance that you can run the <code>dc</code> command on a terminal right
+now.</p>
+
+<pre><code class=block>@\
+$ dc
+0 1
+500ss[sqswlqlqlw+pdls>a]salax
+@</code></pre>
+
+<p>dc is a postfix expression solver, which means that the operations go to the
+right of the operands, rather than in the middle. So instead of running "3 + 2",
+you'd run "3 2 +". Postfix operations nice because they're really easy to parse
+with a computer program. A general algorithm might go like this:</p>
+
+<ol>
+	<li>Begin copying your postfix expression from left to right onto a <a
+	href=https://en.wikipedia.org/wiki/Stack_(abstract_data_type)>stack</a>.</li>
+	<li>If you encounter a number, add it to the top of the stack and move
+		on.</li>
+	<li>If you encounter an operation, remove the last two values on the
+		stack, apply the operation, and add the result to the
+		stack.</li>
+</ol>
+
+<p>The expression "3 2 4 * + 5 -" might be parsed like this:</p>
+
+<ol>
+	<li><p>"3" is a number, copy it down.</p>
+	    <p>Current stack: 3</p></li>
+	<li><p>"2" is a number, copy it down.</p>
+	    <p>Current stack: 3, 2</p></li>
+	<li><p>"4" is a number, copy it down.</p>
+	    <p>Current stack: 3, 2, 4</p></li>
+	<li><p>"*" is an operation. Take the last two numbers in the stack and
+		replace them with the result. 2*4=8, so we replace both numbers
+		with a single 8.</p>
+	    <p>Current stack: 3, 8</p></li>
+	<li><p>"+" is an operation. Take the last two numbers in the stack and
+		replace them with the result. 3+8=11, so we replace both numbers
+		with a single 11.</p>
+	    <p>Current stack: 11</p></li>
+	<li><p>"5" is a number, copy it down.</p>
+	    <p>Current stack: 11, 5</p></li>
+	<li><p>"-" is an operation. Take the last two numbers in the stack and
+		replace them with the result. 11-5=6, so we replace both numbers
+		with a single 6.</p>
+	    <p>Current stack: 6</p></li>
+</ol>
+
+<p>At the end of this sequence, we should have one number left. This is our
+answer.</p>
+
+<p>In dc, you can print out the value at the top of the stack with the
+<code>p</code> command, as well as the entire stack with the <code>f</code>
+command, like this:</p>
+
+<pre><code class=block>@\
+3 2 5 +
+p
+7
+f
+7
+3
+@</code></pre>
+
+<p>In this case, the <code>p</code> command let us know there's a 7 at the top
+of the stack, and the <code>f</code> command let us know that the stack
+currently contains the values 3, 7 (the stack is written with one value per
+line, from the end to the beginning).</p>
+
+<p>dc supports arbitrary precision arithmetic, as shown in <a
+href=https://youtu.be/XvDZLjaCJuw?t=923>this awesome demo from 1982</a> by
+Lorinda Cherry, one of the authors of dc. dc will automatically handle
+arithmetic with very large numbers, and you can specify some arbitrary decimal
+precision with the <code>k</code> command.</p>
+
+<pre><code class=block>@\
+2 100 ^ p
+1267650600228229401496703205376
+30 k
+2 v p
+1.414213562373095048801688724209
+@</code></pre>
+
+<p>The <code>^</code> command calculates an exponent, and the <code>v</code>
+command calculates a square root.</p>
+
+<p>One of the more useful features of dc is its register system. If you need to
+use some value a bunch of times, you can store it in a register and load it back
+later. To demonstrate this, let's solve a simple kinematics problem:</p>
+
+<blockquote>
+	<p>A person is walking down the street. At some point, they decide to
+	switch to a jog. It takes them 1.28 seconds to accelerate from 1.34
+	meters per second to 1.79 meters per second. How far did they run during
+	that transition?</p>
+</blockquote>
+
+<p>First, let's set up our environment and store all of our values into
+registers.</p>
+
+<pre><code class=block>@\
+10 k      # set precision
+1.34 si   # store initial velocity
+1.79 sf   # store final velocity
+1.28 st   # store time
+@</code></pre>
+
+<p>Now let's calculate our acceleration</p>
+
+<pre><code class=block>@\
+lf li -   # calculate change in velocity
+lt /      # calculate acceleration
+sa        # store acceleration
+@</code></pre>
+
+<p>Finally, we can calculate our final answer</p>
+
+<pre><code class=block>@\
+li lt * la lt 2 ^ * 2 / + p
+2.0032000000
+@</code></pre>
+
+<p>This person ran 2.00 meters while transitioning from a walk to a jog. Note
+that we didn't have to write out our time over and over again to do this
+calculation, we just put it into the <code>t</code> register at the beginning
+and reused that.</p>
+
+<p>In addition to numbers, you can add strings to the stack by surrounding them
+in square brackets, like this:</p>
+
+<pre><code class=block>@\
+[Hello world!]p
+Hello world!
+@</code></pre>
+
+<p>You can also execute strings as dc commands with the <code>x</code>
+command.</p>
+
+<pre><code class=block>@\
+[1 2 +p]x
+3
+@</code></pre>
+
+<p>By combining strings and registers, you can make some really powerful dc
+programs:</p>
+
+<pre><code class=block>@\
+# fibonacci calculator in dc
+
+0 1       # initialize stack
+500 ss    # set stopping point
+[
+  sq      # get small number
+  sw      # get large number
+  lq      # set new small number
+  lqlw +  # calculate new large number
+  p       # print the new parge number
+
+  d       # duplicate the large number
+  ls      # load the stopping point
+  >a      # the large number is less than the stopping point, execute the macro
+          # in the `a` register
+]
+salax     # store the loop in the `a` register and execute it
+@</code></pre>
+
+<p>The <code>&gt;</code> command pops the top two values in the stack. If the
+top is greater than the second, then executes the macro. From there, it's pretty
+easy to show that dc is turing complete.</p>
+
+<pre><code class=block>@\
+# this macro gets the nth bit of a number
+[
+  Sa      # get the bit index
+  2 La^/  # this division is basically a bit shift
+  2 %     # this modulus gets the last bit
+]sB
+
+# this macro sets the nth bit of a number
+[
+  Sa      # get the new bit value
+  Sb      # get the bit index
+  Sc      # get the number
+
+  # if the old bit isn't the same as the new bit
+  # (the conditional logic comes later)
+  [       
+    la2*1-2lb^*  # hack to calculate the new value - the old value
+    Lc+Sc # add the difference to the old value
+  ]
+
+  # if statement conditional logic
+  Sd      # store if body in a temporary register
+  lclblBx # get the old bit value
+  la      # load the new bit value
+  !=d     # execute the if body
+  Lds_    # discard the temporary register
+
+  Las_    # discard the top of stack `a`
+  Lbs_    # discard the top of stack `b`
+  Lc      # output the top of stack `c`
+  Lds_
+]sS
+
+# this macro does a nand
+[
+  +       # add both operands
+
+  # if the sum is 2 (both operands were a 1)
+  [
+    s_    # dispose of some garbage
+    0     # output a zero
+  ]
+
+  Sa
+
+  Sb      # load a 1
+          # this will be the output if the conditional doesn't execute
+          # otherwise, it gets disposed of
+  1
+  Lb
+
+  2=a     # conditional logic
+  Las_    # discard the top of stack `a`
+]sN
+
+0         # initialize memory
+[
+  # TODO: build a cpu out of nand gates
+
+  lLx     # execute next clock cycle
+]sLlLx    # begin cpu
+@</code></pre>
+
+<p>The <code>S</code> and <code>L</code> commands allow you to use registers as
+secondary stacks. I'm using them as local variables, but without them we could
+have just used more variable names.</p>
+
+<p>This can be made a bit more concise with arrays</p>
+
+<pre><code class=block>@\
+# this macro gets the nth bit of memory
+# arguments: bit index
+[
+  ;m
+]sB
+
+# this macro sets the nth bit of memory
+# arguments: new value, bit index
+[
+  :m
+]sS
+@</code></pre>
+
+<p>dc supports some very basic I/O. The <code>?</code> command will take in a dc
+expression from the user and execute it. As used in this example, the
+<code>P</code> command prints the string at the top of the stack without a
+trailing newline.</p>
+
+<pre><code class=block>@\
+10 k
+[Enter a number in meters: ]P?
+sm
+[Here are some simple conversions:]p
+[  Centimeters: ]Plm100*p
+[  Inches: ]Plm100*2.54/p
+[  Feet: ]Plm100*2.54/12/p
+@</code></pre>
+
+<p>POSIX dc doesn't understand ASCII, but GNU dc does. In GNU dc, if the top of
+the stack is a number, the <code>P</code> prints it out as a base 256 ASCII
+string. Here's a <a href=https://en.wikipedia.org/wiki/Brainfuck>Brainfuck</a>
+interpreter using that functionality, combined with the <a
+href=https://en.wikipedia.org/wiki/Tr_(Unix)>tr</a> command. In the spirit of
+Brainfuck (and because I'm too lazy to add comments), I'll leave it
+obfuscated:</p>
+
+<pre><code class=block>@\
+(tr -dc '+-.,<>\[\]' | tr '+\-.,<>\[\]' '12345678' ; echo ; cat) | dc -e \
+	'0sp0sh?[d10%lp:p10/lp1+spd0<x]sxlxxlp1-sp[lh;h1+lh:h]s1[lh;h1-lh:h]s2[lh;hP]s3[?lh:h]s4[lh1-sh]s5[lh1+sh]s6[1+]s+[1-]s-[lp1-splp;pd7=+8=-d0!={]s{[lp1+splp;pd8=+7=-d0!=}]s}[1l{xs_]s<[1l}xs_]s>[lh;h0=<]s7[lh;h0!=>]s8[lp;pd1=1d2=2d3=3d4=4d5=5d6=6d7=78=8lp1-splp0!>x]sxlxx'
+@</code></pre>
+
+<p>Unfortunately dc doesn't allow you to take arbitrary user input, so with this
+code you're supposed to just enter in the ASCII codes of your inputs. I also
+didn't do any input validation, so if your brackets are mismatched and your
+programs crash then that's your fault.</p>
+
+<p>There are a lot more interesting examples on <a
+href=https://en.wikipedia.org/wiki/Dc_(computer_program)>the dc Wikipedia
+page</a>, and in <a href=https://dylant.org/blog/dc-loops/>this excellent blog
+post</a>.</p>
+
+@%/site/tail.html@
