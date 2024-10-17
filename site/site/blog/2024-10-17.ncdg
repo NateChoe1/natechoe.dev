@@ -15,7 +15,7 @@ $ dc
 @</code></pre>
 
 <p>dc is a postfix expression solver, which means that the operations go to the
-right of the operands, rather than in the middle. So instead of running "3 + 2",
+right of the operands, rather than in the middle; so instead of running "3 + 2",
 you'd run "3 2 +". Postfix operations nice because they're really easy to parse
 with a computer program. A general algorithm might go like this:</p>
 
@@ -239,6 +239,24 @@ easy to show that dc is turing complete.</p>
   lLx     # execute next clock cycle
 ]sLlLx    # begin cpu
 @</code></pre>
+
+<blockquote>
+	<p><b>ADDENDUM</b></p>
+
+	<p>This blog post was written quite hastily very late at night, and
+	looking back I've just realized that dc is actually turing complete even
+	without the comparison operators by using this nand function:</p>
+
+<pre><code class=block>@\
+[
+  +2/Sa1La-
+]sN
+@</code></pre>
+
+	<p>Since we're only working with integer arithmetic, by adding both bits
+	and dividing by two we essentially create an and gate. Subtracting the
+	result of that and gate from 1 gives us a nand gate.</p>
+</blockquote>
 
 <p>The <code>S</code> and <code>L</code> commands allow you to use registers as
 secondary stacks. I'm using them as local variables, but without them we could
