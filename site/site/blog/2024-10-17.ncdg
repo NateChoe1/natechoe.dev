@@ -162,7 +162,7 @@ programs:</p>
   sw      # get small number
   lq      # set new small number
   lqlw +  # calculate new large number
-  p       # print the new parge number
+  p       # print the new large number
 
   d       # duplicate the large number
   ls      # load the stopping point
@@ -246,7 +246,6 @@ pretty easy to show that dc is turing complete.</p>
 	<p>This blog post was written quite hastily very late at night, and
 	looking back I've just realized that dc is actually turing complete even
 	without the comparison operators by using this nand function:</p>
-
 <pre><code class=block>@\
 [
   +2/Sa1La-
@@ -256,6 +255,9 @@ pretty easy to show that dc is turing complete.</p>
 	<p>Since we're only working with integer arithmetic, by adding both bits
 	and dividing by two we essentially create an and gate. Subtracting the
 	result of that and gate from 1 gives us a nand gate.</p>
+
+	<p>Note that dc is not turing complete without macros, since every dc
+	program that doesn't use macros will eventually halt.</p>
 </blockquote>
 
 <p>The <code>S</code> and <code>L</code> commands allow you to use registers as
