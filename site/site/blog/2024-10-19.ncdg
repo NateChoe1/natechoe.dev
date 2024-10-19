@@ -1,0 +1,520 @@
+@%/site/head.html@
+@=header A loosely organized collection of thoughts about the DNS@
+
+<h2>Introduction: How the DNS works</h2>
+
+<p>The DNS (Domain Name System) began from a simple problem: How do you take a
+human-readable domain name like "google.com", and convert it into a
+machine-readable IP address like 142.250.115.101?</p>
+
+<p>In the beginning, there was just a big list of every single computer on the
+internet's domain name and IP address. This list was called "HOSTS.TXT", and
+looked kind of like this:</p>
+
+<pre><code class=block>@\
+127.0.0.1	localhost
+142.250.115.101	google.com
+23.5.146.146	mit.edu
+24.28.17.67	natechoe.dev
+@</code></pre>
+
+<p>This solution would obviously not work today. There are just so many problems
+with it; the storage requirements to handle the literal billions of domain names
+on the internet nowadays, the service interruptions every few weeks as you had
+to wait several hours or even days to download that entire list every few weeks,
+the massive load on whatever server hosted that list, the logistical problems of
+handling billions of requests to add and remove records from this list, the
+delay between requesting to add a record and the record actually being available
+to every system; it's honestly a fun exercise to just think of reasons why this
+wouldn't work at all today.</p>
+
+<p>The replacement for this system had to fix all of these problems. The core
+idea behind the DNS is actually very elegant, and is best explained with an
+example (I stole this example from <a
+href=https://www.youtube.com/watch?v=-wMU8vmfaYo>Ben Eater</a>).</p>
+
+<p>There are 13 "root servers" for the DNS. Every request to the DNS starts with
+them (well, not really, but we'll get to that). These are their IP addresses and
+domain names:</p>
+
+<pre><code class=block>@\
+198.41.0.4		a.root-servers.net.
+2001:503:ba3e::2:30	a.root-servers.net.
+170.247.170.2		b.root-servers.net.
+2801:1b8:10::b		b.root-servers.net.
+192.33.4.12		c.root-servers.net.
+2001:500:2::c		c.root-servers.net.
+199.7.91.13		d.root-servers.net.
+2001:500:2d::d		d.root-servers.net.
+192.203.230.10		e.root-servers.net.
+2001:500:a8::e		e.root-servers.net.
+192.5.5.241		f.root-servers.net.
+2001:500:2f::f		f.root-servers.net.
+192.112.36.4		g.root-servers.net.
+2001:500:12::d0d	g.root-servers.net.
+198.97.190.53		h.root-servers.net.
+2001:500:1::53		h.root-servers.net.
+192.36.148.17		i.root-servers.net.
+2001:7fe::53		i.root-servers.net.
+192.58.128.30		j.root-servers.net.
+2001:503:c27::2:30	j.root-servers.net.
+193.0.14.129		k.root-servers.net.
+2001:7fd::1		k.root-servers.net.
+199.7.83.42		l.root-servers.net.
+2001:500:9f::42		l.root-servers.net.
+202.12.27.33		m.root-servers.net.
+2001:dc3::35		m.root-servers.net.
+@</code></pre>
+
+<p>Note that I've also included <a
+href=https://en.wikipedia.org/wiki/IPv6>IPv6</a> addresses, if you don't know
+what those are, just ignore them. These servers are run by different
+organizations throughout the world, and are spread out over thousands of
+physical computers for redundancy. Everybody sort of just trusts them. If we
+want to resolve a domain like www.facebook.com, we start by asking one of these
+root servers.</p>
+
+<pre><code class=block>@\
+; <<>> DiG 9.18.28-1~deb12u2-Debian <<>> @@198.41.0.4 www.facebook.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 56842
+;; flags: qr rd; QUERY: 1, ANSWER: 0, AUTHORITY: 13, ADDITIONAL: 27
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;www.facebook.com.		IN	A
+
+;; AUTHORITY SECTION:
+com.			172800	IN	NS	l.gtld-servers.net.
+com.			172800	IN	NS	j.gtld-servers.net.
+com.			172800	IN	NS	h.gtld-servers.net.
+com.			172800	IN	NS	d.gtld-servers.net.
+com.			172800	IN	NS	b.gtld-servers.net.
+com.			172800	IN	NS	f.gtld-servers.net.
+com.			172800	IN	NS	k.gtld-servers.net.
+com.			172800	IN	NS	m.gtld-servers.net.
+com.			172800	IN	NS	i.gtld-servers.net.
+com.			172800	IN	NS	g.gtld-servers.net.
+com.			172800	IN	NS	a.gtld-servers.net.
+com.			172800	IN	NS	c.gtld-servers.net.
+com.			172800	IN	NS	e.gtld-servers.net.
+
+;; ADDITIONAL SECTION:
+l.gtld-servers.net.	172800	IN	A	192.41.162.30
+l.gtld-servers.net.	172800	IN	AAAA	2001:500:d937::30
+j.gtld-servers.net.	172800	IN	A	192.48.79.30
+j.gtld-servers.net.	172800	IN	AAAA	2001:502:7094::30
+h.gtld-servers.net.	172800	IN	A	192.54.112.30
+h.gtld-servers.net.	172800	IN	AAAA	2001:502:8cc::30
+d.gtld-servers.net.	172800	IN	A	192.31.80.30
+d.gtld-servers.net.	172800	IN	AAAA	2001:500:856e::30
+b.gtld-servers.net.	172800	IN	A	192.33.14.30
+b.gtld-servers.net.	172800	IN	AAAA	2001:503:231d::2:30
+f.gtld-servers.net.	172800	IN	A	192.35.51.30
+f.gtld-servers.net.	172800	IN	AAAA	2001:503:d414::30
+k.gtld-servers.net.	172800	IN	A	192.52.178.30
+k.gtld-servers.net.	172800	IN	AAAA	2001:503:d2d::30
+m.gtld-servers.net.	172800	IN	A	192.55.83.30
+m.gtld-servers.net.	172800	IN	AAAA	2001:501:b1f9::30
+i.gtld-servers.net.	172800	IN	A	192.43.172.30
+i.gtld-servers.net.	172800	IN	AAAA	2001:503:39c1::30
+g.gtld-servers.net.	172800	IN	A	192.42.93.30
+g.gtld-servers.net.	172800	IN	AAAA	2001:503:eea3::30
+a.gtld-servers.net.	172800	IN	A	192.5.6.30
+a.gtld-servers.net.	172800	IN	AAAA	2001:503:a83e::2:30
+c.gtld-servers.net.	172800	IN	A	192.26.92.30
+c.gtld-servers.net.	172800	IN	AAAA	2001:503:83eb::30
+e.gtld-servers.net.	172800	IN	A	192.12.94.30
+e.gtld-servers.net.	172800	IN	AAAA	2001:502:1ca1::30
+
+;; Query time: 8 msec
+;; SERVER: 198.41.0.4#53(198.41.0.4) (UDP)
+;; WHEN: Sat Oct 19 03:35:02 CDT 2024
+;; MSG SIZE  rcvd: 841
+@</code></pre>
+
+<p>Okay, so we asked the root server about www.facebook.com, and it basically
+told us "I don't know, but I do know that .com is managed by these people", and
+gave us another list of 13 new servers that manage .com. The NS records
+designate that there's a "zone cut" at this domain, where everything below that
+point is run by a different organization. All 13 servers that manage .com happen
+to be run by the same organizations that manage the root servers, but this isn't
+the case with every top level domain.</p>
+
+<p>Anyways, now let's ask one of these .com servers about www.facebook.com</p>
+
+<pre><code class=block>@\
+; <<>> DiG 9.18.28-1~deb12u2-Debian <<>> @@192.41.162.30 www.facebook.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 11112
+;; flags: qr rd; QUERY: 1, ANSWER: 0, AUTHORITY: 4, ADDITIONAL: 9
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;www.facebook.com.		IN	A
+
+;; AUTHORITY SECTION:
+facebook.com.		172800	IN	NS	a.ns.facebook.com.
+facebook.com.		172800	IN	NS	b.ns.facebook.com.
+facebook.com.		172800	IN	NS	c.ns.facebook.com.
+facebook.com.		172800	IN	NS	d.ns.facebook.com.
+
+;; ADDITIONAL SECTION:
+a.ns.facebook.com.	172800	IN	A	129.134.30.12
+a.ns.facebook.com.	172800	IN	AAAA	2a03:2880:f0fc:c:face:b00c:0:35
+b.ns.facebook.com.	172800	IN	A	129.134.31.12
+b.ns.facebook.com.	172800	IN	AAAA	2a03:2880:f0fd:c:face:b00c:0:35
+c.ns.facebook.com.	172800	IN	A	185.89.218.12
+c.ns.facebook.com.	172800	IN	AAAA	2a03:2880:f1fc:c:face:b00c:0:35
+d.ns.facebook.com.	172800	IN	A	185.89.219.12
+d.ns.facebook.com.	172800	IN	AAAA	2a03:2880:f1fd:c:face:b00c:0:35
+
+;; Query time: 56 msec
+;; SERVER: 192.41.162.30#53(192.41.162.30) (UDP)
+;; WHEN: Sat Oct 19 03:39:19 CDT 2024
+;; MSG SIZE  rcvd: 288
+@</code></pre>
+
+<p>Once again, there's a zone cut here. facebook.com is actually managed by four
+different servers, this time run by Facebook. Let's ask one of them!</p>
+
+<pre><code class=block>@\
+; <<>> DiG 9.18.28-1~deb12u2-Debian <<>> @@129.134.30.12 www.facebook.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 10989
+;; flags: qr aa rd; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;www.facebook.com.		IN	A
+
+;; ANSWER SECTION:
+www.facebook.com.	3600	IN	CNAME	star-mini.c10r.facebook.com.
+
+;; Query time: 32 msec
+;; SERVER: 129.134.30.12#53(129.134.30.12) (UDP)
+;; WHEN: Sat Oct 19 03:42:19 CDT 2024
+;; MSG SIZE  rcvd: 74
+@</code></pre>
+
+<p>So it turns out that www.facebook.com is actually just another name for
+star-mini.c10r.facebook.com, so we have to resolve that domain instead. Luckily,
+we already have the facebook.com nameservers, so we don't have to start at the
+root this time:</p>
+
+<pre><code class=block>@\
+; <<>> DiG 9.18.28-1~deb12u2-Debian <<>> @@129.134.30.12 star-mini.c10r.facebook.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 8070
+;; flags: qr aa rd; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;star-mini.c10r.facebook.com.	IN	A
+
+;; ANSWER SECTION:
+star-mini.c10r.facebook.com. 60	IN	A	31.13.93.35
+
+;; Query time: 28 msec
+;; SERVER: 129.134.30.12#53(129.134.30.12) (UDP)
+;; WHEN: Sat Oct 19 03:45:03 CDT 2024
+;; MSG SIZE  rcvd: 72
+@</code></pre>
+
+<p>There we go. The IP address of www.facebook.com (which is actually just an
+alias for star-mini.c10r.facebook.com) is 31.13.93.35.</p>
+
+<p>That trick that we did in the middle where we used our existing knowledge of
+the facebook.com nameservers to resolve star-mini.c10r.facebook.com is called
+"caching", and it's used all the time in the DNS. Every record in the DNS has a
+time to live, or TTL, which says "this record is valid for this many seconds".
+Once we find out that facebook.com is managed by those 4 servers, we don't have
+to ask about the .com servers about it for the next 172800 seconds (48 hours);
+we already have that information. After the TTL is up, though, we have to remove
+the record from our cache and ask again.</p>
+
+<p>This really fixes a lot of problems with the old HOSTS.TXT system. It works
+on a per-domain basis, so you clients don't have to waste time downloading the
+IP addresses for 10 billion domains that they'll never use, it's distributed so
+that system administrators can change their records quickly, and it's cached so
+that the load is never too big on any one server.</p>
+
+<p>It's actually beneficial to have as many users as possible share the same
+cache, since that minimizes the number of queries to outside servers. Many ISPs
+and companies host their own caching nameservers that millions of people can
+share for faster query times. If we ask one of these caching servers for the
+address of www.facebook.com, it'll do all the hard work for us and just give us
+an answer from the cache.</p>
+
+<pre><code class=block>@\
+; <<>> DiG 9.18.28-1~deb12u2-Debian <<>> @@1.1.1.1 www.facebook.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 52230
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;www.facebook.com.		IN	A
+
+;; ANSWER SECTION:
+www.facebook.com.	3564	IN	CNAME	star-mini.c10r.facebook.com.
+star-mini.c10r.facebook.com. 24	IN	A	31.13.93.35
+
+;; Query time: 8 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (UDP)
+;; WHEN: Sat Oct 19 05:58:41 CDT 2024
+;; MSG SIZE  rcvd: 90
+@</code></pre>
+
+<h2>Loosely connected thought 1: Domain boundaries</h2>
+
+<p>facebook.com and google.com are owned by different people. facebook.com and
+www.facebook.com are owned by the same people. For security reasons, it's often
+useful to make these distinctions, so that I, the webmaster at natechoe.dev,
+can't access your account at www.facebook.com, but the people at facebook.com
+can. This is a surprisingly hard problem. You can't just use zone cuts, since
+there are plenty of edge cases where a zone cut isn't actually a real cut, and
+vice versa (see <a href=/blog/2024-04-20.html>my weird Cloudflare hack</a> which
+<a href=/blog/2024-04-29.html>didn't work</a>). You can't just "count the dots",
+since websites like "bbc.co.uk" and "independent.co.uk" would be considered the
+same domain. You can't ask ICANN (the people that manage domain names) for a big
+list of cuts, since certain private organizations have their own cuts (see:
+github.io). To a certain extent, you can't rely on any system of cuts, since
+domains like amazon.com and amazon.de should have the <i>same</i> owner.</p>
+
+<blockquote>
+	<p>For more info about old proposed solutions, check out <a
+	href=https://web.archive.org/web/20070124231741/http://weblogs.mozillazine.org:80/gerv/archives/2006/10/dns_structure.html>this
+	blog post from 2006 discussing the problem</a>, as well as the other
+	links in the "Articles" section of <a
+	href=https://wiki.mozilla.org/Public_Suffix_List>this Mozilla wiki
+	page</a>.
+</blockquote>
+
+<p>As of writing this blog post, the world has converged onto the <a
+href=https://publicsuffix.org/>Public Suffix List</a>, a big list of every
+single domain boundary, including those run by private organizations. It's
+managed by some unpaid volunteers on <a
+href=https://github.com/publicsuffix/list>Github</a>.</p>
+
+<p>I feel like this is a return to the old HOSTS.TXT system. The Internet
+Engineering Task Force thought so too, so they created the <a
+href=https://datatracker.ietf.org/doc/charter-ietf-dbound/>dbound working group
+to come up with a standardized, distributed solution</a>. A few people came up
+with their own standards and submitted them, but they couldn't agree on which
+one to use, so they ended up giving up entirely. There is still no
+widely-accepted distributed system for detecting domain boundaries.</p>
+
+<p>I've read through <a
+href=https://mailarchive.ietf.org/arch/browse/dbound/>the dbound mailing
+list</a>, it's genuinely infuriating. Half of their emails are just discussing
+which bar to meet up at to discuss things farther, and the other half are just
+going over the same points over and over again. I've even read through their
+proposals, <a
+href=https://datatracker.ietf.org/doc/draft-levine-dbound-dns/>John Levine's</a>
+is clearly the best, since it's closest to the first thing that I thought of
+when I tried solving this problem. Then, some fancy-pants engineer from Verisign
+(the company that oversees the .com tld) goes and proposes <a
+href=https://datatracker.ietf.org/doc/draft-deccio-dbound-organizational-domain-policy/>this
+garbage solution</a> that would require a whole new TLD to be registered. Then,
+he <a href=https://github.com/verisign/odup>implements the proposal in code</a>.
+Like, that doesn't change the fact that you're trying to create a whole new TLD
+for this one small task that could be solved just as effectively with Levine's
+proposal. Just because you're Verisign doesn't change the fact that that would
+require a root zone file update. Don't even get me started on <a
+href=https://datatracker.ietf.org/doc/draft-yao-dbound-dns-solution/02/>Yao's
+overengineered trash</a> or <a
+href=https://datatracker.ietf.org/doc/draft-sullivan-domain-policy-authority/>Sullivan's
+even worse dog water</a>. Hey, we've known for half a decade that a suffix list
+is good enough, what are you doing?</p>
+
+<p>In all seriousness, all of these solutions have their own strengths and
+weaknesses, and I haven't read through every single one thoroughly enough to
+honestly critique them. The fact is that just like the DNS, this system might go
+unchanged for half a century. It really should be robust enough to handle all of
+these different use cases, and having a diversity of proposals that have
+different strengths and weaknesses is definitely a good thing. That being said,
+Levine's proposal is still clearly the best one and we should all adopt it right
+now.</p>
+
+<h2>Loosely connected thought 2: OpenNIC</h2>
+
+<p>If you really wanted to, you could host your own DNS root servers, completely
+separate from the 13 main ones. <a
+href=https://en.wikipedia.org/wiki/Alternative_DNS_root>People do this all of
+the time</a>, usually to add blockchains. Last year I wrote about why <a
+href=https://natechoe.dev/blog/2022-07-10.html>this is usually a bad idea</a>,
+and my thoughts on the matter have mostly gone unchanged. There is one alternate
+root that I think is kind of neat though: <a
+href=https://opennic.org/>OpenNIC</a>.</p>
+
+<p>From what I gather, OpenNIC tries to be a more democratic version of ICANN,
+actively taking measures to prevent censorship and adding new TLDs that people
+want but which ICANN hasn't added. From around 2008-2012, ICANN started taking
+applications for the New gTLD Program, but the application fee was $185,000 and
+if you missed that round you have to wait until 2026.</p>
+
+<h3>Subthought: .music</h3>
+
+<p>The story of the <a href=https://icannwiki.org/.music>.music TLD</a> is
+crazy. There were eight applicants for this one TLD, each of whom had to pay
+that $185,000 application fee with the possibility of losing. In the end, <a
+href=https://nic.music/>the .music collective</a>, made up of several publishers
+and musical federations that supposedly represent over 95% of global music
+consumed (a claim which I absolutely do not believe) won after several years of
+fighting. The application was approved in 2019, the agreement was signed in
+2021, and domains started being sold in 2024. Their entire pitch was based
+around strong protections for musicians. Based on <a
+href=https://www.registry.music/registrars>their registrar policy</a>, it looks
+like if someone's registered a .music domain in your name, you can challenge
+it.</p>
+
+<h3>End of subthought</h3>
+
+<p>I personally don't think the DNS roots need anti censorship measures. If
+you're going to censor the DNS, you're going to do it through the TLD servers,
+not the roots. When law enforcement took down the Dark Net Mail Exchange, a mail
+service offering access through a Tor hidden service, they did it by contacting
+the registrar that sold them dnmx.org, not by altering the root server directly.
+That didn't matter anyways since the DNMX is still up at dnmx.su. Note that
+every single two letter TLD refers to a country code (think .co.<b>uk</b>). In
+this case, .su stands for "Soviet Union". I don't think law enforcement is
+taking that down any time soon.</p>
+
+<p>It's not like anti-censorship measures are going to cause any harm, though,
+and they've got some cool TLDs in there too. You've got .oz, which is notable
+because it's a two level TLD that isn't a country code, and .o, which is notable
+because it's a one letter TLD, which ICANN will never register.</p>
+
+<p>Most of the rest of the domains are definitely pandering towards the sort of
+technical nerd that installs an alternate DNS root. Domains like .pirate, .geek,
+.null, .oss (open source software), .libre (which means free, as in freedom in
+Spanish, in a similar vain to .oss), .gopher (an alternative to HTTP that
+quickly faded into obscurity, but which is still used by <a
+href=https://github.com/NateChoe1/EasyGopher>some nerds</a>), and so on.</p>
+
+<p>OpenNIC also partners with other alternate roots to create a sort of unified
+alternate root with a combination of TLDs from various sources. They partner
+with Emercoin to bring you some cryptocurrency nonsense, New Nations to provide
+TLDs for four nations without an official ICANN TLD yet (I'm pretty sure these
+domains don't work though), and FurNIC to provide the .fur TLD.</p>
+
+<p>At first, I thought that that last one would be for furries, but then I
+looked up "furnic", and found <a href=http://furnic.co/>a furniture company
+instead</a>. Then I went to <a
+href=https://wiki.opennic.org/opennic/dot?redirect=1#peered_top-level_domains>the
+OpenNIC wiki</a> and realized that it was actually just furries all along. I
+guess the stereotype of furries being in IT wasn't wrong after all.</p>
+
+<p><a href=https://wiki.opennic.org/setup>This page from the OpenNIC wiki</a>
+provides instructions to set up OpenNIC on Windows and MacOS, but not on Linux.
+I guess they assume that Linux users are smart enough to know about
+resolv.conf.</p>
+
+<h2>Loosely connected thought 3: .tv</h2>
+
+<p>Like I mentioned earlier, every single two letter TLD is actually a country
+code. That includes the weird ones; .ai is Anguila, .me is Montenegro, .io is
+the British Indian Ocean Territory, and .tv is Tuvalu.</p>
+
+<p>.tv is interesting. Since Tuvalu is a small island nation, and since .tv
+sales are so lucrative, the government of Tuvalu gets a significant portion
+(around 8%) of their revenue from domain name sales alone.</p>
+
+<p>Tuvalu is also in danger of disappearing. Rising sea levels are threatening
+to cover the small island in ocean. In case that happens, ICANN has made plans
+to retire the .tv domain, and any other domains that need to be retired in the
+future. I'm not sure why they didn't do this with .su, but it might happen with
+.tv, which is insane to me. An entire top level domain that makes up 8% of a
+government's revenue, gone. Wild.</p>
+
+<h2>Loosely connected though 4: Migrating from UDP to TCP</h2>
+
+<p><b>NOTE:</b> For this section you need a working understanding of internet
+protocols, I can't be bothered to explain all this crap right now.</p>
+
+<p>In my junior year of high school I took a digital forensics test with a
+question like this:</p>
+
+<blockquote>
+	<p>Selected the pairs of protocols which go together, where X/Y
+	indicates that protocol X depends on protocol Y to run.</p>
+	<ol>
+		<li>HTTP/IP</li>
+		<li>TCP/IP</li>
+		<li>DNS/TCP</li>
+		<li>TCP/HTTP</li>
+	</ol>
+</blockquote>
+
+<p>I answered 1 and 2. HTTP depends on TCP, but TCP depends on IP, so HTTP
+indirectly depends on IP. Obviously, TCP depends on IP. DNS actually runs on UDP
+by default, and HTTP depends on TCP, not the other way around. I got the
+question "wrong". The "correct" answers were 2 and 3.</p>
+
+<p>Making DNS run over UDP seemed kind of weird to me at first, but it actually
+kind of makes sense. First, the DNS was created in the 80s, when a three way TCP
+handshake was much more expensive than it is today. Second, DNS messages (at
+least at the time) are small enough to fit into a UDP packet sent over even the
+most restrictive networks, so data loss isn't actually that big of a
+problem.</p>
+
+<p>Unfortunately, the original DNS specification was not very secure. There was
+no way to verify that the messages you received were actually correct, so you
+just had to trust that there were no malicious actors on your network. This was
+fixed with <a
+href=https://en.wikipedia.org/wiki/Domain_Name_System_Security_Extensions>DNSSEC</a>,
+which added cryptographic verification to DNS records. Unfortunately, the extra
+cryptographic information included with each DNS packet was too big to fit into
+most UDP packets, so we had to switch to DNS over TCP. Unfortunately again, DNS
+over UDP was by far the preferred way to do DNS lookups, so there had to be this
+big migration over from UDP to TCP for the entire DNS. To this day, most
+resolvers try a UDP lookup and switch to TCP only if it happens to be
+necessary.</p>
+
+<p>This whole debacle led to the creation of <a
+href=https://www.rfc-editor.org/rfc/rfc7766>RFC 7766</a>, which required that
+DNS implementations have to implement TCP. It also led to the hardest line ever
+written in an RFC (as far as I'm aware):</p>
+
+<blockquote>
+<p>The future that was anticipated in RFC 1123 has arrived, and the only
+standardised UDP-based mechanism that may have resolved the packet size issue
+has been found inadequate.</p>
+
+<p>- Some badass writing RFC 7766</p>
+</blockquote>
+
+<h2>Loosely connected idea 5: DNS isn't just IP addresses</h2>
+
+<p>The DNS started as a way to map domain names to IP addresses, but it's
+definitely evolved since then. If you need a way to map something to a domain,
+you use the DNS. <a href=https://en.wikipedia.org/wiki/MX_record>Mail servers
+use it to identify themselves</a>, <a
+href=https://letsencrypt.org/docs/challenge-types/>Let's Encrypt can use it to
+validate the owners of domain names</a>, and <a
+href=https://en.wikipedia.org/wiki/DomainKeys_Identified_Mail>mail servers use
+it to cryptographically verify their emails</a>. The fact that I named two mail
+related ideas here isn't a coincidence, DNS and email have always been very
+closely related.</p>
+
+@%/site/tail.html@
