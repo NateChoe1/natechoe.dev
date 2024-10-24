@@ -159,7 +159,7 @@ work:</p>
 
 [lh;h0=<]s7   # [ : if the current head is 0, jump to the corresponding ]
 [lh;h0!=>]s8  # ] : if the current head isn't 0, jump to the corresponding [
-</code></pre>
+@</code></pre>
 
 <p>If you've ever written a brainfuck implementation, you probably understand
 what I'm doing here. The core logic is really just finding the corresponding
