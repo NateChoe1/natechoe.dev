@@ -1,0 +1,237 @@
+@%/site/head.html@
+@=header How dc brainfuck works@
+
+<p>Last week I wrote <a href=/blog/2024-10-17.html>a blog post</a> going over
+dc, one of the first (the first?) Unix programs ever written, and the oldest one
+that's still used today. I ended that blog post with the following
+implementation of <a href=https://en.wikipedia.org/wiki/Brainfuck>brainfuck</a>
+in dc:</p>
+
+<pre><code class=block>@\
+(tr -dc '+-.,<>\[\]' | tr '+\-.,<>\[\]' '12345678' ; echo ; cat) | dc -e \
+	'0sp0sh?[d10%lp:p10/lp1+spd0<x]sxlxxlp1-sp[lh;h1+lh:h]s1[lh;h1-lh:h]s2[lh;hP]s3[?lh:h]s4[lh1-sh]s5[lh1+sh]s6[1+]s+[1-]s-[lp1-splp;pd7=+8=-d0!={]s{[lp1+splp;pd8=+7=-d0!=}]s}[1l{xs_]s<[1l}xs_]s>[lh;h0=<]s7[lh;h0!=>]s8[lp;pd1=1d2=2d3=3d4=4d5=5d6=6d7=78=8lp1-splp0!>x]sxlxx'
+@</code></pre>
+
+<p>I wrote that blog post at around 4:00 AM while heavily procrastinating a
+bunch of other stuff that I really should have been doing, and didn't write an
+explanation for how it works. That's been bothering me, so in this article I'll
+give a proper writeup. I'll also make fun of some of the weird design choices I
+made so late at night.</p>
+
+<p>First, I formatted this as a shell command because dc can't take arbitrary
+user inputs. We have to do some preprocessing to our brainfuck code to get it
+into a format that dc can understand. We start by <a
+href=https://www.gnu.org/software/bash/manual/html_node/Command-Grouping.html>grouping</a>
+several shell commands:</p>
+
+<pre><code class=block>@\
+(tr -dc '+-.,<>\[\]' | tr '+\-.,<>\[\]' '12345678' ; echo ; cat) | dc -e \
+	# some dc code
+@</code></pre>
+
+<p>The first two <code>tr</code> command deletes anything other than the 8
+brainfuck characters from user input. The second converts those characters into
+numbers - '+' turns into 1, '-' turns into 2, and so on. A simple brainfuck
+program might get converted like this:</p>
+
+<pre><code class=block>@\
+$ tr -dc '+-.,<>\[\]' | tr '+\-.,<>\[\]' '12345678' 
++++++[>+++++++++++++<-]>. this is a comment and will be deleted
+1111176111111111111152863
+@</code></pre>
+
+<p>dc will interpret this series of numbers as an integer, specifically around
+1.1*10<sup>24</code>. Since dc can handle arbitrary precision arithmetic, we can
+process these very large numbers digit by digit without worrying about data
+loss.</p>
+
+<p>The <code>echo</code> command inserts a newline after our code to distinguish
+it from user input, which is obtained through the <code>cat</code> command. Note
+that without any arguments, <code>cat</code> will simply copy standard input to
+standard output.</p>
+
+<p>The actual dc code begins by converting this huge number that represents our
+code into individual digits (bytes). You can get the last digit of a number by
+calculating its value mod 10, and you can get everything except the last digit
+of a number by calculating its value divided by 10, like this:</p>
+
+<pre><code class=block>@\
+0sp  # for now, the `p` variable will store our program's length
+0sh  # this variable represents the tape head, it's used later
+?    # read the code from the user
+
+# in this loop, the stack will always contain exactly one value: the rest of the
+# code that hasn't been loaded into the array yet
+[
+	d       # copy the code so that we can do math with it
+	10%lp:p # take the last digit and store it into the `p` array
+	10/     # discard the byte we've just for the next iteration of the loop
+	lp1+sp  # increase the program length
+	d0<x    # if we still have code to read, loop again
+]
+sxlxx
+@</code></pre>
+
+<p>There are a few weird things I did here. I initialized the <code>h</code>
+variable here, instead of after parsing all of my code. It's not like it makes
+any difference, though. I'm also using both the <code>p</code> register for the
+program length, and the <code>p</code> array for the program itself. These are
+two separate values, and you'd be forgiven for missing that. For some reason I
+used a separate modulus and division, when I could have just used the
+<code>~</code> command. I think my logic was that <code>~</code> is a GNU
+extension and should be avoided since it's "non-standard", but I'm still using
+the <code>d</code> and integer <code>P</code> commands, so I might have just
+been out of it.</p>
+
+<p>At this point, we've put all of our code into array <code>p</code>. Just one
+problem: it's backwards. Since we're doing basic character replacement to
+generate our number, the first character is actually going to be the most
+significant digit, which gets processed last and put at the end of the array. I
+could painstakingly copy my array to the right order, or I could...</p>
+
+<pre><code class=block>@\
+lp1-sp  # repurpose the `p` variable to act as the program counter and interpret
+        # my code backwards through the array
+@</code></pre>
+
+<p>By subtracting 1 from <code>p</code> and aligning it with the start (end) of
+the program, I'm basically declaring that from this point on the <code>p</code>
+variable represents the program counter, not the length of the program. The
+<code>p</code> array still contains the code, though.</p>
+
+<p>Next we implement the simpler commands in registers:</p>
+
+<pre><code class=block>@\
+[lh;h1+lh:h]s1   # +
+[lh;h1-lh:h]s2   # -
+[lh;hP]s3        # .
+[?lh:h]s4        # ,
+[lh1-sh]s5       # <
+[lh1+sh]s6       # >
+@</code></pre>
+
+<p>These are all pretty self explanatory if you know dc, but absolute gibberish
+if you don't. Whenever we see one of these brainfuck commands in our program,
+we'll just load and execute the corresponding register. I numbered these
+registers to correspond with the numbers in the program array, which I think was
+actually a pretty good choice. I also use the <code>h</code> array to store the
+tape, which I think was a fine choice since it's consistent with
+<code>p</code>.</p>
+
+<p>Now we get to the real meat of most brainfuck implementations: the bracket
+commands. I actually had to define six more helper macros to get these to
+work:</p>
+
+<pre><code class=block>@\
+# basic helpers to increment/decrement a value from a conditional
+[1+]s+
+[1-]s-
+
+[ # [ main loop
+	lp1-sp  # go to the next instruction
+	lp;p    # read this new instruction
+	d7=+    # if this new instruction is a [, increment the nest count
+	8=-     # if this new instruction is a ], decrement the nest count
+	d0!={   # if the nest count isn't 0, continue looping
+]s{
+
+[ # ] main loop
+	lp1+sp  # go to the previous instruction
+	lp;p    # read this new instruction
+	d8=+    # if this new instruction is a ], increment the nest count
+	7=-     # if this new instruction is a [, decrement the nest count
+	d0!=}   # if the nest count isn't 0, continue looping
+]s}
+
+# [ helper #1
+[
+	1     # load the current nest count
+	l{x   # run the main loop
+	s_    # discard the current nest count
+]s<
+
+# ] helper #1
+[
+	1     # load the current nest count
+	l}x   # run the main loop
+	s_    # discard the current nest count
+]s>
+
+[lh;h0=<]s7   # [ : if the current head is 0, jump to the corresponding ]
+[lh;h0!=>]s8  # ] : if the current head isn't 0, jump to the corresponding [
+</code></pre>
+
+<p>If you've ever written a brainfuck implementation, you probably understand
+what I'm doing here. The core logic is really just finding the corresponding
+bracket whenever a jump takes place. We do this by counting the nested layers.
+In a more reasonable language, this might look like this:</p>
+
+<pre><code class=block>@\
+int find_corresponding_right_bracket(string str, int left_bracket_position) {
+	int nested_layers = 0;
+	int pointer = left_bracket_position;
+	do {
+		if (str[pointer] == '[') {
+			nested_layers += 1;
+		} else if (str[pointer] == ']') {
+			nested_layers -= 1;
+		}
+	} while (nested_layers != 0);
+	return pointer;
+}
+@</code></pre>
+
+<p>We're effectively doing the same thing here, we load the nest count and
+iterate until it hits zero, at which point we've found the corresponding
+bracket. We just do it twice for left and right brackets, and do it in a
+language that feels more like random noise than code. There are some ways to
+write out this logic just once and specify whether we're searching for a right
+or left bracket, but in a language like dc that would be (imho) much less
+elegant than just writing it out twice.</p>
+
+<p>I'm also using some weird names for these helper functions. I think I
+actually encountered a bug with dc, because replacing the <code>&lt;</code> and
+<code>&gt;</code> registers with the <code>[</code> and <code>]</code> registers
+causes dc to give this error:</p>
+
+<pre><code class=block>@\
+dc: ']' (0135) unimplemented
+@</code></pre>
+
+<p>I really just needed a bunch of characters that vaguely corresponded with
+"left" and "right" so that I could keep my two implementation separate. I'm not
+sure why I chose <code>&lt;</code> and <code>&gt;</code> to replace
+<code>[</code> and <code>]</code> when <code>&lt;</code> and <code>&gt;</code>
+are already brainfuck commands, but if it works it works.</p>
+
+<p>Finally, we get to the main loop, which is comparatively quite simple:</p>
+
+<pre><code class=block>@\
+[
+	lp;p     # read the next command
+
+	# execute the corresponding register
+	d1=1
+	d2=2
+	d3=3
+	d4=4
+	d5=5
+	d6=6
+	d7=7
+	8=8
+
+	lp1-sp   # increment (decrement) program counter)
+	lp0!>x   # if pc >= 0 (we're not at the end of the program), continue
+]sxlxx
+@</code></pre<
+
+<p>We read a command, execute the corresponding macro, and repeat until we hit
+the end.</p>
+
+<p>This was honestly a pretty painless experience. Generally, programming
+languages get harder and harder to use as you move back through time. Java was
+preceded by C++, which was preceded by C, which was preceded by assembly. dc was
+written for the PDP-11 before even the assembler, so you'd expect it to be
+awful, and it is, but not so much.</p>
+
+@%/site/tail.html@
