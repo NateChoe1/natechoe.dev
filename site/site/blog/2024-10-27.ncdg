@@ -1,0 +1,14 @@
+@%/site/head.html@
+@=header How semicolons work in English@
+
+<p>Every semicolon could be replaced with a period without causing too many
+problems; you can verify this fact by reading this sentence again and mentally
+replacing the semicolon with a full stop.</p>
+
+<p>Semicolons are also used in lists with internal punctuation. Uses of the
+semicolon include separating independent clauses, as in the first paragraph; in
+lists with internal punctuation, as in this paragraph; and in programming
+languages such as C, C++, and Java. Note that we couldn't have used exclusively
+commas in that previous sentence; that would have caused a bit of confusion.</p>
+
+@%/site/tail.html@
