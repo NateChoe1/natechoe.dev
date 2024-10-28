@@ -223,7 +223,7 @@ are already brainfuck commands, but if it works it works.</p>
 	lp1-sp   # increment (decrement) program counter)
 	lp0!>x   # if pc >= 0 (we're not at the end of the program), continue
 ]sxlxx
-@</code></pre<
+@</code></pre>
 
 <p>We read a command, execute the corresponding macro, and repeat until we hit
 the end.</p>
