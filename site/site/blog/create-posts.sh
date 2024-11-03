@@ -7,8 +7,14 @@ create_entry() {
 	htmlfile="$(echo "$file" | sed 's/\..*$/.html/')"
 	date=$(printf '%s\n' "$file" | grep -Eo "^[0-9]{4}-[0-9]{2}-[0-9]{2}")
 	extension=$(printf '%s\n' "$file" | grep -o "\..*$")
+	if echo "$extension" | grep -q '\.ignored$' ; then
+		return
+	fi
 	if [ "$extension" = ".ncdg" ] ; then
 		title=$(sed -n "s/@=header \(.*\)@/\1/p" $file | head -n1)
+		echo "/blog/$htmlfile \"$date - $title\""
+	elif [ "$extension" = ".nm" ] ; then
+		title=$(head -n1 "$file" | cut -b 3-)
 		echo "/blog/$htmlfile \"$date - $title\""
 	elif [ "$file" = "2022-02-23.txt" ] ; then
 		echo "/blog/$file \"$date - I hate ASCII\""

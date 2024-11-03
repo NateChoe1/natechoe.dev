@@ -36,7 +36,7 @@ h1,h2,h3,h4,h5,h6 {
 	font-family: monospace;
 }
 
-code {
+code, tt {
 	background-color: var(--codeback);
 	border-color: var(--codeback) solid 3px;
 	color: var(--codecol);
@@ -45,7 +45,7 @@ code {
 	white-space: pre;
 }
 
-code.block {
+pre > code, tt {
 	max-height: 400px;
 	overflow-y: scroll;
 	display: block;

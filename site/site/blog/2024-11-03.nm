@@ -1,0 +1,12 @@
+//I wrote a markup language
+
+.p|I'm writing this blog post in <(https://github.com/NateChoe1/nmark)[nmark]>.
+This blog post gets compiled to <(https://github.com/NateChoe1/nmcdg)[ncdg]>,
+which will then be compiled to HTML. I can't just go directly from nmark to HTML
+because I have all of these legacy web pages written in ncdg, so any sort of
+migration would have to concurrently support both types of pages. I don't want
+to build that system, so I'm just going to keep using this hack.
+
+.p|There are definitely some things that still have to be done; I don't really
+have a clean way to use KaTeX for math-related articles and I can't add images,
+but this is definitely way better than using raw HTML.
