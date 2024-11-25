@@ -1,0 +1,99 @@
+//R&eacute;sum&eacute; of Nate Choe
+
+.p|<(https://natechoe.dev/resume.html)[See this r\&eacute\;um\&eacute\; on my
+website]>
+
+#2|Basic info
+
+.p|Name: Nate Choe
+
+.p|Email: <(mailto:nate@natechoe.dev)[<nate@natechoe.dev>]>
+
+.p|Website: <(https://natechoe.dev)[https://natechoe.dev]>
+
+#2|Anecdote
+
+.p|I remember the first piece of code I ever wrote. I was in second grade when
+my Dad showed me the Scratch programming language on his computer. When it was
+my turn to play with it, I wrote a program to make the cat run in circles around
+the screen. I saw how I could connect blocks together and make the computer do
+something tangible. I was instantly hooked. I haven't stopped writing code
+since.
+
+.p|That love for making real things is reflected in the way I approach learning.
+I believe that the best way to truly understand something is to do it yourself.
+Whenever I learn something new, I always ask "can I model this?" If I can't,
+then I haven't learned enough. If I can, then I often do just to make sure.
+
+#2|Skills
+
+#3|The C programming language (very experienced)
+
+.p|I've written a lot of things in C, including
+<(https://github.com/NateChoe1/swebs)[an entire web server written from
+scratch]>, <(https://github.com/NateChoe1/backupfs)[a custom backup system]>,
+<(https://github.com/NateChoe1/npm)[and a password manager that implements
+SHA256 and AES]>.
+
+.p|In fact, this r\&eacute\;sum\&eacute\; is written in
+<(https://github.com/NateChoe1/nmark)[a markup language that I implemented
+myself in C]>.
+
+#3|Systems programming (very experienced)
+
+.p|Of all the programs I've ever written, the one I use most on a day-to-day
+basis is <(https://github.com/NateChoe1/tytc)[a Youtube client written with
+shell script]>. I've also written <(https://github.com/NateChoe1/ttf2psf)[a
+utility to generate Linux console font files]> (which was a Herculean effort
+that required me to read kernel source code and culminated in me writing
+<(https://en.wikipedia.org/wiki/PC_Screen_Font)[most of the Wikipedia article
+for the PC Screen Font file format]>), and <(https://github.com/NateChoe1/nce)[a
+small utility to cheat at video games by directly modifying memory values]>.
+
+.p|There are also a few silly things I've done, including
+<(https://github.com/NateChoe1/bash-snake)[a snake game written in shell
+script]>, and <(https://natechoe.dev/blog/2024-10-23.html)[an implementation of
+the BF esoteric programming language in dc]>.
+
+#3|Networking (very experienced)
+
+.p|In addition to my web server, when I was in high school I wrote
+<(https://github.com/NateChoe1/tcp-over-http)[a custom proxy]> to get around my
+school's internet filtering. I've also implemented
+<(https://personal.utdallas.edu/~nxc230036/cgi-bin/dns.php)[DNS queries with
+PHP]>, and host my own mail and DNS servers.
+
+#3|Python (experienced)
+
+.p|I wrote
+<(https://gist.github.com/NateChoe1/65809afa76f786c33df865de75c32eee)[an
+all-pairs testing generator in Python]>, which is currently being used in
+production at Amazon. In 2024, I was also a part of the ACM Research "Maestro"
+team at UTD, which involved extensive work on machine learning in Python.
+
+.p|In fact, the markup language that generates this r\&eacute\;sum\&eacute\; uses
+<(https://github.com/NateChoe1/nmark/blob/main/node-dfa.py)[a Python script] to
+generate C code that implements a
+<(https://en.wikipedia.org/wiki/Deterministic_finite_automaton)[DFA]>
+
+#3|HTML, CSS, and Javascript (very experienced)
+
+.p|As mentioned before, I have <(https://natechoe.dev)[a website]>, and I think
+it looks pretty good. There are also
+<(https://natechoe.dev/misc/tools/index.html)[some Javascript tools]> on there.
+
+#3|Java (very experienced)
+
+.p|I have a surprisingly small number of actual projects written in Java, which
+is strange because it's also one of the languages I'm most experienced in. Most
+of my projects are geared towards web design and systems programming, which Java
+just isn't built for, so I've always just chosen C or some other language. I do
+use Java for competitive programming quite often, though. In fact, in 2024
+<(https://postings.speechwire.com/r-uil-academics.php?groupingid=9&Submit=View+postings&region=4&district=&state=&conference=6&seasonid=16)[I was
+one of only four students in the entire state of Texas to get a perfect score in
+the UIL Computer Science Area level contest], and
+<(https://postings.speechwire.com/r-uil-academics.php?groupingid=9&Submit=View+postings&region=&district=&state=1&conference=6&seasonid=16)[was
+in an 11 way tie for tenth place at the state level competition]>.
+
+.p|In December 2023, I was also promoted to USACO gold, although there is no
+public record of this accomplishment.

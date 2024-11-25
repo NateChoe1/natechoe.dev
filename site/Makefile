@@ -35,6 +35,7 @@ site/misc/comp/index.html: site/misc/comp/index.ncdg site/misc/comp/links $(CDEP
 	nmark $< $@.tmp
 	echo '@%/site/head.html@' > $@
 	echo '@=header $(shell head -n1 $< | cut -b 3-)@' >> $@
+	cat $< | tail -n+2 | grep '^//' | cut -b 3- >> $@
 	echo '@&' >> $@
 	cat $@.tmp | sed 's/@/@@/g' >> $@
 	echo '@' >> $@
