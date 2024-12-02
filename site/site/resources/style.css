@@ -55,6 +55,12 @@ pre > code, tt {
 	code.block {
 		max-height: none;
 	}
+  header {
+    display: none;
+  }
+  #content {
+    box-shadow: none;
+  }
 }
 
 header {
