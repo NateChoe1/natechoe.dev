@@ -1,0 +1,164 @@
+//Why I don't like competitive programming
+
+.p|I just completed an interesting homework assignment for my computer science
+class. The goal was to implement a few different sorting algorithms, count the
+number of swaps and comparisons, and compare their performance. You can find my
+code
+<(https://gist.github.com/NateChoe1/31cfb17773e5b280165ec027c30f58fd)[here]>,
+but I'm going to go through it in this article. Keep in mind, the point of this
+assignment wasn't to write clean code, it was to create a bunch of hypotheses
+for the runtimes of these sorting algorithms and to test them experimentally. We
+didn't have to submit any code to get credit for this assignment, and we were
+even encouraged to copy code from the internet so we could write our report
+faster.
+
+.p|I started with this wrapper function to test some generic sorting algorithm:
+
+```"void run_sort(void (*sort)(long *data, int *swaps, int *comparisons), long *data, char *name) {
+   "	int swaps, comparisons;
+   "	long scratch[NUM_ELEMS];
+   "	swaps = comparisons = 0;
+   "	memcpy(scratch, data, sizeof(scratch));
+   "	sort(scratch, &swaps, &comparisons);
+   "	printf("%s: %d swaps, %d comparisons\n", name, swaps, comparisons);
+   "}
+
+.p|This is a pattern that comes from functional programming, which you don't see
+very often in C since we don't have native closures. This is pretty unclean, but
+when I was writing it I knew that I was only going to use it for four relatively
+simple functions. I would never have to expand this code to fit some new
+requirement, so this small amount of technical debt is worth it to save the 10
+or so lines that would have come from repeating all of this stuff over and over.
+Speaking of which, my main function now looks like this:
+
+```"int main() {
+   "	long data[NUM_ELEMS];
+   "	srandom(42);
+   "	for (int i = 0; i < NUM_ELEMS; ++i) {
+   "		data[i] = random();
+   "	}
+   "
+   "	run_sort(insertion, data, "Insertion");
+   "	run_sort(selection, data, "Selection");
+   "	run_sort(bubble, data, "Bubble");
+   "	run_sort(merge, data, "Merge");
+   "}
+
+.p|This looks nice, but now all of our sorting algorithm functions have to
+follow a very specific function template. If we ever want to benchmark some new
+piece of information, say the total number of jumps between non-adjacent list
+items, we can't just add that in. That's fine though, because we're not
+benchmarking that piece of information, so we don't have to worry about it.
+
+.p|All of the O(n^2) sorting algorithms are pretty standard, I do use a dirty
+trick to swap two integers though, which can be seen in my insertion sort
+implementation:
+
+```"void insertion(long *data, int *swaps, int *comparisons) {
+   "	for (int i = 1; i < NUM_ELEMS; ++i) {
+   "		for (int j = i-1; j >= 0; --j) {
+   "			++*comparisons;
+   "			if (data[j+1] > data[j]) {
+   "				break;
+   "			}
+   "			++*swaps;
+   "			data[j+1] ^= data[j];
+   "			data[j] ^= data[j+1];
+   "			data[j+1] ^= data[j];
+   "		}
+   "	}
+   "}
+
+.p|Ah yes, the old xor swap hack. This works because xor is associative and
+commutative, and anything xor itself equals the identity (zero). This is
+slightly faster to write than the standard scratch variable swap method, so
+sacrifice readability for terseness.
+
+.p|My mergesort implementation is just awful. I used exclusively one-letter
+variable names, since they're faster to type than verbose names. Also, since
+we're doing mergesort on a linkedlist, we never do any swaps, so we just have an
+ignored function argument.
+
+```"struct node {
+   "	long v;
+   "	struct node *n;
+   "};
+   "
+   "struct node *mergesort(struct node *l, int *c) {
+   "	struct node *t, *h, *r, **i;
+   "	if (l->n == NULL) {
+   "		return l;
+   "	}
+   "	t = h = l;
+   "	for (;;) {
+   "		if (h->n == NULL || h->n->n == NULL) {
+   "			break;
+   "		}
+   "		h = h->n->n;
+   "		t = t->n;
+   "	}
+   "	h = t->n;
+   "	t->n = NULL;
+   "	t = mergesort(l, c);
+   "	h = mergesort(h, c);
+   "
+   "	i = &r;
+   "	while (t != NULL && h != NULL) {
+   "		++*c;
+   "		if (t->v < h->v) {
+   "			*i = t;
+   "			t = t->n;
+   "		} else {
+   "			*i = h;
+   "			h = h->n;
+   "		}
+   "		i = &(*i)->n;
+   "	}
+   "	if (t != NULL) {
+   "		*i = t;
+   "	} else {
+   "		*i = h;
+   "	}
+   "	return r;
+   "}
+   "
+   "void merge(long *data, int *swaps, int *comparisons) {
+   "	(void) swaps;
+   "	struct node *head, **iter, *it;
+   "	iter = &head;
+   "	for (int i = 0; i < NUM_ELEMS; ++i) {
+   "		*iter = malloc(sizeof(struct node));
+   "		(*iter)->v = data[i];
+   "		iter = &(*iter)->n;
+   "	}
+   "	*iter = NULL;
+   "
+   "	head = mergesort(head, comparisons);
+   "	it = head;
+   "	for (int i = 0; i < NUM_ELEMS; ++i) {
+   "		data[i] = it->v;
+   "		it = it->n;
+   "	}
+   "	it = head;
+   "	while (it != NULL) {
+   "		struct node *next = it->n;
+   "		free(it);
+   "		it = next;
+   "	}
+   "}
+
+.p|We start by finding the middle element with the tortoise and hare algorithm
+(that's what `t` and `h` are), split the list into two parts by adding a `NULL`
+pointer, sort both parts, and merge them using
+<(https://www.ted.com/talks/linus_torvalds_the_mind_behind_linux)[the Linus
+Torvalds linkedlist pointer trick]>. We reuse `t` and `h` as our pointers to the
+two halves of our linkedlist, a fact which is not at all obvious from just the
+code and which is not announced in a comment.
+
+.p|This code is awful. I feel like I'm losing future job prospects just by
+publishing it. Unfortunately, there are certain environments that encourage
+writing code like this. When the requirements are relatively simple, guaranteed
+not to change (such as in a programming competition or homework assignment), and
+code quality doesn't matter, but the time it takes to write the code does
+matter, code like this is almost inevitable. I've always disliked competitive
+programming for this reason.
