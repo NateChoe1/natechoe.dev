@@ -1,0 +1,213 @@
+//Nate's UIL CS cheatsheet
+
+#2|Snippets
+
+.p|You should be able to write most of these templates from memory, and solve
+most of these exercises. Also, feel free to change these templates to suit your
+needs and style.
+
+#3|The general solution template
+
+```"import java.io.*;
+   "import java.util.*;
+   "
+   "public class ProblemName {
+   "    public static void main(String[] args) throws Exception {
+   "        Scanner sc = new Scanner(new File("filename.dat"));
+   "        // your code goes here
+   "        sc.close(); // this line is optional, but nothing bad will happen if you delete it
+   "    }
+   "}
+
+.p|The only interesting thing here is the `throws Exception` in the main
+function header, which allows us to open the input file without handling a
+`FileNotFoundException`.
+
+.p|Exercises:
+
+*-|Change this template to only throw `FileNotFoundException`s, rather than some
+  |generic `Exception`
+ -|Change this template to use a try/catch instead of throwing an exception.
+
+#3|Custom hash codes
+
+```"class SomeClass {
+   "    public boolean equals(Object o) {
+   "        if (getClass() != o.getClass()) {
+   "            return false;
+   "        }
+   "        SomeClass other = (SomeClass) o;
+   "
+   "        // compare `this` and `other` and return some boolean
+   "    }
+   "
+   "    public int hashCode() {
+   "        // return some hash code
+   "    }
+   "}
+
+.p|Exercises:
+
+*-|Add `@Override` directives so that the compiler warns you when you do
+  |something wrong.
+
+#3|compareTo
+
+```"class SomeClass implements Comparable<SomeClass> {
+   "    public int compareTo(SomeClass other) {
+   "        // compare the two values
+   "    }
+   "}
+
+.p|The trick to writing a `compareTo` method is to subtract `this - other`. For
+example, if we're writing a `BankAccount` class and want to compare bank
+accounts by balance, we can just write this `compareTo` function:
+
+```"class BankAccount implements Comparable<BankAccount> {
+   "    int balance;
+   "    // some other fields
+   "    public int compareTo(BankAccount other) {
+   "        return balance - other.balance;
+   "    }
+   "}
+
+.p|Exercises:
+
+*-|Write a `BankAccount` class with a `name` and `balance` field. Bank accounts
+  |should be compared by balance. If two bank accounts have the same balance,
+  |the name should serve as the tiebreaker.
+
+#3|Sorting
+
+```"ArrayList<SomeType> arrayList;
+   "SomeType[] normalArray;
+   "
+   "// assume that arrayList and normalArray are initialized with some values
+   "
+   "// these functions sort in ascending order (smallest value first)
+   "Arrays.sort(normalArray);
+   "Collections.sort(arrayList);
+   "
+   "// these function sort in descending order (largest value first)
+   "Arrays.sort(normalArray, Collections.reverseOrder());
+   "Collections.reverse(arrayList);
+
+.p|Exercises:
+
+*-|Write the `BankAccount` class from the `compareTo` template exercise, create
+  |an array of 5 `BankAccount`s, and sort them.
+ -|Do the same with an ArrayList.
+ -|Rewrite both of these examples to work in reverse order.
+
+#2|Built in Java types
+
+.p|These are generally listed from most important to least important. I also
+won't be explaining how any of these data structures work internally, if you
+want to learn about them you can just go to Wikipedia or take CS 3.
+
+#3|Scanner (very important)
+
+.p|Scanners read in data from a file or the user. In UIL Computer Science, we
+only ever use them to read from files.
+
+```"Scanner sc = new Scanner(new File("filename.dat")); // creates a scanner
+   "int num = sc.nextInt(); // gets the next number in a file
+   "String str = sc.next(); // gets the next word in a file
+   "String line = sc.nextLine(); // reads an entire line from a file
+   "long l = sc.nextLong(); // reads a long from a file
+   "double d = sc.nextDouble(); // reads a double from a file
+   "Float f = sc.nextFloat(); // reads a float from a file
+   "if (sc.hasNextInt()) { /* ... */ } // checks if a file contains an int
+   "if (sc.hasNext()) { /* ... */ } // checks if a file contains more data
+   "if (sc.hasNextLine()) { /* ... */ } // checks if a file contains a line
+   "if (sc.hasNextLong()) { /* ... */ } // checks if a file contains a long
+   "if (sc.hasNextDouble()) { /* ... */ } // checks if a file contains a double
+   "if (sc.hasNextFloat()) { /* ... */ } // checks if a file contains a float
+   "sc.close(); // closes a scanner
+
+.p|There are more examples of scanners being used elsewhere in this document.
+
+#3|HashMap (very important)
+
+.p|`HashMap`s map keys to values in O(1) time. To work, the keys need to have an
+`equals` function and a `hashCode` function, where if two `hashCode`s are equal,
+then the `equals` function returns that the two objects are equal.
+
+.p|I'll implement a solution to this example problem:
+
+>.|Student dataset
+ .|It's class registration season, and we have a bunch of new students to
+  |welcome into our campus. Each student has an ID and a name. Help us build a
+  |system to look up a student's name from their ID.
+ .|The first line of your input will contain two numbers. The first number
+  |indicates the number of students in our dataset. The second number indicates
+  |the number of queries we're trying to make. The input will then contain the
+  |students, with one student per line. Each line will contain the student's ID
+  |number and name. Finally, we'll end with the queries, with one query per
+  |line. Each line will contain exactly one number, the student ID that we're
+  |trying to look up. Names will only consist of lowercase and uppercase
+  |letters. Your output will be the names of the people with the student IDs in
+  |the query, with one name per line.
+ .|Example input:
+ ```"5 5
+    "816239 Nate
+    "192693 Arif
+    "618462 Adiyat
+    "251147 Steven
+    "018394 Dana
+    "618462
+    "251147
+    "192693
+    "018394
+    "816239
+ .|Example output:
+ ```"Adiyat
+    "Steven
+    "Arif
+    "Dana
+    "Nate
+
+.p|Here's a working solution to this problem:
+
+```"import java.io.*;
+   "import java.util.*;
+   "
+   "public class Dataset {
+   "    public static void main(String[] args) throws Exception {
+   "        Scanner sc = new Scanner(new File("dataset.dat"));
+   "        HashMap<Integer, String> students = new HashMap<>();
+   "        int numStudents = sc.nextInt();
+   "        int numQueries = sc.nextInt();
+   "        for (int i = 0; i < numStudents; i++) {
+   "            int id = sc.nextInt();
+   "            String name = sc.next();
+   "            students.put(id, name);
+   "        }
+   "        for (int i = 0; i < numQueries; i++) {
+   "            System.out.println(students.get(sc.nextInt()));
+   "        }
+   "    }
+   "}
+
+.p|As you can see, a `HashMap` allows us to create an association between pairs
+of data. `HashMap`s are only one way, in this example if we have a student's
+name we can't work backwards to find their student ID. We would need two
+`HashMap`s for that, one to find students' names, and another to find their IDs.
+
+.p|Important methods:
+
+*-|`void put(K key, V value)` - Adds a value to a `HashMap`, runs in O(1) time (best
+  |case, average case), or O(n) time (worst case).
+ -|`V get(K key)` - Gets a value from a `HashMap`, runs in O(1) time (best case,
+  |average case), or O(n) time (worst case).
+ -|`V remove(K key)` - Removes a value from a `HashMap`
+ -|`int size()` - Returns the size of a `HashMap`
+ -|`Set<K> keySet()` - Gets a set of keys in this `HashMap`, can be used in a
+  |`for` loop.
+
+.p|Exercises:
+
+*-|Modify the `Dataset` class above to print out a list of all students and
+  |their student IDs after processing all queries (hint: use `keySet()`).
+
+

@@ -1,0 +1,10 @@
+//Nate's guide to UIL Computer Science
+
+.p|This guide is primarily going to be for the hands-on section. Most of this
+advice won't help your written test scores, some of it (such as tips on what to
+and what not to study) will actively lower your scores. Also, the best way to
+get better at programming is just to practice. 90% of your progress will come
+from writing a lot of code, this guide will just go over the other 10% that's
+specific to competitive programming.
+
+//@$ /site/create-hub.sh /site/site/misc/comp/links "articles"@
