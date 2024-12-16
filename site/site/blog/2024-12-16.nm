@@ -38,7 +38,7 @@ let's just roll with this.
 .p|We can write this function by copying over the `rotateClockwise` function,
 selecting our switch cases, and running this Vim command:
 
-   ":'<,'>norm $F.ldt;0elli.^[0f.P0f.xdt:$F.p
+```":'<,'>norm $F.ldt;0elli.^[0f.P0f.xdt:$F.p
 
 .p|Note that the \<code\>^[\<\/code\> sequence is actually typed by pressing
 ctrl-v and then pressing escape.
