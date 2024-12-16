@@ -25,7 +25,7 @@ function header, which allows us to open the input file without handling a
 
 .p|Exercises:
 
-*-|Change this template to only throw `FileNotFoundException`s, rather than some
+*-|Change this template to only throw `FileNotFoundException`, rather than some
   |generic `Exception`
  -|Change this template to use a try/catch instead of throwing an exception.
 
@@ -95,7 +95,7 @@ accounts by balance, we can just write this `compareTo` function:
 .p|Exercises:
 
 *-|Write the `BankAccount` class from the `compareTo` template exercise, create
-  |an array of 5 `BankAccount`s, and sort them.
+  |an array of 5 `BankAccount` s, and sort them.
  -|Do the same with an ArrayList.
  -|Rewrite both of these examples to work in reverse order.
 
@@ -127,10 +127,24 @@ only ever use them to read from files.
 
 .p|There are more examples of scanners being used elsewhere in this document.
 
+#3|ArrayList (very important)
+
+.p|`ArrayList` s are like lists but they can grow forever. You've probably
+studied all of the functions already for the written section, but here are the
+most important ones:
+
+```"ArrayList<SomeType> arr = new ArrayList<>();
+   "arr.add(value); // O(1)
+   "arr.set(index, newValue); // O(1)
+   "arr.get(index); // O(1)
+   "arr.size(); //O(1)
+   "arr.remove(index); // O(n)
+   "arr.add(index, value); // O(n)
+
 #3|HashMap (very important)
 
-.p|`HashMap`s map keys to values in O(1) time. To work, the keys need to have an
-`equals` function and a `hashCode` function, where if two `hashCode`s are equal,
+.p|`HashMap` s map keys to values in O(1) time. To work, the keys need to have an
+`equals` function and a `hashCode` function, where if two `hashCode` s are equal,
 then the `equals` function returns that the two objects are equal.
 
 .p|I'll implement a solution to this example problem:
@@ -190,9 +204,9 @@ then the `equals` function returns that the two objects are equal.
    "}
 
 .p|As you can see, a `HashMap` allows us to create an association between pairs
-of data. `HashMap`s are only one way, in this example if we have a student's
+of data. `HashMap` s are only one way, in this example if we have a student's
 name we can't work backwards to find their student ID. We would need two
-`HashMap`s for that, one to find students' names, and another to find their IDs.
+`HashMap` s for that, one to find students' names, and another to find their IDs.
 
 .p|Important methods:
 
@@ -210,4 +224,6 @@ name we can't work backwards to find their student ID. We would need two
 *-|Modify the `Dataset` class above to print out a list of all students and
   |their student IDs after processing all queries (hint: use `keySet()`).
 
+#3|HashSet (very important)
 
+.p|To be written

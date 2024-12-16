@@ -26,10 +26,9 @@ site/blog/blog-index/update-check: site/blog/blog-index/create-index.sh site/blo
 site/blog/blog.rss: site/blog/rss.xncdg site/blog/posts
 	ncdg $< $@
 
-site/misc/comp/index.html: site/misc/comp/index.ncdg site/misc/comp/links create-hub.sh $(CDEPS)
+site/misc/comp/index.html: site/misc/comp/index.nm site/misc/comp/links create-hub.sh $(CDEPS)
 site/misc/tools/index.html: site/misc/tools/index.ncdg site/misc/tools/tools create-hub.sh $(CDEPS)
 site/misc/index.html: site/misc/index.ncdg site/misc/links create-hub.sh $(CDEPS)
-site/misc/comp/index.html: site/misc/comp/index.ncdg site/misc/comp/links $(CDEPS)
 
 %.ncdg.ignored: %.nm
 	nmark $< $@.tmp

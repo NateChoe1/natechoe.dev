@@ -1,0 +1,47 @@
+//The absolute power of Vim
+
+.p|Here's a simple piece of Java code:
+
+```"enum Direction {
+   "    UP,
+   "    RIGHT,
+   "    DOWN,
+   "    LEFT
+   "}
+   "
+   "static Direction rotateClockwise(Direction d) {
+   "    switch (d) {
+   "    case UP: return Direction.RIGHT;
+   "    case RIGHT: return Direction.DOWN;
+   "    case DOWN: return Direction.LEFT;
+   "    case LEFT: return Direction.UP;
+   "    default: return d;
+   "    }
+   "}
+
+.p|There are cleaner ways of representing the cardinal directions - in fact I
+never ended up using this code and instead used a vector representation - but
+let's just roll with this.
+
+.p|We might also want a `rotateCounterClockwise` function which looks like this:
+
+```"static Direction rotateCounterClockwise(Direction d) {
+   "    switch (d) {
+   "    case RIGHT: return Direction.UP;
+   "    case DOWN: return Direction.RIGHT;
+   "    case LEFT: return Direction.DOWN;
+   "    case UP: return Direction.LEFT;
+   "    default: return d;
+   "    }
+   "}
+
+.p|We can write this function by copying over the `rotateClockwise` function,
+selecting our switch cases, and running this Vim command:
+
+   ":'<,'>norm $F.ldt;0elli.^[0f.P0f.xdt:$F.p
+
+.p|Note that the \<code\>^[\<\/code\> sequence is actually typed by pressing
+ctrl-v and then pressing escape.
+
+.p|I managed to get this to work on the first try. I'm not going to explain how
+it works, I just felt like this magic had to be archived.
