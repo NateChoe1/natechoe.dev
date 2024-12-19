@@ -1,0 +1,47 @@
+//My Advent of Code day 19 part 1 solution
+
+.p|<(https://adventofcode.com/2024/day/19)[Link to the problem]>
+
+.p|My solution
+
+```"import java.util.*;
+   "import java.util.regex.*;
+   "
+   "public class Day19 {
+   "    public static void main(String[] args) {
+   "        Scanner sc = new Scanner(System.in);
+   "        String[] towels = sc.nextLine().split(", ");
+   "        sc.nextLine();
+   "        ArrayList<String> patterns = new ArrayList<>();
+   "        while (sc.hasNextLine()) {
+   "            patterns.add(sc.nextLine());
+   "        }
+   "        sc.close();
+   "
+   "        StringBuilder regexBuilder = new StringBuilder("^(");
+   "        for (String t: towels) {
+   "            if (regexBuilder.length() != 2) {
+   "                regexBuilder.append("|");
+   "            }
+   "            regexBuilder.append(t);
+   "        }
+   "        regexBuilder.append(")*$");
+   "        Pattern compiled = Pattern.compile(regexBuilder.toString());
+   "
+   "        int possible = 0;
+   "        for (String pattern: patterns) {
+   "            Matcher m = compiled.matcher(pattern);
+   "            boolean matchFound = m.find();
+   "            if (matchFound) {
+   "                ++possible;
+   "            }
+   "        }
+   "        System.out.println(possible);
+   "    }
+   "}
+
+.p|There's some startup cost to compile the regex, but then each pattern can be
+checked in O(n) time. As far as I can tell, that's better than any reasonable
+trie implementation that doesn't devolve into a large DFA. This code could
+definitely use some input validation and string escaping, but I still think that
+this is really cool.
