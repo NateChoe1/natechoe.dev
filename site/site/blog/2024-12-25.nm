@@ -1,0 +1,57 @@
+//Two Secret Santa algorithms
+
+.p|Secret Santa is a game in which a group of people are randomly assigned
+recipients to give gifts to. Nobody knows who they will be receiving a gift from
+until the big day when everybody gives their gifts all at once. The process of
+actually assigning gift recipients is pretty interesting, and there are a bunch
+of decent ways of doing it; in this article, I'll describe just two of them.
+
+.p|Both of these algorithms are completely random. That is to say that in a
+group of five people, person 1 is equally likely to be assigned person 2, 3, 4,
+and 5, and likewise for everybody else.
+
+.p|The most obvious idea to generate Secret Santa pairings would be to randomly
+select pairs until everybody has been assigned a giver and a recipient. By the
+way, in this article I'll use the word "giver" to describe the person giving a
+gift, and "recipient" to describe the person receiving a gift. This means that
+if Alice is giving Bob a gift, and Bob is giving Charlie a gift, then Bob's
+giver is Alice and Bob's recipient is Charlie. We start with two sets of people:
+the people that have yet to be assigned a recipient, and the people who have yet
+to be assigned a giver. We randomly remove one person from each set, pair them
+up, and repeat until everybody has been assigned a giver and recipient.
+
+.p|This algorithm definitely feels canonical, but it does have one fatal flaw.
+If Alice, Bob, and Charlie are in a Secret Santa group, what happens if Alice
+gets assigned Bob, and Bob gets assigned Alice? Now, our only option is to pair
+Charlie up with himself, which is obviously not great.
+
+.p|One potential way to avoid these sorts of self-giftings is to put all of the
+members of the group into a big cycle. Person 1 gifts to person 2, who gifts to
+person 3, and so on until person n gives a gift to person 1. This is the first
+algorithm.
+
+.p|This algorithm is nice, but it doesn't feel random. Even though the
+likelihood of any given pairing is evenly distributed, that original canonical
+idea that potentially leads to self-giftings would almost never produce the same
+results as this algorithm. In reality, if you randomly select pairs and just
+happen to avoid self-giftings, you'll probably get a bunch of shorter
+self-contained cycles, rather than one massive cycle that spans the whole group.
+
+.p|Another algorithm might be to generate pairs of people. In any given pair,
+person A gifts to person B and person B gifts to person A. This way we maximize
+the number of cycles. If we have an odd number of people, then we create a cycle
+of length 3. This algorithm maximizes cycles, although for the vast majority of
+people your recipient is also going to be your giver, so most people would be
+able to correctly guess their giver. This could be solved by using mostly cycles
+of length 3 and switching to cycles of length 2 or 4 if there are any people
+left over.
+
+.p|Both of these algorithms produce "random" results as described in the
+beginning of this article, but for any group of at least 4 people, they will
+never produce the same pairings. Even though the local probability distributions
+are the same when focusing on any individual node, the global structure is
+completely different.
+
+.p|This article was inspired by
+<(https://en.wikipedia.org/wiki/100_prisoners_problem)[the 100 prisoners
+problem]>
