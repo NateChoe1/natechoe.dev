@@ -1,0 +1,143 @@
+//How TCP over HTTP worked
+
+.p|When I first started hosting natechoe.dev, I discovered that my high school's
+strict network filtering blocked my own website, labeling it as "Unmanaged".
+This sent me down a years-long journey to profile and crack that filtering as
+much as possible.
+
+.p|Over a few weeks during class downtime, I'd do some experiments with netcat,
+figuring out which connections were blocked and which weren't. I made a few
+interesting observations:
+
+*-|SSH connections were completely blocked, regardless of port number
+ -|The school was very strict on HTTPS connections, but quite lenient with HTTP
+  |connections. For example, https://natechoe.dev was blocked, but
+  |http://natechoe.dev went through without a problem. I assume some sysadmin
+  |accidentally configured it that way and didn't bother testing HTTP. The .dev
+  |TLD has HSTS enabled anyways, so this wouldn't help unblock my website.
+ -|The school uses, likely among other things, the domain name and web host to
+  |determine if a website should be blocked. For example, natechoe.dev, which is
+  |hosted from my homelab on a residential IP address, is blocked. natechoe.com,
+  |however, which is hosted with Cloudflare (and earlier Github Pages) isn't.
+  |This is why I bought the natechoe.com domain.
+ -|When HTTPS connections aren't blocked, the website is sent through using the
+  |original host's actual web certificate. This means that the school can't see
+  |the contents of the webpage. I assume that in this case it's filtering
+  |entirely based on the hostname and webhost.
+ -|When HTTPS connections are blocked, the school injects its own global
+  |self-signed certificate into the TLS connections and returns a different web
+  |page.
+ -|Most protocols other than SSH, HTTP(S), and the various VPN protocols are
+  |completely unfiltered. This notably includes SMTP on port 25 (which can be
+  |used for email spam) and
+  |<(https://en.wikipedia.org/wiki/Gopher_(protocol)[Gopher]>.
+
+.p|Based on these and various other observations I developed a mental model for
+the school's internet filtering which looked kind of like this:
+
+```"If a student makes a TCP connection:
+   "    If this is an SSH connection:
+   "        Drop this connection
+   "    Else if this is a VPN connection:
+   "        Drop this connection
+   "        Block this user's internet access for 5 minutes
+   "    Else if this is an HTTP(S) connection:
+   "        Get the domain name of the endpoint, either through SNI or the `Host`
+   "        HTTP header
+   "
+   "        Evaluate the endpoint on various metrics, including:
+   "            Top level domain
+   "            Second level domain name (?)
+   "            Whether the connection is encrypted or not
+   "            Destination IP address
+   "            Whether the endpoint has been explicitly alllowed/blocked by a
+   "            sysadmin
+   "        If the endpoint isn't trustworthy:
+   "            Drop this connection
+   "    If this connection hasn't been dropped:
+   "        Allow it to go through as-is
+
+.p|Note that with this model, if a TCP connection isn't dropped its contents are
+not modified in any way. HTTP requests aren't buffered, HTTP headers go through
+as-is, and so on. The contents of a TCP connection are only modified if the
+connection is dropped.
+
+.p|Also note that since I have a server, I can write custom proxy protocols that
+the school isn't checking for. At first I spent a while trying to build a
+complicated generic TCP to HTTP encapsulation protocol, until I realized that we
+could just run this useless handshake at the beginning of our TCP connection.
+
+```"> GET / HTTP/1.1
+   "> Content-Length: 99999999999999
+   "> Host: example.com
+   ">
+   "< HTTP/1.1 500 Internal Server Error
+   "< Content-Length: 99999999999999
+   "<
+
+.p|According to the IETF, this is a perfectly valid HTTP exchange.
+
+>.p|/All responses, regardless of the status code (including interim responses)
+can be sent at any time after a request is received, even if the request is not
+yet complete. A response can complete before its corresponding request is
+complete (Section 6.1). Likewise, clients are not expected to wait any specific
+amount of time for a response. Clients (including intermediaries) might abandon
+a request if the response is not received within a reasonable period of time./
+
+ .|RFC 9110
+
+.p|At the end of this exchange, the client is sending a really really long
+request body and at the same time the server is sending back a really really
+long response body. At this point, regardless of what data is sent through this
+TCP connection, any reasonable network sniffer would interpret this TCP
+connection as an HTTP connection. We can now run some other protocol, like SSH,
+through this disguised connection. The general model looks like this:
+
+
+```"                     My school's filter
+   "                              |
+   "   My laptop (localhost)      |     My server (natechoe.dev)
+   "                              |
+   "                              |
+   "   SSH -> TCP over HTTP  <--------->   TCP over HTTP  --------->  SSH
+   " client       client     injects fake     server        strips   server
+   "                            header                   fake header
+   "                              |
+   "                              |
+   "                              |
+
+.p|Some existing SSH client connects to the TCP over HTTP client running on
+localhost. The TCP over HTTP client does that fake exchange with the TCP over
+HTTP server and naively shovels data back and forth between the SSH client and
+TCP over HTTP server. The TCP over HTTP server receives that fake exchange from
+the client and shovels data back and forth to the SSH server. From the SSH
+client and server's perspective, they're just making a regular SSH connection.
+From my code's perspective, we're just making a small exchange and then
+shuffling data around. From the school's perspective, I'm just making a weirdly
+long but perfectly fine HTTP request.
+
+.p|This is how <(https://github.com/NateChoe1/tcp-over-http)[TCP over HTTP
+works]>. Around a year after I first built this system, it started getting
+flagged as a VPN. It turns out that this mechanism is similar enough to an
+existing VPN app called <(https://httpinjector.com/)[HTTP injector]> to get
+detected. Eventually this got bad enough that I hacked together but didn't
+publish another quick proxy which used websockets and Node.js, and hosted it at
+natechoe.com behind Cloudflare.
+
+.p|Cloudflare is interesting. A decent chunk of the internet is proxied through
+Cloudflare, to the point where it's not at all practical to indiscriminately
+block every single one of them. At the same time, Cloudflare websites are slowly
+becoming indistinguishable. From what I understand, my school was already doing
+most if not all of its filtering based on domain names and web hosts, but with
+new technologies like
+<(https://blog.cloudflare.com/announcing-encrypted-client-hello/)[Encrypted
+Client Hello]> it may be impossible to distinguish between any two Cloudflare
+websites in any meaningful way. I think that in the future, all of the tens of
+millions of websites that Cloudflare proxies will have the same web host and the
+same TLS handshake, so it will be impossible to filter anything without shutting
+down the internet entirely.
+
+.p|The internet has been getting quite centralized lately, every time Cloudflare
+or AWS have an outage it makes the news because large chunks of the internet go
+down all at once. This has some significant problems, and in general is a pretty
+big problem, but I think in this one specific case it might actually help.
