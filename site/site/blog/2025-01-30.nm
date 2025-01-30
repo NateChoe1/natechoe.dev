@@ -99,7 +99,7 @@ through this disguised connection. The general model looks like this:
    "   My laptop (localhost)      |     My server (natechoe.dev)
    "                              |
    "                              |
-   "   SSH -> TCP over HTTP  <--------->   TCP over HTTP  --------->  SSH
+   "   SSH <> TCP over HTTP  <--------->   TCP over HTTP  <-------->  SSH
    " client       client     injects fake     server        strips   server
    "                            header                   fake header
    "                              |
