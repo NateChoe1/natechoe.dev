@@ -30,7 +30,7 @@ interesting observations:
  -|Most protocols other than SSH, HTTP(S), and the various VPN protocols are
   |completely unfiltered. This notably includes SMTP on port 25 (which can be
   |used for email spam) and
-  |<(https://en.wikipedia.org/wiki/Gopher_(protocol)[Gopher]>.
+  |<(https://en.wikipedia.org/wiki/Gopher_(protocol))[Gopher]>.
 
 .p|Based on these and various other observations I developed a mental model for
 the school's internet filtering which looked kind of like this:

@@ -2,7 +2,7 @@ FROM natechoe/ncdg AS ncdg
 FROM natechoe/nmark AS nmark
 
 FROM natechoe/swebs
-RUN apt-get update --allow-releaseinfo-change && apt-get upgrade -y && apt-get install -y make gcc nasm imagemagick source-highlight
+RUN apt-get update --allow-releaseinfo-change && apt-get upgrade -y && apt-get install -y make gcc nasm imagemagick vim
 RUN [ "rm", "-rf", "/site" ]
 COPY --from=ncdg /usr/bin/ncdg /usr/bin/ncdg
 COPY --from=nmark /usr/bin/nmark /usr/bin/nmark

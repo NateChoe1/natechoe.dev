@@ -44,6 +44,73 @@ code, tt {
 	padding: 3px;
 	white-space: pre;
 }
+.highlight-Comment {
+  color: #0032ba;
+}
+.highlight-Constant,.highlight-String,.highlight-Character,.highlight-Number,.highlight-Boolean,.highlight-Float {
+  color: #8b1876;
+}
+/* .highlight-Identifier, .highlight-Function */
+/* I'm intentionally not coloring these ones */
+.highlight-Statement,.highlight-Conditional,.highlight-Repeat,.highlight-Label,.highlight-Operator,.highlight-Keyword,.highlight-Exception {
+  color: #ff5a00;
+}
+.highlight-PreProc,.highlight-Include,.highlight-Define,.highlight-Macro,.highlight-Precondit {
+  color: #005ccc;
+}
+.highlight-Type,.highlight-StorageClass,.highlight-Structure,.highlight-Typedef {
+  color: #06aa00;
+}
+.highlight-Special,.highlight-SpecialChar,.highlight-Tag,.highlight-Delimiter,.highlight-SpecialComment,.highlight-Debug {
+  color: #ba5a37;
+}
+.highlight-Underlined {
+  text-decoration: underline;
+  color: #00a0ff;
+}
+.highlight-Error {
+  background-color: #ff9e00;
+  color: #000;
+}
+.highlight-Todo {
+  background-color: #ffff23;
+  color: #000
+}
+
+@media(prefers-color-scheme:dark) {
+  .highlight-Comment {
+    color: #00a0ff;
+  }
+  .highlight-Constant,.highlight-String,.highlight-Character,.highlight-Number,.highlight-Boolean,.highlight-Float {
+    color: #ff5ae4;
+  }
+  /* .highlight-Identifier, .highlight-Function */
+  /* I'm intentionally not coloring these ones */
+  .highlight-Statement,.highlight-Conditional,.highlight-Repeat,.highlight-Label,.highlight-Operator,.highlight-Keyword,.highlight-Exception {
+    color: #ff0;
+  }
+  .highlight-PreProc,.highlight-Include,.highlight-Define,.highlight-Macro,.highlight-Precondit {
+    color: #00caff;
+  }
+  .highlight-Type,.highlight-StorageClass,.highlight-Structure,.highlight-Typedef {
+    color: #00fc33;
+  }
+  .highlight-Special,.highlight-SpecialChar,.highlight-Tag,.highlight-Delimiter,.highlight-SpecialComment,.highlight-Debug {
+    color: #ffacb7;
+  }
+  .highlight-Underlined {
+    text-decoration: underline;
+    color: #00a0ff;
+  }
+  .highlight-Error {
+    background-color: #ff9e00;
+    color: #000;
+  }
+  .highlight-Todo {
+    background-color: #ffff23;
+    color: #000
+  }
+}
 
 pre > code, tt {
 	max-height: 400px;

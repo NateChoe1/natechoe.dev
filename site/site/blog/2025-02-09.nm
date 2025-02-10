@@ -1,0 +1,20 @@
+//Finally, syntax highlighting on natechoe.dev!
+
+$</site/code.sh c
+$|#include <stdio.h>
+$|int main() {
+$|	printf("Hello world!\n");
+$|	return 0;
+$|	// TODO: Remove these brackets that conveniently show how erroneous code
+$|	// is colored on this website
+$|	[]]
+$|}
+
+.p|It took a little while, but I finally got syntax highlighting on
+natechoe.dev! I tried using <(https://www.gnu.org/software/src-highlite/)[GNU
+source-highlight]> for a bit, but it generates pretty ugly output and uses
+outdated HTML tags. I ended up writing a script that uses the vim TOhtml command
+to create tagged code, and creating two custom color schemes for light and dark
+mode. I'm probably never going to update all of the old code blocks on this
+website just to add color, that would be way too much work; especially on the
+really old pages which still use ncdg.
