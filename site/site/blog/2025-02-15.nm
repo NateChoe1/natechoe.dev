@@ -1,0 +1,469 @@
+//Enumerating every UTD personal website
+
+.p|*The following work is entirely my own, it is not endorsed by the University
+of Texas at Dallas.*
+
+.p|The University of Texas at Dallas allows every student and faculty member to
+create their own personal website, hosted on UTD's servers.
+<(https://personal.utdallas.edu/~nxc230036/)[Here's mine!]> Of course,
+immediately after finding out about this resource I got distracted,
+<(https://personal.utdallas.edu/~nxc230036/cgi-bin/dns.php)[learned PHP]>,
+<(https://github.com/NateChoe1/nmark)[created my own markup language]>, and then
+didn't use that markup language on the site that I made it for.
+
+.p|UTD hosts a number of servers which any student can SSH into. The network
+diagram looks kind of like this:
+
+```"+----------+     +-UTD private network--------------------------------------+
+   "|  Public  | ------> (pubssh.utdallas.edu)                              mars|
+   "| Internet |     |   (giant.utdallas.edu)                               axon|
+   "+----------+     |   (cs1.utdallas.edu)                              Malthus|
+   "                 |   <various other servers>     <various other NFS servers>|
+   "                 +----------------------------------------------------------+
+
+.p|If you're connected to UTD's private network, you can directly SSH into any
+of the servers on the left side of the diagram. Notably, `pubssh.utdallas.edu`
+is the only server accessible to people outside of UTD's network, everything
+else is hidden behind
+<(https://en.wikipedia.org/wiki/Network_address_translation)[NAT]>. This is so
+that people can still access these systems even if they're off campus; you just
+SSH into `pubssh`, then SSH again into some other server.
+
+.p|The servers on the right contain a bunch of home directories. `axon` contains
+the home directories of all the faculty members associated with the college of
+Brain and Behavioral Sciences (BBS), `Malthus` contains the home directories of
+people in the college of Economics, Political, and Policy Sciences (EPPS), and
+so on. All of those servers expose these directories through NFS drives, which
+are mounted onto the servers on the left.
+
+#2|Side quest: Finding these servers
+
+.p|When I first created my personal website, I found
+<(https://web.archive.org/web/20240809154835/https://atlas.utdallas.edu/TDClient/30/Portal/KB/ArticleDet?ID=113)[this
+page]> listing every server that stores home directories. I wanted to link to it
+in this article, but it got taken down and I didn't save the link to look up in
+the Wayback Machine.
+
+.p|About an hour of fiddling with the Wayback Machine API and `jq` later, I
+wrote this script to automatically download every single article posted by the
+UTD Office of Information Technology that's been archived so that I could `grep`
+through it to find the specific article I was looking for.
+
+$</site/code.sh sh
+$|#!/bin/sh
+$|
+$|# get all pages on the utd oit website
+$|curl 'https://web.archive.org/cdx/search?output=json&url=https%3A%2F%2Fatlas%2Eutdallas%2Eedu%2FTDClient%2F30%2FPortal%2FKB%2F%2A' > index
+$|
+$|# print all articles
+$|#cat index | jq --raw-output 'map(select(.[0] | test("ArticleDet";"i"))) | .[] | .[0]'
+$|
+$|# create a directory structure
+$|cat index | jq --raw-output 'map(select(.[0] | test("ArticleDet";"i"))) | .[] | "/\(.[2])"' | cut -b 2- | jq -Rr '@uri' | sed "s/^/.\/out\//" | xargs mkdir -p
+$|
+$|# fetch all articles
+$|cat index | jq --raw-output 'map(select(.[0] | test("ArticleDet";"i"))) | .[] | "-o\n./out/\(.[2] | @uri)/\(.[1])\nhttps://web.archive.org/web/\(.[1])id_/\(.[2] | @uri)"' | xargs curl
+
+.p|Some interesting things to note are my heavy use of `xargs` for performance
+(`while` loops are /very/ slow in shell scripts), and the fact that I only
+invoke `curl` once so that every request can be made in a single TCP connection.
+
+#2|Side quest: The operating system that these servers run on
+
+.p|For my class CS 3377 "Systems Programming in UNIX and Other Environments", we
+have to do our labs in `cs1`. As I was doing these labs, I was quite surprised
+to find that `cs1`, `cs2`, and `csgrads` are all still running CentOS 7, despite
+the fact that
+<(https://www.redhat.com/en/blog/centos-linux-has-reached-its-end-life-eol)[it
+reached end of life in 2024]>. What's even weirder is that every other server I
+checked is running some up-to-date version of Red Hat Enterprise Linux (RHEL),
+so clearly some IT guy somewhere was in charge of migrading from CentOS to RHEL
+and just forgot about all of the CS servers.
+
+.p|I really have no idea why these specific servers are using a deprecated
+operating system. My two best guesses are that the `cs*` servers are mainly used
+by students to complete homework assignments, so a consistent environment is
+more important than a secure environment, or that someone just forgot about
+these servers when migrating from CentOS after the deprecation announcement.
+Both seem reasonable to me.
+
+#2|End of side quests
+
+.p|Iterating through public websites is easy. We just look in every user's home
+directory for a `public_html` subdirectory and print out their NetIDs. We can
+start by finding all of the home directories by listing
+<(https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/storage_administration_guide/nfs-autofs)[autofs]> mount points.
+
+```"{cslinux1:~} mount -l | grep 'type autofs' | grep -oP 'on .*? ' | cut -b 4-
+   "/proc/sys/fs/binfmt_misc 
+   "/misc 
+   "/net 
+   "/people/cs/u 
+   "/usr/local 
+   "/people/cs/o 
+   "/people/cs/t 
+   "/home/012 
+   "/courses/cs4396 
+   "/people/advising 
+   "... extra output truncated
+
+#2|Side quest: The \/courses directory
+
+.p|The `\/courses` directory contains three subdirectories: `cs4396`, `cs6390`,
+and `se6367`. `cs6390` is entirely empty except for a single file called
+`remove.txt`, which just says this:
+
+```"remove this when convenient
+   "bnelson 7/21/2020
+
+.p|`cs4396` contains a 57 gigabyte tar file called `cs-tech.tar` and a file
+called `remove.txt`, which says this:
+
+```"remove this when convenient`
+   "bnelson 7/21/2020
+
+.p|`se6367` contains a software testing utility called `xsuds`, and a file
+called `remove.txt`, which says this:
+
+```"ownership removed from wew021000 
+   "bnelson 7/21/2020
+   "remove in 2 years if no complaint
+   "they should be using the xsudsu serve:
+
+.p|Based on <(https://personal.utdallas.edu/~wew021000/)[this personal
+website]>, it seems like `wew021000` is a professor who teaches `se6367`, and
+uses `xsuds` in his course. It's been four years and I don't think there have
+been any complaints, but this is the sort of thing that sysadmins just forget
+about for years.
+
+#2|End of side quest
+
+.p|It turns out that when you get rid of all the miscellaneous mounts, all of
+the home directories are stored in `\/home` and `\/people`. Who would have
+guessed!
+
+#2|Side quest: The removed users
+
+.p|If you look into any of the larger home directory stashes, you'll find that a
+lot of home directories are marked to be removed:
+
+```"{cslinux1:/home/010/n/nx} ls | head
+   "nxa130430.REMOVE.2024-06-30-175222
+   "nxa154130
+   "nxa161130.REMOVE.2024-09-30-000212
+   "nxa161230
+   "nxa164430
+   "nxa170006
+   "nxa170430
+   "nxa170930
+   "nxa180002
+   "nxa180007
+   "{cslinux1:/home/010/n/nx} ls | grep REMOVE | wc -l
+   "1514
+
+.p|You'll also find that most of these users seem to have had public websites at
+one point.
+
+```"{cslinux1:/home/010/n/nx} ls | grep REMOVE | wc -l
+   "1514
+   "{cslinux1:/home/010/n/nx} ls -d *REMOVE* | while read line ; do test -d "$line/public_html" && echo "$line" ; done | wc -l
+   "1103
+
+.p|According to this small experiment, over 70% of these users had a
+`public_html` directory. I don't know who these people are; I'd assume that
+they're mostly alumni, but the idea that 70% of students create a personal web
+page before graduating seems a bit fishy to me. I suspect that a vast majority
+of these "websites" are actually just empty directories with no content inside
+of them. From my experiments this seems relatively common.
+
+#2|End of side quest
+
+.p|So let's find every website! I really, /really/ want to avoid a bash `while`
+loop, so I wrote this Python script to filter out real websites reasonably
+efficiently.
+
+$</site/code.sh python
+$|#!/usr/bin/env python3
+$|
+$|import os
+$|from os.path import basename
+$|import stat
+$|
+$|while True:
+$|    try:
+$|        line = input()
+$|    except EOFError:
+$|        break
+$|
+$|    public_html = line + "/public_html"
+$|    try:
+$|        html_stat = os.stat(public_html)
+$|    except FileNotFoundError:
+$|        continue
+$|
+$|    # public_html must be a directory
+$|    if not stat.S_ISDIR(html_stat.st_mode):
+$|        continue
+$|
+$|    # public_html must be accessible for the web server to function
+$|    if html_stat.st_mode & 0o055 != 0o055:
+$|        continue
+$|
+$|    # public_html must actually have something in it
+$|    if len(os.listdir(public_html)) == 0:
+$|        continue
+$|
+$|    print(basename(line))
+
+.p|The one slight compromise I made was to check for `0o055` permissions instead
+of `0o005` permissions. Either I slightly underestimate the real number of UTD
+personal sites, or I massively overestimate it. I decided to go with the former. 
+
+```"{cslinux1:/home/010} find . -type d -maxdepth 3 -not -name '*.REMOVE*' 2>/dev/null | ~/has-home.py | tee ~/mars-websites
+   "jcp016300
+   "jct220002
+   "jcw200002
+   "jcarden
+   "jce180001
+   "jcg053000
+   "...
+   "{cslinux1:~} wc -l mars-websites 
+   "1074 mars-websites
+
+.p|I ran this same script on every home directory mount location and got the
+following data:
+
+```"{cslinux1:~} wc -l mars-websites axon-websites eng-websites malthus-websites people-websites 
+   " 1074 mars-websites
+   "   78 axon-websites
+   "  191 eng-websites
+   "   42 malthus-websites
+   "  115 people-websites
+   " 1500 total
+
+.p|As far as I can tell, there are exactly 1500 personal websites hosted by UTD.
+I should note that the names of these fields were taken directly from the
+existing filenames. Websites in `\/home/axon` were recorded in the
+`axon-websites` file, websites in `\/home/eng` were recorded in the
+`eng-websites` file, and so on. `people-websites` is for every website stored in
+the `\/people` directory.
+
+```"{cslinux1:/home} ls
+   "010  011  012  013  014  axon  eng  malthus  nsm
+
+.p|I should note that every single website in the `\/people` directory was run by
+someone in CS. There is not a single academic advisor at UTD who uses the
+UTD-provided personal websites.
+
+.p|Let's take a random sample of sites to see generally who's running them:
+
+```"{cslinux1:~} cat *-websites > combined-websites
+   "{cslinux1:~} shuf -n30 combined-websites 
+   "ptw190000
+   "jxy170007
+   "nkumar
+   "chasteen
+   "kxa051000
+   "dga071000
+   "kxl172530
+   "yxw158830
+   "csr170000
+   "nxs135730
+   "mxz173130
+   "jbb130330
+   "nxa190029
+   "cje160030
+   "cxs180003
+   "jxa220048
+   "nxh150030
+   "nai160030
+   "sxb180041
+   "mxy171630
+   "fass
+   "mxh143930
+   "axv210014
+   "sxn177430
+   "ted
+   "sxk220505
+   "jpb170330
+   "jjo190001
+   "bag190002
+   "mxc220049
+
+<<table>
+<  <tr>
+<    <th>NetID</th>
+<    <th>Owner classification</th>
+<    <th>Other notes</th>
+<  </tr>
+<  <tr>
+<    <td>ptw190000</td>
+<    <td>Student</td>
+<    <td>Undergraduate, website was created for a class</td>
+<  </tr>
+<  <tr>
+<    <td>jxy170007</td>
+<    <td>Website is broken</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>nkumar</td>
+<    <td>Professor</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>chasteen</td>
+<    <td>Professor</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>kxa051000</td>
+<    <td>Professor</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>dga071000</td>
+<    <td>Professor</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>kxl172530</td>
+<    <td>Website is broken</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>yxw158830</td>
+<    <td>TA</td>
+<    <td>Website looks very nice</td>
+<  </tr>
+<  <tr>
+<    <td>csr170000</td>
+<    <td>Website is broken</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>nxs135730</td>
+<    <td>Website is broken</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>mxz173130</td>
+<    <td>Student</td>
+<    <td>Ph.D. student</td>
+<  </tr>
+<  <tr>
+<    <td>jbb130330</td>
+<    <td>Website is broken</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>nxa190029</td>
+<    <td>cppfile.exe</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>cje160030</td>
+<    <td>cppfile.exe</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>cxs180003</td>
+<    <td>Website is broken</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>jxa220048</td>
+<    <td>cppfile.exe</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>nxh150030</td>
+<    <td>Website is broken</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>nai160030</td>
+<    <td>Website is broken</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>sxb180041</td>
+<    <td>Website is broken</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>mxy171630</td>
+<    <td>Website is broken</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>fass</td>
+<    <td>Professor</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>mxh143930</td>
+<    <td>Website is broken</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>axv210014</td>
+<    <td>Student</td>
+<    <td>Ph.D. student</td>
+<  </tr>
+<  <tr>
+<    <td>sxn177430</td>
+<    <td>Professor</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>ted</td>
+<    <td>Professor</td>
+<    <td>I'm assuming this guy is a professor, he might have a more managerial
+<    role though, the website is kind of vague.</td>
+<  </tr>
+<  <tr>
+<    <td>sxk220505</td>
+<    <td>Student</td>
+<    <td>Graduate student</td>
+<  </tr>
+<  <tr>
+<    <td>jpb170330</td>
+<    <td>Website is broken</td>
+<    <td></td>
+<  </tr>
+<  <tr>
+<    <td>jjo190001</td>
+<    <td>Professor</td>
+<    <td>Website looks very nice</td>
+<  </tr>
+<  <tr>
+<    <td>bag190002</td>
+<    <td>Student</td>
+<    <td>Undergraduate, website was created for a class</td>
+<  </tr>
+<  <tr>
+<    <td>mxc220049</td>
+<    <td>cppfile.exe</td>
+<    <td></td>
+<  </tr>
+<</table>
+
+.p|I sorted these websites into four categories: websites by professors, by
+students, broken websites, and cppfile.exe. I have no idea what these
+cppfile.exe websites are, but
+<(https://web.archive.org/web/20250215075808/https://personal.utdallas.edu/~mxc220049/)[they
+all look identical]>. I assume that they were all created for the same class.
+
+.p|In total we had 5 students, 8 professors, 1 TA, 12 broken websites, and 4
+cppfile.exe sites. All of these broken websites have some content in them,
+they're just misconfigured in some way. For example, the last broken website I
+looked at was actually a cppfile.exe website in disguise.
+
+```"{pubssh:/home/010/j/jp/jpb170330/public_html} ls -l
+   "total 96
+   "----------. 1 574231 studunionx 9224 Sep  4  2020 cppfile.exe
+   "-r--r-----. 1 574231 studunionx   15 Sep  4  2020 trial.txt
+
+.p|If you want to play around with this data yourself, the lists I created can
+be found <(https://personal.utdallas.edu/~nxc230036/personal-sites/)[here]>.
