@@ -1,0 +1,211 @@
+//On shell escaping
+
+.p|There's this famous bug that certain shell scripts have; it happens with code
+like this:
+
+$</site/code.sh sh
+$|#!/bin/sh
+$|
+$|if [ $# -lt 1 ] ; then
+$|	echo "Usage: $0 [file name]"
+$|	exit 1
+$|fi
+$|
+$|cat $1
+
+.p|This program prints out the file given to it by the command line argument,
+like this:
+
+```"$ echo 'hello world' > some-file
+   "$ ./print.sh some-file
+   "hello world
+
+.p|The bug is that file names can contain spaces, so with some input like this:
+
+```"$ echo 'hello world' > 'some file'
+   "$ ./print.sh 'some file'
+
+.p|The first argument is the string 'some file', so `print.sh` expands that into
+this command:
+
+$</site/code.sh sh
+$|cat some file
+
+.p|Now `cat` interprets `some` and `file` as two different files to print out.
+Neither of these names correspond to actual files, so we get this output:
+
+```"$ ./print.sh 'some file'
+   "cat: some: No such file or directory
+   "cat: file: No such file or directory
+
+.p|I should note that the details of this interaction are slightly more
+complicated than simple string expansion, so injections like this don't work:
+
+```"$ ./print.sh '/dev/null ; ls'
+   "cat: ';': No such file or directory
+   "cat: ls: No such file or directory
+
+.p|If we want to implement this program correctly, we should quote all of our
+environment variables to prevent these sorts of errors:
+
+$</site/code.sh sh
+$|#!/bin/sh
+$|
+$|if [ "$#" -lt 1 ] ; then
+$|	echo "Usage: $0 [file name]"
+$|	exit 1
+$|fi
+$|
+$|cat "$1"
+
+.p|This infamous mistake is even noted in the textbook for the Unix programming
+class I'm taking. Reading that reminded me of some similar potential issues in
+shell scripts, including one that starts with this implementation of the `ls`
+command:
+
+$</site/code.sh c
+$|#include <stdio.h>
+$|#include <errno.h>
+$|#include <dirent.h>
+$|
+$|int main(int argc, char **argv) {
+$|	char *dirpath;
+$|	DIR *dir;
+$|	struct dirent *dirent;
+$|
+$|	dirpath = ".";
+$|	if (argc >= 2) {
+$|		dirpath = argv[1];
+$|	}
+$|
+$|	dir = opendir(dirpath);
+$|	if (dir == NULL) {
+$|		perror("opendir() failed");
+$|		return 1;
+$|	}
+$|
+$|	errno = 0;
+$|	for (;;) {
+$|		dirent = readdir(dir);
+$|		if (dirent == NULL) {
+$|			break;
+$|		}
+$|
+$|		/* exclude hidden files */
+$|		if (dirent->d_name[0] == '.') {
+$|			continue;
+$|		}
+$|
+$|		puts(dirent->d_name);
+$|	}
+$|
+$|	if (errno != 0) {
+$|		perror("readdir() failed");
+$|		return 1;
+$|	}
+$|	return 0;
+$|}
+
+.p|In pretty much every reasonable use case, this code works exactly as
+intended:
+
+```"$ ./ls ~
+   "Downloads
+   "repos
+   "Documents
+   "Music
+   "coding
+   "go
+   "tmp
+
+.p|As a side note, Google's decision to not even bother putting the `go`
+directory in a hidden path is ridiculously stupid. Anyways, this code has a bug
+in it:
+
+```"$ touch ~/$'hello\nworld'
+   "$ ./ls ~
+   "Downloads
+   "repos
+   "Documents
+   "Music
+   "coding
+   "go
+   "tmp
+   "hello
+   "world
+
+.p|In Unix, file paths are just C strings. This basically means that every
+character other than `'\0'` (the null character at the end of every C string)
+and \<code\>'/'\<\/code\> (the slash character which separates directories in Unix paths) is
+fair game, including newlines.
+
+.p|I first learned about this problem from
+<(https://blog.toast.cafe/posix2024-xcu)[this blog post]> about the new shell
+features in the POSIX 2024 standard. Basically, if you want to do operations
+with file names with shell scripts, you should have all of your programs use the
+null character as a delimiter using their newly introduced command line
+arguments. For example, this incredibly useful shell script to output your `ls`
+results into `cowsay`:
+
+$</site/code.sh sh
+$|#!/bin/sh
+$|
+$|ls -1 | while read file ; do
+$|	echo "$file" | cowsay
+$|done
+
+.p|Should really be rewritten like this:
+
+$</site/code.sh sh
+$|#!/bin/bash
+$|
+$|find . -maxdepth 1 -not -name '.*' -print0 | while read -d '' file ; do
+$|	basename "$file" | cowsay
+$|done
+
+.p|If we're willing to use GNU extensions, we could also rewrite it like this:
+
+$</site/code.sh sh
+$|#!/bin/bash
+$|
+$|ls -1 --zero | while read -d '' file ; do
+$|	echo "$file" | cowsay
+$|done
+
+.p|Actually, this code has another bug in it. In some Unix systems, including
+GNU systems, `echo` can take the `-n` argument to suppress the newline it
+creates. This means that in some cases, `echo` can misinterpret our file name as
+an option:
+
+```"$ touch -- -n
+   "$ ls
+   "-n
+   "$ ~/ls.sh
+   " __
+   "<  >
+   " --
+   "        \   ^__^
+   "         \  (oo)\_______
+   "            (__)\       )\/\
+   "                ||----w |
+   "                ||     ||
+
+.p|For most shell programs, we can fix this by using the special
+\<code\>--\<\/code\> option. For example, in the interaction above, I ran the
+command `touch -- -n` to create a file called `-n`. The \<code\>--\<\/code\>
+argument tells `touch` "everything that comes after this is an argument, not an
+option". Unfortunately, this doesn't work with `echo`:
+
+```"$ echo -- -n
+   "-- -n
+   "$ echo -n
+   "$ echo -e '\-n'
+   "\-n
+   "$ echo -e '\x2dn'
+   "-n
+
+.p|If you're writing a shell script that's has to output some arbitrary string,
+you should really use the `printf` command instead:
+
+```"$ printf '%s\n' '-n'
+   "-n
