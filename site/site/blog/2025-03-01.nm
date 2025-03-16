@@ -135,7 +135,7 @@ in it:
    "world
 
 .p|In Unix, file paths are just C strings. This basically means that every
-character other than `'\0'` (the null character at the end of every C string)
+character other than `'\\0'` (the null character at the end of every C string)
 and \<code\>'/'\<\/code\> (the slash character which separates directories in Unix paths) is
 fair game, including newlines.
 
