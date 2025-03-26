@@ -94,17 +94,18 @@ connection as an HTTP connection. We can now run some other protocol, like SSH,
 through this disguised connection. The general model looks like this:
 
 
-```"                     My school's filter
-   "                              |
-   "   My laptop (localhost)      |     My server (natechoe.dev)
-   "                              |
-   "                              |
-   "   SSH <> TCP over HTTP  <--------->   TCP over HTTP  <-------->  SSH
-   " client       client     injects fake     server        strips   server
-   "                            header                   fake header
-   "                              |
-   "                              |
-   "                              |
+```"                          My school's filter
+   "                                  |
+   "      My laptop (localhost)       |     My server (natechoe.dev)
+   "                                  |
+   "                                  |
+   "   SSH <----> TCP over HTTP  <--------->   TCP over HTTP  <------->  SSH
+   " client           client          |           server                server
+   "     normal SSH     ^        SSH session         ^       normal SSH
+   "       session      |     with injected header   |         session
+   "                    |             |              |
+   "              injects/strips      |        injects/strips
+   "                  header          |            header
 
 .p|Some existing SSH client connects to the TCP over HTTP client running on
 localhost. The TCP over HTTP client does that fake exchange with the TCP over
@@ -125,19 +126,33 @@ publish another quick proxy which used websockets and Node.js, and hosted it at
 natechoe.com behind Cloudflare.
 
 .p|Cloudflare is interesting. A decent chunk of the internet is proxied through
-Cloudflare, to the point where it's not at all practical to indiscriminately
-block every single one of them. At the same time, Cloudflare websites are slowly
+Cloudflare, to a point where it's not at all practical to indiscriminately block
+every single one of them. At the same time, Cloudflare websites are slowly
 becoming indistinguishable. From what I understand, my school was already doing
 most if not all of its filtering based on domain names and web hosts, but with
 new technologies like
 <(https://blog.cloudflare.com/announcing-encrypted-client-hello/)[Encrypted
-Client Hello]> it may be impossible to distinguish between any two Cloudflare
-websites in any meaningful way. I think that in the future, all of the tens of
-millions of websites that Cloudflare proxies will have the same web host and the
-same TLS handshake, so it will be impossible to filter anything without shutting
-down the internet entirely.
+Client Hello]> it may become impossible to distinguish between any two
+Cloudflare websites in any meaningful way. I think that in the future, all of
+the tens of millions of websites that Cloudflare proxies will have the same web
+host and the same TLS handshake, so it will be impossible to filter anything
+without shutting down the internet entirely.
 
-.p|The internet has been getting quite centralized lately, every time Cloudflare
-or AWS have an outage it makes the news because large chunks of the internet go
-down all at once. This has some significant problems, and in general is a pretty
-big problem, but I think in this one specific case it might actually help.
+.p|I'm not entirely sure how I feel about this. The centralization of the
+internet is definitely a huge problem - every few months a massive cloud service
+provider like Cloudflare or AWS has an outage that takes down something like 10%
+of the internet for a few hours. At the same time, the fact that it's basically
+impossible to selectively censor Cloudflare websites clearly shows that there's
+some tradeoff between centralization and censorship. The goal of a censor is to
+distinguish between "good" and "bad" traffic, and the goal of the evader is to
+make this job as difficult as possible. The beauty of having everything on
+Cloudflare is that it's literally impossible to distinguish between two types of
+traffic when it all just looks like encrypted randomness being sent to a single
+host. This is definitely getting more political than I usually like to be on
+this blog though, so I'll just say that regardless of what systems we
+collectively decide on as a society, I'll just keep abusing them as much as I
+can to get what I want.
+
+.p|*Edits*: I made some slight edits to this article on March 26. Specifically,
+I made the ASCII art diagram slightly clearer and rewrote the entire last
+paragraph.
