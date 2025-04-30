@@ -9,30 +9,30 @@ results with paid models.
 
 #2|The initial prompt
 
->.|Here is some C code:
+.|Here is some C code:
 
- $</site/code.sh c
- $|#include <unistd.h>
- $|
- $|int main() {
- $|	char buff[1024];
- $|	for (;;) {
- $|		ssize_t len = read(1, buff, sizeof(buff));
- $|		if (len <= 0) {
- $|			break;
- $|		}
- $|		if (write(0, buff, len) < len) {
- $|			return 1;
- $|		}
- $|	}
- $|	return 0;
- $|}
+$</site/code.sh c
+$|#include <unistd.h>
+$|
+$|int main() {
+$|	char buff[1024];
+$|	for (;;) {
+$|		ssize_t len = read(1, buff, sizeof(buff));
+$|		if (len <= 0) {
+$|			break;
+$|		}
+$|		if (write(0, buff, len) < len) {
+$|			return 1;
+$|		}
+$|	}
+$|	return 0;
+$|}
 
- .|This question comes in three parts:
+.|This question comes in three parts:
 
- 1-|What is this code trying to do?
-  -|What is the bug in this code?
-  -|Why does this code seem to work in my terminal?
+1-|What is this code trying to do?
+ -|What is the bug in this code?
+ -|Why does this code seem to work in my terminal?
 
 #2|The intended, human-written solution
 
@@ -164,7 +164,7 @@ data to read or some error occurs.
 .p|The bug is related to the handling of file descriptors for standard input and
 standard output.
 
-*-.|*Standard Input (`1`):* The `read()` function is called with `1` as the file
+*-.p|*Standard Input (`1`):* The `read()` function is called with `1` as the file
 descriptor. This is incorrect. The file descriptor for *standard input* is `0`,
 not `1`. In Unix-like systems:
 
@@ -202,7 +202,7 @@ incorrectly references file descriptor `1` (stdout) for reading.
 .p|To fix the program, simply correct the file descriptors in the `read` and
 `write` calls:
 
-$>/site/code.sh c
+$</site/code.sh c
 $|#include <unistd.h>
 $|
 $|int main() {
@@ -234,7 +234,7 @@ an interactive terminal?"
 
 #2|ChatGPT's response
 
-.p||Certainly! Let’s dive deeper into why the code seems to work in an
+.p|Certainly! Let’s dive deeper into why the code seems to work in an
 interactive terminal, even though there are file descriptor bugs in the program.
 
 #3|1. Terminal Behavior and File Descriptors
@@ -260,7 +260,7 @@ output, but it does so in a special way, using file descriptors.
 
 #3|2. Understanding the Bug and How it Relates to the Terminal
 
-Let's focus on the *file descriptor bug* in the code:
+.|Let's focus on the *file descriptor bug* in the code:
 
 *-p|The program is *incorrectly using* `read(1, ...)\<\/code\> to read from
 *file descriptor 1* (which is *stdout*), but *stdout* is typically *not a
@@ -302,12 +302,12 @@ type something.
 
  -|Writing to file descriptor `0` (stdin):
 
-   *-p|*Writing to stdin (fd 0)* is problematic because stdin is usually not a
-   writable stream. It’s the input stream, not the output one.
+  *-p|*Writing to stdin (fd 0)* is problematic because stdin is usually not a
+  writable stream. It’s the input stream, not the output one.
 
-    -p|However, the terminal may *ignore this write operation* or *treat it
-    differently* in a way that doesn’t cause an immediate error, allowing the
-    program to continue as if it’s "working" (i.e., it doesn’t outright crash).
+   -p|However, the terminal may *ignore this write operation* or *treat it
+   differently* in a way that doesn’t cause an immediate error, allowing the
+   program to continue as if it’s "working" (i.e., it doesn’t outright crash).
 
 #3|4. Terminal’s Input Echo and Line Buffering
 
@@ -370,7 +370,7 @@ grantpt."
 
 1-|*Pseudo-Terminals (PTYs)*: A *pseudo-terminal* is a mechanism used to create a pair of devices that act like a real terminal. They allow programs to interact with one another as if they were communicating through a terminal, even though the underlying system doesn't involve an actual terminal device. Terminal emulators like `xterm`, `gnome-terminal`, and even `screen` or `tmux` utilize PTYs.
 
-  *-|A PTY consists of two parts: a *master* and a *slave*. The *master* (often referred to as `/dev/ptmx`) is what the program writes to or reads from, and the *slave* (e.g., `/dev/tty`) is what the terminal emulator displays to the user.
+  *-|A PTY consists of two parts: a *master* and a *slave*. The *master* (often referred to as `\/dev/ptmx`) is what the program writes to or reads from, and the *slave* (e.g., `\/dev/tty`) is what the terminal emulator displays to the user.
 
  -|*The Interaction Between Program and PTY*: When you launch a program in a terminal emulator, the terminal typically uses *openpty()*, *grantpt()*, and *unlockpt()* to set up a PTY pair. The program that is running inside the terminal interacts with the master end of the PTY, while the terminal emulator itself is connected to the slave end of the PTY. The input and output of the program are transferred between the program and the terminal emulator through these PTY file descriptors.
 
@@ -430,7 +430,7 @@ $|}
 
  -|Specifically:
 
-  *-|The terminal emulator may *echo the input back* to the program, allowing *read(1, ...)\<\/code\> to receive what’s typed.
+  *-|The terminal emulator may *echo the input back* to the program, allowing `read(1, ...)\<\/code\> to receive what’s typed.
 
    -|When the program writes to `stdin`, the terminal emulator handles it as input, and then it *displays the written data* in the terminal window, *acting as if the program wrote to `stdout`*.
 
@@ -483,7 +483,7 @@ input."
 
   -|The slave side of the PTY is what the child process (your program) interacts with as if it were a standard terminal.
 
-.|In typical usage, the master end of the PTY is used by the terminal emulator, while the slave end is what the running program uses for I/O, just like a regular terminal device (/dev/tty).
+.|In typical usage, the master end of the PTY is used by the terminal emulator, while the slave end is what the running program uses for I/O, just like a regular terminal device (\/dev/tty).
 
 #3|The Correct Simplified Explanation
 
@@ -491,7 +491,7 @@ input."
 
 1-|Terminal Devices and File Descriptors:
 
-  *-|In a terminal emulator, when a program runs, it’s typically connected to the slave side of a pseudoterminal (PTY). This slave side behaves just like a regular terminal device (/dev/tty), meaning that it can read from stdin (file descriptor 0) and write to stdout (file descriptor 1), just as if the program were interacting with a real terminal.
+  *-|In a terminal emulator, when a program runs, it’s typically connected to the slave side of a pseudoterminal (PTY). This slave side behaves just like a regular terminal device (\/dev/tty), meaning that it can read from stdin (file descriptor 0) and write to stdout (file descriptor 1), just as if the program were interacting with a real terminal.
 
  -|How the PTY Works:
 
@@ -523,7 +523,7 @@ input."
 
 #3|Summary of Why It Works:
 
-*-|PTYs provide a virtual terminal for the program, and the slave side of the PTY acts like a real terminal device (/dev/tty).
+*-|PTYs provide a virtual terminal for the program, and the slave side of the PTY acts like a real terminal device (\/dev/tty).
 
  -|The program mistakenly uses stdout (1) for reading and stdin (0) for writing, but these operations work because the slave side of the PTY is connected to the program’s stdin and stdout in the way a real terminal would be.
 
