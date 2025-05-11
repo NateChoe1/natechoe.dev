@@ -1,0 +1,68 @@
+//DoSing web browsers with hotlinked images
+
+.p|A few weeks ago I read <(https://idiallo.com/blog/zipbomb-protection)[this
+article]> and
+<(https://blog.haschek.at/2017/how-to-defend-your-website-with-zip-bombs.html)[this
+earlier article which probably inspired the first]> about protecting web servers
+with zip bombs. The idea is that the HTTP `Content-Encoding` and
+`Transfer-Encoding` headers allow you to send highly compressed data over the
+web, so you might spend just 10 MB of bandwidth to send a 10 GB payload to a
+client. If your client is a malicious bot that's running on a VPS with just 4 GB
+of memory, it will theoretically run out of memory while decompressing the
+message you've sent it and die. This sort of pathologically compressed payload
+is called a "zip bomb", and both of the articles I linked use the same technique
+to create one:
+
+$</site/code.sh sh
+$|# create a very large file of just zero bytes
+$|dd if=/dev/zero of=data.raw bs=1G count=10
+$|
+$|# compress it down for use with the Content-Encoding HTTP header
+$|gzip data.raw
+$|
+$|# alternatively, combine both of these steps into a pipe
+$|dd if=/dev/zero bs=1G count=10 | gzip > data.gz
+
+.p|To me, this feels very inefficient for two reasons. The first is that it only
+uses a single layer of compression. Under the hood, `gzip` uses
+<(https://www.rfc-editor.org/rfc/rfc1951)[the Deflate compressed data format]>,
+which can only achieve a maximum of 1032x compression on very very repetitive
+files. HTTP allows us to specify multiple data encodings, so we could
+theoretically compress our data multiple times to achieve exponentially higher
+levels of compression.
+
+.p|The second problem is that when we start with uncompressed data and then
+compress it, we have to work with the uncompressed data. If we want to use two
+layers of decompression to create a 1 MB payload, we would have to start with a
+1 TB file, which means we'd have to wait for several hours as gzip churns
+through 1 TB of data. This is a unique problem because it only gets worse as
+your zip bombs get more efficient. By building our payloads this way, we're
+basically just hoping that we have more resources than the enemy.
+
+.p|One weekend of hacking later, I created
+<(https://github.com/NateChoe1/zip-bomb)[my own pretty big zip bomb]>. I decided
+to use zlib instead of gzip because it's a slightly simpler file format that's
+still basically universal among HTTP implementations. The compressed payload is
+just 1 MB, but it decompresses twice to over 1 TB. It was created entirely by
+hand by typing ones and zeros into a text editor.
+
+.p|One interesting use case for these sorts of payloads is as a denial of
+service attack through hotlinked assets.
+<(https://forums.online-go.com/t/ogs-profile-formatting-some-useful-tips/31336)[Some
+websites]> allow you to create <(https://online-go.com/player/76618)[custom]>
+<(https://online-go.com/user/view/1643753)[profile pages]> with HTML, including
+external resources such as CSS and images. I thought it would be funny to create
+a button which loads a very large image and crashes the browser, like this:
+
+$</site/code.sh html
+$|<details>
+$|<summary>Click here to crash your web browser</summary>
+$|<img src=bomb/bomb.svg loading=lazy />
+$|</details>
+
+.p|The idea is that when you click to expand the `details` element, your browser
+loads the lazy image, runs out of memory, and crashes. I haven't actually put
+this on any actual profiles for actual websites, but I have created
+<(https://p2p.natechoe.dev/bomb.html)[this demo site]> where you can try it out
+for yourself. I've also disabled hotlinking, so if you want to try this yourself
+you'll have to host my payload somewhere else.
