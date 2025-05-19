@@ -6,14 +6,14 @@ problem]>:
 $</site/code.sh c
 $|// hack to fix integer overflow problems
 $|static uint32_t mySqrt_exact(uint32_t x) {
-$|   uint32_t r = 0;
-$|   for (uint32_t b = 1 << 15; b > 0; b >>= 1) {
-$|    uint32_t nr = r | b;
-$|     if (nr * nr <= x) {
-$|        r = nr;
-$|     }
-$|   }
-$|   return r;
+$|    uint32_t r = 0;
+$|    for (uint32_t b = 1 << 15; b > 0; b >>= 1) {
+$|        uint32_t nr = r | b;
+$|        if (nr * nr <= x) {
+$|            r = nr;
+$|        }
+$|    }
+$|    return r;
 $|}
 $|
 $|int mySqrt(int x) {
