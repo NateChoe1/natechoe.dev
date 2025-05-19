@@ -1,0 +1,24 @@
+//A really nice LeetCode solution
+
+.p|Here's a solution to <(https://leetcode.com/problems/sqrtx/)[this LeetCode
+problem]>:
+
+$</site/code.sh c
+$|// hack to fix integer overflow problems
+$|static uint32_t mySqrt_exact(uint32_t x) {
+$|   uint32_t r = 0;
+$|   for (uint32_t b = 1 << 15; b > 0; b >>= 1) {
+$|    uint32_t nr = r | b;
+$|     if (nr * nr <= x) {
+$|        r = nr;
+$|     }
+$|   }
+$|   return r;
+$|}
+$|
+$|int mySqrt(int x) {
+$|    return (int) mySqrt_exact((uint32_t) x);
+$|}
+
+.p|This is basically a bit-level binary search. I thought that this was cool
+enough to warrant a blog post.
