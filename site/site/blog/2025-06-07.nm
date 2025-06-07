@@ -1,0 +1,335 @@
+//On arena-based memory management
+
+.p|The first data structure that everybody learns about is the linked list. Its
+fundamental component is the linked node, which looks like this:
+
+$</site/code.sh c
+$|struct linked_node {
+$|	int value; /* or some other data type */
+$|	struct linked_node *next_node;
+$|};
+
+.p|If implemented properly, it's capable of `O(1)` insertion, deletion, and
+access at the head or tail, at the cost of `O(n)` average random access times.
+It's often used to implement other data structures like stacks and queues.
+
+.p|If you're using C, once you create a linked list, at some point later you
+have to free it. This can be done with a function like this in `O(n)` time and
+`O(1)` memory:
+
+$</site/code.sh c
+$|void free_linked_list(struct linked_node *head) {
+$|	struct linked_node *iter = head;
+$|	while (iter != NULL) {
+$|		struct linked_node *next = iter->next;
+$|		free(iter);
+$|		iter = next;
+$|	}
+$|}
+
+.p|If this linked list has a cycle things get a bit more complicated, but we can
+still achieve `O(n)` time and `O(1)` memory usage with
+<(https://en.wikipedia.org/wiki/Cycle_detection#Floyd's_tortoise_and_hare)[Floyd's
+cycle-finding algorithm]>:
+
+$</site/code.sh c
+$|void free_linked_list(struct linked_node *head) {
+$|	struct linked_node *tortoise, *hare, *iter;
+$|	int seen_loop;
+$|
+$|	tortoise = hare = iter = head;
+$|
+$|	do {
+$|		/* this linked list doesn't have a cycle, so we can free it with
+$|		 * the simple function from earlier */
+$|		if (hare->next == NULL || hare->next->next == NULL) {
+$|			free_linked_list_simple(head);
+$|		}
+$|		hare = hare->next->next;
+$|
+$|		tortoise = tortoise->next;
+$|	} while (tortoise != hare);
+$|
+$|	tortoise = head;
+$|	while (tortoise != hare) {
+$|		tortoise = tortoise->next;
+$|		hare = hare->next;
+$|	}
+$|
+$|	seen_loop = 0;
+$|	for (;;) {
+$|		struct linked_node *next;
+$|
+$|		if (iter == tortoise) {
+$|			if (seen_loop) {
+$|				return;
+$|			}
+$|			seen_loop = 1;
+$|		}
+$|
+$|		next = iter->next;
+$|		free(iter);
+$|		iter = next;
+$|	}
+$|}
+
+.p|One of the next data structures you learn as a student is the binary tree,
+which looks like this:
+
+$</site/code.sh c
+$|struct btree_node {
+$|	int value; /* or some other data type */
+$|	struct linked_node *left_child;
+$|	struct linked_node *right_child;
+$|};
+
+.p|Binary trees are much more complicated than linked lists, so I won't explore
+them in too much detail here, but they can be used for lots of
+<(https://en.wikipedia.org/wiki/Binary_search_tree)[cool]>
+<(https://en.wikipedia.org/wiki/Heap_(data_structure))[stuff]>. I can think of
+three algorithms to free an arbitrary binary tree. The first uses recursion and
+achieves `O(n)` time and `O(log(n))` memory, assuming that the tree is
+approximately balanced.
+
+$</site/code.sh c
+$|void free_btree(struct btree_node *root) {
+$|	if (root == NULL) {
+$|		return;
+$|	}
+$|
+$|	free_btree(root->left);
+$|	free_btree(root->right);
+$|	free(root);
+$|}
+
+.p|I'm pretty sure that it's impossible to achieve any lower memory usage while
+still running in `O(n)` time, although I'm not good enough at math to formalize
+a proof for this.
+
+.p|If we did want to achieve `O(1)` memory, we could do so by sacrificing a bit
+of speed with this iterative `O(n*log(n))` algorithm:
+
+$</site/code.sh c
+$|void free_btree(struct btree_node *root) {
+$|	struct btree_node *iter, **parent;
+$|
+$|	for (;;) {
+$|		iter = root;
+$|
+$|		for (;;) {
+$|			if (iter->left != NULL) {
+$|				parent = &iter->left;
+$|				iter = iter->left;
+$|			} else if (iter->right != NULL) {
+$|				parent = &iter->right;
+$|				iter = iter->right;
+$|			} else {
+$|				break;
+$|			}
+$|		}
+$|
+$|		/* moving free(iter) here is technically undefined behavior */
+$|
+$|		if (iter == root) {
+$|			break;
+$|		}
+$|		free(iter);
+$|		*parent = NULL;
+$|	}
+$|	free(root);
+$|}
+
+.p|Again, I'm pretty sure that this is an optimal `O(1)` memory algorithm, but I
+can't formalize it.
+
+.p|If we have access to parent nodes, we can get `O(n)` time and `O(1)` memory
+usage.
+
+$</site/code.sh c
+$|void free_btree(struct btree_node *root) {
+$|	struct btree_node *iter, *parent;
+$|
+$|	iter = root;
+$|
+$|	/* i'm assuming root->parent == NULL */
+$|	for (;;) {
+$|		if (iter->left != NULL) {
+$|			iter = iter->left;
+$|		} else if (iter->right != NULL) {
+$|			iter = iter->right;
+$|		} else {
+$|			parent = iter->parent;
+$|			if (parent == NULL) {
+$|				goto updated_parent;
+$|			}
+$|			if (parent->left == iter) {
+$|				parent->left = NULL;
+$|			} else {
+$|				parent->right = NULL;
+$|			}
+$|updated_parent:
+$|			free(iter);
+$|			iter = parent;
+$|		}
+$|	}
+$|}
+
+.p|If we don't have access to parent nodes but we are allowed to mark each node,
+we can use this algorithm to populate the parent nodes in `O(n)` time and `O(1)`
+memory:
+
+$</site/code.sh c
+$|void populate_parents(struct btree_node *root) {
+$|	struct btree_node *iter, *prev;
+$|	int just_descended;
+$|
+$|	prev = NULL;
+$|	iter = root;
+$|	just_descended = 1;
+$|	for (;;) {
+$|		if (just_descended) {
+$|			iter->parent = prev;
+$|			if (iter->left != NULL) {
+$|				iter->left->parent = NULL;
+$|			}
+$|			if (iter->right != NULL) {
+$|				iter->right->parent = NULL;
+$|			}
+$|		}
+$|		if (iter->left != NULL && iter->left->parent == NULL) {
+$|			just_descended = 1;
+$|			prev = iter;
+$|			iter = iter->left;
+$|		} else if (iter->right != NULL && iter->right->parent != NULL) {
+$|			just_descended = 1;
+$|			prev = iter;
+$|			iter = iter->right;
+$|		} else {
+$|			just_descended = 0;
+$|			iter = iter->parent;
+$|		}
+$|	}
+$|}
+
+.p|When we're freeing a binary tree, we don't really care what the values in the
+binary tree are anymore, so it's reasonable to allow ourselves to overwrite them
+to store the parent references by defining our nodes like this:
+
+$</site/code.sh c
+$|struct btree_node {
+$|	union {
+$|		int value;
+$|		struct btree_node *parent;
+$|	};
+$|	struct btree_node *left;
+$|	struct btree_node *right;
+$|};
+
+.p|All of these data structure freeing problems generalize into a
+<(https://en.wikipedia.org/wiki/Graph_traversal)[graph traversal]>, and it's a
+well-known fact that graph traversal has a worst case complexity of `O(n^2)`
+time and `O(n)` memory. Unfortunately, no matter how cleverly we design our
+algorithms, there's always going to be some case where we get some slow
+algorithm.
+
+.p|Except there is one more really, /really/ clever trick we can use: instead of
+dealing with memory as a set of independently allocated objects which have to be
+traversed independently, we just throw all of our allocations into a bucket and
+free them all at once.
+
+$</site/code.sh c
+$|void main(void) {
+$|	/* create a new arena */
+$|	struct arena *arena = arena_new();
+$|
+$|	/* allocate a bunch of memory from the arena */
+$|	struct node *ptr1 = arena_malloc(arena, sizeof(struct node));
+$|	struct node *ptr2 = arena_malloc(arena, sizeof(struct node));
+$|	struct node *ptr3 = arena_malloc(arena, sizeof(struct node));
+$|	struct node *ptr4 = arena_malloc(arena, sizeof(struct node));
+$|	struct node *ptr5 = arena_malloc(arena, sizeof(struct node));
+$|
+$|	/* free everything in the arena all at once */
+$|	arena_free(arena);
+$|}
+
+.p|This trick has many names; Wikipedia calls it
+<(https://en.wikipedia.org/wiki/Region-based_memory_management)[region-based
+memory management]>, but I first heard about it from
+<(https://github.com/tsoding/arena)[this library]> which calls it arena
+allocation. Arenas are trivial to implement with linked lists, but they make
+memory management ridiculously simple. We just allocate as much as we want, and
+call `arena_free` at the end.
+
+.p|I started playing around with arenas while writing
+<(https://github.com/NateChoe1/cs6035)[an LALR(1) parser generator in C]>, and I
+quickly realized that arenas also make your code much cleaner.
+
+.p|Let's say you have some function to initialize a data structure. If you're
+not using arenas, your code is going to look like this:
+
+$</site/code.sh c
+$|struct hashset *hashset_new(void) {
+$|	struct hashset *ret;
+$|
+$|	ret = malloc(sizeof(ret));
+$|	/* malloc() a bunch of other stuff */
+$|
+$|	return ret;
+$|}
+
+.p|If you want to use this data structure, you have to do something like this:
+
+$</site/code.sh c
+$|void main(void) {
+$|	struct hashset *h;
+$|
+$|	h = hashset_new();
+$|	/* use h */
+$|	hashset_free(h);
+$|}
+
+.p|It's the callee's responsibility to allocate memory, but it's the caller's
+responsibility to free it. This creates a contract between the two functions; if
+you change how one function works you have to change the other. This adds a
+little bit of extra complexity to your code. With this simple example it's fine,
+but with a larger codebase it becomes very easy to accidentally mismanage
+memory.
+
+.p|When you're using arenas, things get much simpler: the function that creates
+the arena must also free it later. Our data structure initializer could be
+rewritten with this new prototype:
+
+$</site/code.sh c
+$|struct hashset *hashset_new(struct arena *arena) {
+$|	struct hashset *ret;
+$|
+$|	ret = arena_malloc(arena, sizeof(ret));
+$|	/* arena_malloc() a bunch of other stuff */
+$|
+$|	return ret;
+$|}
+
+.p|Our parent function gets rewritten like this:
+
+$</site/code.sh c
+$|void main(void) {
+$|	struct arena *a;
+$|	struct hashset *h;
+$|
+$|	a = arena_new();
+$|	h = hashset_new(a);
+$|	/* use h */
+$|	arena_free(a);
+$|}
+
+.p|Our contract is gone. From the child function it's obvious that we're never
+going to have a memory leak, since everything is going to the arena. From the
+parent function it's obvious that we're never going to have a memory leak
+because we free the arena right after we create it. Each of these functions can
+be analyzed independently without having a dependency on some other behavior
+somewhere else. Over the course of an entire codebase several thousand lines
+long, this makes a huge difference.
+
+.p|Basically, arenas are faster, cleaner, and often less memory-intensive than
+manual memory management. That's pretty cool.
