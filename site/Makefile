@@ -5,7 +5,7 @@ BLOG = $(shell find site/blog -maxdepth 1 -type f | grep -E "[0-9]{4}-[0-9]{2}-[
 HTML = $(SRCS:.ncdg=.html) $(NM:.nm=.html)
 CDEPS = /tor-data/natechoe-dev-onion/hostname /site/head.html /site/tail.html
 
-all: $(HTML) asm site/blog/blog.rss site/sitemap.txt library.so site/blog/posts
+all: $(HTML) asm site/blog/blog.rss library.so site/blog/posts
 
 asm: favicon.ico site/resources/88x31.bmp site/resources/88x31-bw.png
 
@@ -15,10 +15,6 @@ library.so: library.c
 site/blog/posts: site/blog/create-posts.sh $(BLOG)
 	cd ./site/blog
 	./site/blog/create-posts.sh
-
-site/sitemap.txt: $(HTML) site/blog/blog-index/update-check
-	find site -name '*.html' | sed "s/^\.\/site/https:\/\/natechoe.dev/g" > $@
-	echo "https://natechoe.dev/" >> $@
 
 site/blog/blog-index/update-check: site/blog/blog-index/create-index.sh site/blog/posts /tor-data/natechoe-dev-onion/hostname create-hub.sh $(wildcard site/blog/blog-index/*.tempate)
 	$<

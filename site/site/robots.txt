@@ -1,1 +1,2 @@
-Sitemap: https://natechoe.dev/sitemap.txt
+User-Agent: *
+Disallow: *
