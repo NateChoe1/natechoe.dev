@@ -35,7 +35,7 @@ message]> I wrote while trying to implement a POSIX standard:
 >.|fix links again
 >.|the posix spec is so fucking bad, genuinely some of the worst technical
   |writing i've ever had the displeasure of reading. up there with the
-  |<(/blog/2022-06-06.html)[commonmark spec]>.
+  |<(\/blog/2022-06-06.html)[commonmark spec]>.
 
 #2|Dumb POSIX stuff, mainly about Lex and Yacc
 
