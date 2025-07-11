@@ -1,0 +1,116 @@
+//Everybody hates POSIX
+
+#2|People hating POSIX
+
+.p|From the
+<(https://www.gnu.org/prep/standards/html_node/Non_002dGNU-Standards.html)[GNU
+coding standards]>:
+
+>.|The GNU Project regards standards published by other organizations as
+  |suggestions, not orders. We consider those standards, but we do not “obey”
+  |them.  In developing a GNU program, you should implement an outside
+  |standard’s specifications when that makes the GNU system better overall in an
+  |objective sense. When it doesn’t, you shouldn’t.
+ .|...
+ .|POSIX specifies that ‘df’ and ‘du’ must output sizes by default in units of
+  |512 bytes. What users want is units of 1k, so that is what we do by default.
+  |If you want the ridiculous behavior “required” by POSIX, you must set the
+  |environment variable ‘POSIXLY_CORRECT’ (which was originally going to be
+  |named ‘POSIX_ME_HARDER’).
+
+.p|From <(https://cr.yp.to/proto/utctai.html)[DJB's website]>:
+
+>.|The main obstacle is POSIX. POSIX is a "standard" designed by a vendor
+  |consortium several years ago to eliminate progress and protect the installed
+  |base. The behavior of the broken localtime() libraries was documented and
+  |turned into a POSIX requirement.
+>.|Fortunately, the POSIX rules are so outrageously dumb---for example, they
+  |require that 2100 be a leap year, contradicting the Gregorian calendar---that
+  |no self-respecting engineer would obey them.
+
+.p|From a frustrated
+<(https://github.com/NateChoe1/cs6035/commit/b9980e41a797b7a72db38c3174f983dd135c447a)[commit
+message]> I wrote while trying to implement a POSIX standard:
+
+>.|fix links again
+>.|the posix spec is so fucking bad, genuinely some of the worst technical
+  |writing i've ever had the displeasure of reading. up there with the
+  |<(/blog/2022-06-06.html)[commonmark spec]>.
+
+#2|Dumb POSIX stuff, mainly about Lex and Yacc
+
+.p|Command line flags must come before arguments:
+
+```"$ export POSIXLY_CORRECT=1
+   "$ ls -l ./dir
+   "total 0
+   "-rw-r--r-- 1 nate nate 0 Jul 10 23:55 hello.txt
+   "$ ls ./dir -l
+   "ls: cannot access '-l': No such file or directory
+   "dir:
+   "hello.txt
+
+.p|<(https://pubs.opengroup.org/onlinepubs/9799919799/utilities/lex.html)[Lex's]>
+`BEGIN newstate;` action is a special action, and not a statement, so things
+like this nested multiline comment parser use undefined behavior:
+
+$</site/code.sh lex
+$|%x COMMENT
+$| static int level = 0;
+$|
+$|%%
+$|
+$|\/\* level = 1; BEGIN COMMENT;
+$|<COMMENT>\/\* ++level;
+$|<COMMENT>\*\/ if (--level == 0) BEGIN INITIAL;
+$|\*\/ return 0;
+$|. ECHO;
+$|<COMMENT>. ;
+
+.p|There is no standards-compliant way to have two lexers or two parsers in the
+same codebase:
+
+```"$ lex -t lexer1.l > lexer1.c
+   "$ lex -t lexer2.l > lexer2.c
+   "$ cc lexer1.c lexer2.c -o two-lexers
+   "/usr/bin/ld: /tmp/ccVHmdOT.o:(.bss+0x0): multiple definition of `yyleng'; /tmp/cc7Kz2q3.o:(.bss+0x0): first defined here
+   "/usr/bin/ld: /tmp/ccVHmdOT.o:(.bss+0x8): multiple definition of `yyin'; /tmp/cc7Kz2q3.o:(.bss+0x8): first defined here
+
+.p|There is no standards compliant way to use a lexer twice:
+
+$</site/code.sh c
+$|int main(void) {
+$|	yyin = fopen("file1.txt", "r");
+$|	yylex();
+$|
+$|	yyreset(); /* this function doesn't exist, to switch files you have to
+$|		      read through all of file1.txt and pray that you're back in
+$|		      the INITIAL state. */
+$|
+$|	yyin = fopen("file2.txt", "r");
+$|	yylex();
+$|	return 0;
+$|}
+
+.p|The standard often seems to conflict with itself (from
+<(https://pubs.opengroup.org/onlinepubs/9799919799/utilities/lex.html)[Lex]>):
+
+>.|Definitions appear before the first \<code\>%%\<\/code\> delimiter. Any line in this section
+  |not contained between \<code\>%{\<\/code\> and \<code\>%}\<\/code\> lines and not beginning with a `<blank>`
+  |shall be assumed to define a lex substitution string.
+ .|...
+ .|In the Definitions section, any line beginning with a <percent-sign> (\<code\>%\<\/code\>)
+  |character and followed by an alphanumeric word beginning with either `s` or
+  |`S` shall define a set of start conditions.
+
+.p|This seems to imply that a line like `%s state` is both a substitution string
+and a start condition.
+
+.p|Odd behavior is often standardized, see the DJB quote from earlier.
+
+.p|Important behavior is often left unspecified or implementation-defined (from
+<(https://pubs.opengroup.org/onlinepubs/9799919799/utilities/echo.html)[echo]>:
+
+>.|If the first operand consists of a '-' followed by one or more characters
+  |from the set {'e', 'E', 'n'}, or if any of the operands contain a <backslash>
+  |character, the results are implementation-defined.

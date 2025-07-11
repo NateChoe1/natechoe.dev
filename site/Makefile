@@ -5,7 +5,7 @@ BLOG = $(shell find site/blog -maxdepth 1 -type f | grep -E "[0-9]{4}-[0-9]{2}-[
 HTML = $(SRCS:.ncdg=.html) $(NM:.nm=.html)
 CDEPS = /tor-data/natechoe-dev-onion/hostname /site/head.html /site/tail.html
 
-all: $(HTML) asm site/blog/blog.rss library.so site/blog/posts
+all: $(HTML) asm site/blog/blog.rss library.so site/blog/blog-index/update-check
 
 asm: favicon.ico site/resources/88x31.bmp site/resources/88x31-bw.png
 
