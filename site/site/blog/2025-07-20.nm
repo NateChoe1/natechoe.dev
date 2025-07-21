@@ -1,0 +1,177 @@
+//The scale of Bitcoin
+
+#2|Part 1: Cryptographic hashing
+
+.p|There's an algorithm called <(https://en.wikipedia.org/wiki/SHA-2)[SHA-256]>,
+which takes some data and summarizes it into a short checksum. To show how it
+works, let's start with a copy of the book
+<(https://www.gutenberg.org/ebooks/41445)[Frankenstein]>:
+
+```"$ head -n1000 frankenstein.txt | tail
+   "union. This expectation will now be the consolation of your father.
+   "Elizabeth, my love, you must supply my place to your younger cousins.
+   "Alas! I regret that I am taken from you; and, happy and beloved as I
+   "have been, is it not hard to quit you all? But these are not thoughts
+   "befitting me; I will endeavour to resign myself cheerfully to death, and
+   "will indulge a hope of meeting you in another world.”
+   "
+   "She died calmly; and her countenance expressed affection even in death.
+   "I need not describe the feelings of those whose dearest ties are rent by
+   "that most irreparable evil, the void that presents itself to the soul,
+
+.p|I can calculate the SHA-256 checksum of this file with the `sha256sum`
+command (I also have <(/misc/tools/hash/index.html)[a webapp]> to do this):
+
+```"$ sha256sum frankenstein.txt
+   "97553cba841936c2b91deeed927e14589ba61c018f7cbe00d6e7d38289ce52ec  frankenstein.txt
+
+.p|Now I've got a corrupted version of Frankenstein:
+
+```"$ diff frankenstein.txt frankenstein-corrupted.txt
+   "4321c4321
+   "< wore the human form.
+   "---
+   "> wore thd human form.
+
+.p|The only difference is that in chapter 8 of the novel, on line 4321 of the
+text file, I've changed the text "wore the human form" to "wore thd human form".
+Suddenly, the checksum has completely changed:
+
+```"$ sha256sum frankenstein.txt frankenstein-corrupted.txt
+   "97553cba841936c2b91deeed927e14589ba61c018f7cbe00d6e7d38289ce52ec  frankenstein.txt
+   "4ef44d27b03ff2fc2b46c7b79c00f62c2067d4d88f7557342c59ad538290c7c4  frankenstein-corrupted.txt
+
+.p|SHA-256 is a type of algorithm called a "cryptographic hash". Hashes are
+supposed to be consistent but unpredictable; if you have some data, then its
+hash will never change, but if you add even a slight corruption to your data,
+the hash changes in a completely unpredictable, effectively random way.
+
+#2|Part 2: Proof of work
+
+.p|Here are a series of shell commands:
+
+```"$ printf 0 | sha256sum
+   "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9  -
+   "$ printf 39 | sha256sum
+   "0b918943df0962bc7a1824c0555a389347b4febdc7cf9d1254406d80ce44e3f9  -
+   "$ printf 286 | sha256sum
+   "00328ce57bbc14b33bd6695bc8eb32cdf2fb5f3a7d89ec14a42825e15d39df60  -
+   "$ printf 886 | sha256sum
+   "000f21ac06aceb9cdd0575e82d0d85fc39bed0a7a1d71970ba1641666a44f530  -
+   "$ printf 88484 | sha256sum
+   "0000a456e7b5a5eb059e721fb431436883143101275c4077f83fe70298f5623d  -
+   "$ printf 596138 | sha256sum
+   "00000691457f4f0ce13e187b9ab4fda6d42c8647752909b8f71f9dbd8f6bd4ab  -
+   "$ printf 18719932 | sha256sum
+   "000000669445c22167511857d8f3b822b331c3342f25dfdcb326e35c1a7aa267  -
+
+.p|Here we're taking the SHA-256 sum of various integers. Notice that the
+checksums of each value in this list starts with more and more zeros.
+Coincidentally, the checksum for `0` starts with no zeros. The checksum for `39`
+starts with one zero, the checksum for `286` starts with two, and so on, all the
+way up to `18719932`, which starts with 6 zeros.
+
+.p|I created this list with a simple Python script that checks every number
+until it finds interesting ones like these:
+
+$</site/code.sh python
+$|#!/usr/bin/env python3
+$|
+$|# i know that using the decimal representations of integers for proof-of-work
+$|# is inefficient and a bit unelegant, but the point of this article is mainly
+$|# to show the scale of the bitcoin blockchain, not to write a really efficient
+$|# bitcoin miner or to get exact benchmarks on hash rates.
+$|
+$|from hashlib import sha256
+$|
+$|values = [None] * 7
+$|
+$|x = 0
+$|while None in values:
+$|    h = sha256(bytes(str(x), 'ascii')).hexdigest()
+$|    idx = 0
+$|    while h[idx] == '0':
+$|        idx += 1
+$|    if idx < len(values) and values[idx] == None:
+$|        values[idx] = x
+$|    x += 1
+$|
+$|print(values)
+
+.p|Theoretically, this is the only possible way to generate this list of
+numbers. Assuming that SHA-256 is a proper cryptographic hash, the only way to
+generate "interesting" hashes like these is to just guess and check lots of
+strings until one happens to work.
+
+.p|The implication of this is that if you have a message with an interesting
+hash, someone had to waste a certain amount of electricity to generate it.
+
+```"$ printf 'Nate Choe wasted billions of CPU cycles to generate this message... 7341201' | sha256sum
+   "00000061fbd5b347f9ee691e5b0af90037805b32253aade79381ef33da7c5ec4  -
+
+.p|This is the core idea behind
+<(https://en.wikipedia.org/wiki/Proof_of_work)["proof of work"]>; you
+intentionally waste a bunch of electricity to generate an interesting hash, but
+once you've done so anybody can easily verify that you've wasted your
+electricity without too much effort.
+
+.p|One of the original use cases for proof of work was, and
+<(https://github.com/TecharoHQ/anubis)[still is]>, denial of service mitigation.
+If you run a mail server, you can install something like
+<(http://hashcash.org/)[Hashcash]> on it, so that every time someone wants to
+send an email through your server they have to waste a little bit of
+electricity first. If you're an actual human using this mail server, that might
+mean that you're just waiting a few more seconds for your email to send, but if
+you're a spam marketer sending millions of emails every day, that added cost may
+be huge.
+
+.p|Bitcoin uses the same principle. With Bitcoin, whenever you're trying to get
+a list of transactions that have occured, you trust the guy that wasted the most
+electricity. The idea is that most of the people wasting electricity for Bitcoin
+are acting in good faith, so if a scammer wants to forge their own list of
+transactions, they have to waste more electricity than all of the good guys
+combined.
+
+#2|The scale of Bitcoin
+
+.p|With my crappy Python code, if I want to generate a hash that starts with 4
+zeros, it takes around 0.12 seconds. If I want a hash that starts with 5 zeros,
+that takes around 0.72 seconds. If I want a hash with 6 zeros, it takes over 20
+seconds. On average each additional zero will make this computation 16x more
+expensive. For example, if you want 1 zero you'll have to check around 16 hahes;
+if you want 2, you'll have to check around 256 hashes; 3 takes 4096; 4 takes
+65536; and so on. Theoretically, on my laptop with my code, getting 8 zeros
+would take well over an hour, and would require me to check over 4 billion
+hashes. If I wanted 16 zeros, I'd have to wait over half a million years and
+check over 18 quintillion hashes.
+
+```"printf '\x14\xc0\xd1\xaf\xb9\x81\x8a\x44\xc0\x6b\x88\xd6\xa1\xeb\x66\x7a\xd1\xdb\xad\xdc\xdc\x3c\xc8\x1c\xb9\xd1\x82\xac\xa0\x79\xb4\xa2' | sha256sum
+   "7324a766fecea07d4bd39044d8bd192ca87fa7f1eaf200000000000000000000  -
+
+.p|I took this data from the
+<(https://bitcoinexplorer.org/block-height/906188)[Bitcoin blockchain]>. You can
+follow
+<(https://bitcoin.stackexchange.com/questions/55188/download-single-and-specific-block-for-study-purposes)[this
+guide]> to get a similar result with a different block. Note that Bitcoin puts
+their zeros at the end of the hash instead of the beginning.
+
+.p|That's 20 zeros. With my crappy code on my laptop, calculating a hash this
+unique would take several times longer than the lifetime of the universe.
+The Bitcoin blockchain finds hashes like this because Bitcoin currently has a
+hash rate of around 900 exahashes per second. That's 900 million terahashes per
+second, or 900 quintillion hashes per second.
+
+.p|This is approximately the upper limit on what humanity as a species can
+possibly hope to achieve computationally. According to ASICMinerValue,
+<(https://www.asicminervalue.com/miners/bitmain/antminer-s21-xp-hyd-473th)[one
+mining machine]> which costs $2152 can achieve 473 terahashes per second. If we
+assume that every Bitcoin miner in the world is using these specific machines,
+then all of the Bitcoin mining infrastructure in the world would cost around $4
+billion. From this estimate I think it's safe to say that the total value of
+Bitcoin infrastructure worldwide is somewhere between $1 billion and $100
+billion, and that's not even accounting for electricity costs.
+
+.p|Think about how many millions of people you could get out of poverty with
+that sort of money, and then realize that that amount of value has been
+completely thrown away to store just 766.5 gigabytes of data on drug
+transactions and scams.
