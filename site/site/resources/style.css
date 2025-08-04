@@ -4,7 +4,8 @@ html {
 
 body {
 	margin: 0px;
-  color: var(--textcol);
+	color: var(--textcol);
+	font-family: sans-serif;
 }
 
 a:link {

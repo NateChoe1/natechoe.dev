@@ -1,0 +1,531 @@
+//A googol byte zip bomb that's also valid HTML
+
+.p|Here it is:
+
+$</site/code.sh sh
+$|basenc -d --base16 << --EOF-- \
+$|	| gzip -d | gzip -d | # ...34 layers of decompression in total
+$|1F8B08000000000002FF002D04D2FB1F8B08000000000002FF001004EFFB1F8B080000000000
+$|02FF00F3030CFC1F8B08000000000002FF00D60329FC1F8B08000000000002FF00B90346FC1F
+$|8B08000000000002FF009C0363FC1F8B08000000000002FF007F0380FC1F8B08000000000002
+$|FF0062039DFC1F8B08000000000002FF004503BAFC1F8B08000000000002FF002803D7FC1F8B
+$|08000000000002FF000B03F4FC1F8B08000000000002FF00EE0211FD1F8B08000000000002FF
+$|00D1022EFD1F8B08000000000002FF00B4024BFD1F8B08000000000002FF00970268FD1F8B08
+$|000000000002FF007A0285FD1F8B08000000000002FF005D02A2FD1F8B08000000000002FF00
+$|4002BFFD1F8B08000000000002FF002302DCFD1F8B08000000000002FF000602F9FD1F8B0800
+$|0000000002FF00E90116FE1F8B08000000000002FF00CC0133FE1F8B08000000000002FF00AF
+$|0150FE1F8B08000000000002FF0092016DFE1F8B08000000000002FF0075018AFE1F8B080000
+$|00000002FF005801A7FE1F8B08000000000002FF003B01C4FE1F8B08000000000002FF001E01
+$|E1FE1F8B08000000000002FF000101FEFE1F8B08000000000002FF00E4001BFF1F8B08000000
+$|000002FF00C70038FF1F8B08000000000002FF00AA0055FF1F8B08000000000002FF008D0072
+$|FF1F8B08000000000002FF0070008FFF3C21444F43545950452068746D6C3E3C68746D6C3E3C
+$|686561643E3C7469746C653E476574207A697020626F6D626564206C6F6C3C2F7469746C653E
+$|3C2F686561643E3C626F64793E3C703E48657265277320612062756E6368206F66203C636F64
+$|653E613C2F636F64653E733A2061ECC081000000000090FF6B235455ECC081000000000090FF
+$|6B235455ECC081000000000090FF6B235455ECC081000000000090FF6B235455ECC081000000
+$|000090FF6B235455ECC081000000000090FF6B235455ECC081000000000090FF6B235455ECC0
+$|81000000000090FF6B235455ECC081000000000090FF6B235455ECC081000000000090FF6B23
+$|5455ECC081000000000090FF6B235455ECC081000000000090FF6B235455ECC0810000000000
+$|90FF6B235455ECC081000000000090FF6B235455ECC081000000000090FF6B235455ECC08100
+$|0000000090FF6B235455ECC081000000000090FF6B235455ECC081000000000090FF6B235455
+$|ECC081000000000090FF6B235455ECC081000000000090FF6B235455ECC081000000000090FF
+$|6B235455ECC081000000000090FF6B235455ECC081000000000090FF6B235455ECC081000000
+$|000090FF6B235455ECC081000000000090FF6B235455ECC081000000000090FF6B235455ECC0
+$|81000000000090FF6B235455ECC081000000000090FF6B235455ECC081000000000090FF6B23
+$|5455ECC081000000000090FF6B235455ECC081000000000090FF6B235455ECC0810000000000
+$|90FF6B235455ECC081000000000090FF6B235455ECC081000000000090FF6B23545525E0011F
+$|FE25D3012CFE25C60139FE25B90146FE25AC0153FE259F0160FE2592016DFE2585017AFE2578
+$|0187FE256B0194FE255E01A1FE255101AEFE254401BBFE253701C8FE252A01D5FE251D01E2FE
+$|251001EFFE250301FCFE25F60009FF25E90016FF25DC0023FF25CF0030FF25C2003DFF25B500
+$|4AFF25A80057FF259B0064FF258E0071FF2581007EFF2574008BFF25670098FF255A00A5FF25
+$|4D00B2FF254000BFFF253300CCFF3C2F703E3C703E436F6E6772617473206F6E206E6F742063
+$|72617368696E672E3C2F703E3C2F626F64793E3C2F68746D6C3E0A70CF0971C5A23598B109E4
+$|96EFA23598C180B30F19A33598BF7970F043A335981F3575FC6DA335986A893A2697A335989D
+$|DF8F0DC1A335981B515B76EBA3359894EB8BCD15A43598C208D69E3FA43598398759A069A435
+$|9847DDBA2693A43598B5B3DCEFBDA435982A93F6F2E7A43598B4D11CED11A5359827243F503B
+$|A535988903AE7D65A535987484C6278FA53598EE013C01B9A53598094C0BF1E3A5359834C2E1
+$|B90DA6359824FFBF9B37A635985D7F13BC61A63598BB7A8F428BA6359802D4DF41B5A6351883
+$|5A0273DFA63588EA4AB22509A7357683DFDA7533A7F573F1511BB35DA7AD77A442F95087A7A4
+$|9CF4993C0EB187D3C9A0CBCF63DB638B93B7038294859F2400354B84A91F0F0000
+$|--EOF--
+$|
+$|# Final size: 6572237635227321236188819515811035575405304054106315960115329348108694130599261529595852926105016443552 bytes
+
+#2|Why I made it:
+
+.p|People keep posting
+<(https://blog.haschek.at/2017/how-to-defend-your-website-with-zip-bombs.html)[articles]>
+<(https://idiallo.com/blog/zipbomb-protection)[about]>
+<(https://ache.one/notes/html_zip_bomb)[protecting]> web servers with
+<(https://en.wikipedia.org/wiki/Zip_bomb)[zip bombs]>.  The idea is that if
+there's a malicious bot scraping your website, you can host a heavily compressed
+payload somewhere so that when the bot tries to decompress it it runs out of
+memory and crashes. Everybody writing these articles always creates their
+payloads in the same way:
+
+$</site/code.sh sh
+$|dd if=/dev/zero bs=1M count=10240 | gzip > 10G.gzip
+
+.p|This command uses `dd` to create a 10 gigabye file, and then uses `gzip` to
+compress that file to around 10 megabytes.  This approach has always slightly
+annoyed me because it's obviously the least efficient way to create a zip bomb;
+like, what if the bot has more than 10 gigabytes of memory? Are you just going
+to create a bigger payload? How big are you willing to go? When you use this
+command and others like it, you're basically just hoping that you have more
+memory than your adversary, which seems like a bad assumption to make.
+
+.p|The zip bombs that this command generates are also just not very good.
+<(https://www.rfc-editor.org/rfc/rfc1951.html)[Deflate]>, the data format that
+powers <(https://www.rfc-editor.org/rfc/rfc1952.html)[gzip]> and
+<(https://www.rfc-editor.org/rfc/rfc1950.html)[zlib]>, has a maximum compression
+ratio of 1032x, meaning that a 1 megabyte payload can only expand to a maximum
+of around 1 gigabyte. Luckily,
+<(https://www.rfc-editor.org/rfc/rfc9110.html#name-content-encoding)[HTTP]>
+allows us to apply multiple content encodings to our data, so we could create a
+<(https://github.com/NateChoe1/zip-bomb)[1 megabyte payload]> that expands to a 1 gigabyte payload, which expands again
+into a 1 terabyte file. At the extreme end, we could even create a 1.5 kilobyte
+payload that expands 34 times to create a
+<(https://en.wikipedia.org/wiki/Googol)[googol]> (10^100) byte file.
+
+.p|These very high compression ratios are impossible to achieve using the naive
+first approach; you can't just process a googol bytes of data to generate a 1
+kilobyte payload. Instead, you need some smarter way to represent your data, and
+<(https://github.com/NateChoe1/ied)[some code]> to compress that representation
+more efficiently.
+
+#2|A brief introduction to LZ77
+
+.p|The core algorithm behind Deflate is called
+<(https://en.wikipedia.org/wiki/LZ77_and_LZ78)[LZ77]>. In it, compressed
+messages look kind of like this:
+
+```"abracad<4,7>
+
+.p|To decompress this message, we start by writing `abracad` to the output:
+
+```"abracad
+
+.p|Then, to handle the `<4,7>`, we look at the last 7 characters of our
+uncompressed output and copy 4 of them:
+
+```"abracadabra
+
+.p|Magic! Here's another example:
+
+```"ho<4,2> it's Santa!
+
+.p|We copy `ho` to the output:
+
+```"ho
+
+.p|Then we look at the last 2 characters of our uncompressed output and copy 4
+of them. This seems a bit weird, so I'll go 1 character at a time. First, we
+copy the second to last character that we've already written:
+
+```"hoh
+
+.p|Then we do it again. Note that now that we've written the `h`, the second to
+last character has just changed:
+
+```"hoho
+
+.p|Then we do it again, copying the `h` that we've just written:
+
+```"hohoh
+
+.p|Then we do it one last time. We stop here as we've already written 4
+characters:
+
+```"hohoho
+
+.p|Finally, we copy the simple plaintext:
+
+```"hohoho it's Santa!
+
+.p|He's here a few months early but that's okay. Let's try another example:
+
+```"a\<10,1\><3,1>
+
+.p|First we copy our plaintext:
+
+```"a<10,1>
+
+.p|Then we copy 3 characters from the last 1 character of our output. Note that
+I'm assuming `<10,1>` is really just a long form representation of a single
+binary character:
+
+```"a<10,1><10,1><10,1><10,1>
+
+.p|This message can be decompressed again; first we copy our plaintext:
+
+```"a
+
+.p|Then we copy 10 characters from the last 1 character of our output:
+
+```"aaaaaaaaaaa
+
+.p|Then we do it again:
+
+```"aaaaaaaaaaaaaaaaaaaaa
+
+.p|And again:
+
+```"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+.p|And again:
+
+```"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+.p|I'm simplifying a lot of the implementation details away - in the real
+Deflate format there's another layer called Huffman compression - but this is
+the core idea.
+
+#2|Checksums
+
+.p|On page 50 of the June 1986 issue of
+<(https://archive.org/details/1986-06-compute-magazine/page/50/mode/2up)[Compute!
+Magazine]>, there's a listing titled "Program 2: Miami Ice For Commodore 64",
+which contains this text:
+
+```"0001:0C 08 0A 00 9E 20 32 30 64
+   "0009:36 32 00 00 00 20 E0 0E 11
+   "0011:20 BC 0D A9 00 A0 1B B9 11
+   "...so on for over 600 lines
+
+.p|These bytes are the raw machine code for a game called Miami Ice, as they
+would appear on a Commodore 64. If you were a computer hobbyist in the 80s you
+would get this magazine, manually type in thousands of bytes from the paper to
+your computer, and run it to play your game.
+
+.p|It was pretty common to make typos while typing in these very large programs,
+so each 9 byte row actually only contains 8 bytes of data and one extra byte
+called the checksum. There was
+<(https://nebusresearch.wordpress.com/2021/06/16/how-did-computes-and-computes-gazettes-new-mlx-work/)[a
+formula]> to calculate the correct value of the checksum byte from the 8 data
+bytes, and a program called
+<(https://archive.org/details/1986-06-compute-magazine/page/122/mode/2up)[MLX]>
+which made sure that the calculated checksum bytes matched what you typed in.
+The idea was that if you ever made a typo, MLX would be able to detect that and
+show you where the error was.
+
+>.p|I should note that Compute! definitely didn't come up with this idea. For
+one, Richard Hamming developed a more
+<(https://en.wikipedia.org/wiki/Error_correction_code)[versatile system]> in the
+1940s, and there are almost certainly examples from even earlier. This is just a
+cool use case.
+
+.p|Modern compressed file formats use the same trick. In addition to the raw
+compressed data, formats like gzip and zlib include a checksum on the
+uncompressed data to make sure that there was no corruption. I'll get into how
+we calculate these checksums efficiently later, but for now just know that
+they're there.
+
+#2|Representing payloads
+
+.p|The simplest possible representation of a payload looks like this:
+
+$</site/code.sh rust
+$|struct Payload {
+$|    data: Box<[Segment]>,
+$|}
+$|
+$|enum Segment {
+$|    Block(Block),
+$|    Bomb(Bomb),
+$|}
+$|
+$|struct Block {
+$|    data: Box<[u8]>,
+$|}
+$|
+$|struct Bomb {
+$|    data: Box<[u8]>,
+$|    size: BigUint,
+$|}
+
+.p|A payload is a series of segments, and a segment is either a constant block
+of data or a bomb - a very large stretch of very repeated data. We then create a
+single function which takes a payload and compresses it to generate another
+payload:
+
+$</site/code.sh rust
+$|fn gzip(payload: Payload) -> Payload {}
+
+.p|This gzip function would look like this in pseudocode:
+
+```"for each segment:
+   "    if this segment is a block:
+   "        create a new block which outputs this segment's contents
+   "    else if this segment is a bomb:
+   "        output the bomb's contents as if it were a block
+   "
+   "        create a new bomb b
+   "        set b's contents to <258,l>*4 where l is the size of this bomb's segments.
+   "        # note that 258 is the maximum length of a deflate segment, and you
+   "        # can fit 4 segments in a single byte
+   "
+   "        set b's length based on this segment's length
+   "        output b
+   "calculate and output a checksum
+
+.p|This would work pretty well, but I would like to specify the size of the
+final payload and have the uncompressed data resize automatically based on that,
+rather than the other way around.
+
+>.p|Retrospectively, this was a pretty arbitrary choice and made this whole
+process much harder than it could have been. I still think it was a good call
+though.
+
+.p|Note that each bomb in our initial payload turns into a single bomb in its
+compressed parent. Essentially, I would want each parent bomb to inform its
+child bomb how large it is. This means we have to update our bomb struct:
+
+$</site/code.sh rust
+$|struct Bomb {
+$|    data: Box<[u8]>,
+$|    size: BigUint,
+$|
+$|    /* In most languages other than Rust I would put the Payload in as part of
+$|     * a closure, rather than passing it in directly as an argument, but then
+$|     * you run into problems with having multiple mutable references. There
+$|     * might be a better way to do this, but I don't know what it is. */
+$|    fill: Box<dyn Fn(Option<&mut Payload>, &BigUint)>,
+$|}
+
+.p|Now we've added a `fill` function, which (along with some other logic)
+updates this bomb's size and sets the child's size. Of course, now that our
+child payload has dynamic data, we have to create a dynamic block which can
+store our checksum:
+
+$</site/code.sh rust
+$|struct Block {
+$|    data: BlockData,
+$|
+$|    /* The full length of a block is always known, even if its contents
+$|     * aren't. This makes certain operations with Deflate easier.
+$|     * */
+$|    len: usize,
+$|}
+$|
+$|enum BlockData {
+$|    Known(Box<[u8]>),
+$|    Unfilled(Box<dyn Fn(Option<&mut Payload>) -> Box<[u8]>>),
+$|}
+
+#2|Calculating Adler32
+
+.p|Adler32 is a very simple checksum algorithm used by zlib. In it, you
+calculate two sums called `s1` and `s2`, where `s1` is the sum of all byte
+values plus 1 and `s2` is the sum of all `s1` values. The Adler32 checksum of
+the bytes `01 02 03`
+would be calculated like this:
+
+```"s1  s2
+   "1   0    initial values
+   "2   2    add 1 to s1 and 2 to s2
+   "4   6    add 2 to s1 and 4 to s2
+   "7   13   add 3 to s1 and 7 to s2
+
+.p|The final checksum is just a concatenation of s2 and s1 mod 65521 (the
+largest prime number that fits into 16 bits), so our final checksum is
+`000d0007`.
+
+.p|Luckily, Adler32 over a repetitive bomb of data reduces to two polynomials,
+one for `s1` and another for `s2`. Calculating `s1` is easy enough, in
+pseudocode:
+
+```"Calculate the sum of each byte value in the bomb -> s
+   "Calculate the number of repetitions of the bomb -> r
+   "s0 += s * r
+
+.p|`s2` is a bit harder. Visually, if we graph the value of `s1` over the byte
+index, the change to `s2` is just the area under the curve.
+
+```"  |        .
+   "  |      ...
+   "  |     .###
+   "  |   ...###
+   "s1|  .######
+   "  |...######
+   "  |`````````
+   "  |`````````
+   "   byte index
+
+.p|Here I've graphed three repetitions of the bytes `01 00 01`, and the
+corresponding values for `s1` over time. The area under the curve can be divided
+into three components:
+
+```"s2 += s1 * (number of bytes that we're repeating in total)
+   "s2 += area in a single bomb * number of bombs
+   "rect = change in s1 for a single bomb * length of a single bomb
+   "s2 += rect * (number of bombs) * (number of bombs - 1) / 2
+
+.p|Since we're using a prime characteristic, we have a
+<(https://en.wikipedia.org/wiki/Finite_field)[finite field]>, so all of these
+operations should just work without any issues from the modulus.
+
+#2|Calculating CRC-32
+
+.p|CRC-32 is a more complicated checksum used by gzip. In it, you convert your
+data into a polynomial over <(https://en.wikipedia.org/wiki/GF(2))[GF(2)]>,
+divide it by some other irreducible polynomial, and calculate the remainder.
+Luckily, the implementation is pretty simple, a complete working program just
+looks like this:
+
+$</site/code.sh rust
+$|let mut crc: u32 = 0xffffffff;
+$|
+$|fn apply(crc: u32, byte: u8) -> u32 {
+$|    let mut ret: u32 = crc ^ (byte as u32);
+$|    for _i in 0..8 {
+$|        if (ret & 1) != 0 {
+$|            ret = (ret >> 1) ^ 0xedb88320;
+$|        } else {
+$|            ret = ret >> 1;
+$|        }
+$|    }
+$|    return ret;
+$|}
+$|
+$|// ...later
+$|for byte in data {
+$|    crc = apply(crc, *byte);
+$|}
+$|
+$|// ...later
+$|crc = !crc;
+
+.p|If you're familiar with
+<(https://en.wikipedia.org/wiki/Linear-feedback_shift_register)[linear feedback
+shift registers]>, this logic is similar. For each bit of our input, we xor it
+with 1 bit of our output, shift our output, and then do a second xor if we
+shifted a 1. All of these operations are linear operations, so they can be
+represented as a matrix. We can represent `crc` as a 33 dimensional vector over
+GF(2) which starts off as all ones:
+
+```"crc :=
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+   "1
+
+.p|`crc[0]` is always a one, and the other 32 components are the 32 bits of our
+CRC.
+
+.p|When we see a zero bit, we shift all of our bits over and run a conditional
+xor, which is like a multiplication by this matrix:
+
+```"push_0 :=
+   "100000000000000000000000000000000
+   "000000000000000000000000000000001
+   "010000000000000000000000000000001
+   "001000000000000000000000000000001
+   "000100000000000000000000000000000
+   "000010000000000000000000000000001
+   "000001000000000000000000000000001
+   "000000100000000000000000000000000
+   "000000010000000000000000000000001
+   "000000001000000000000000000000001
+   "000000000100000000000000000000000
+   "000000000010000000000000000000001
+   "000000000001000000000000000000001
+   "000000000000100000000000000000001
+   "000000000000010000000000000000000
+   "000000000000001000000000000000000
+   "000000000000000100000000000000000
+   "000000000000000010000000000000001
+   "000000000000000001000000000000000
+   "000000000000000000100000000000000
+   "000000000000000000010000000000000
+   "000000000000000000001000000000000
+   "000000000000000000000100000000000
+   "000000000000000000000010000000001
+   "000000000000000000000001000000001
+   "000000000000000000000000100000000
+   "000000000000000000000000010000000
+   "000000000000000000000000001000001
+   "000000000000000000000000000100000
+   "000000000000000000000000000010000
+   "000000000000000000000000000001000
+   "000000000000000000000000000000100
+   "000000000000000000000000000000010
+
+.p|When we push a 1 bit, we multiply by this matrix instead (note that the first
+column has changed):
+
+```"push_1 :=
+   "100000000000000000000000000000000
+   "100000000000000000000000000000001
+   "110000000000000000000000000000001
+   "101000000000000000000000000000001
+   "000100000000000000000000000000000
+   "100010000000000000000000000000001
+   "100001000000000000000000000000001
+   "000000100000000000000000000000000
+   "100000010000000000000000000000001
+   "100000001000000000000000000000001
+   "000000000100000000000000000000000
+   "100000000010000000000000000000001
+   "100000000001000000000000000000001
+   "100000000000100000000000000000001
+   "000000000000010000000000000000000
+   "000000000000001000000000000000000
+   "000000000000000100000000000000000
+   "100000000000000010000000000000001
+   "000000000000000001000000000000000
+   "000000000000000000100000000000000
+   "000000000000000000010000000000000
+   "000000000000000000001000000000000
+   "000000000000000000000100000000000
+   "100000000000000000000010000000001
+   "100000000000000000000001000000001
+   "000000000000000000000000100000000
+   "000000000000000000000000010000000
+   "100000000000000000000000001000001
+   "000000000000000000000000000100000
+   "000000000000000000000000000010000
+   "000000000000000000000000000001000
+   "000000000000000000000000000000100
+   "000000000000000000000000000000010
+
+.p|By turning our CRC into a bunch of exponentiations, we can use the
+<(https://en.wikipedia.org/wiki/Exponentiation_by_squaring)[square and
+multiply]> algorithm to calculate our checksum in logarithmic time.
+
+#2|Conclusion
+
+.p|I don't really blame anybody for using the more inefficient approach to
+generating payloads, this is a lot of extra work for very little practical
+marginal benefit. Still, this program was fun to make, and the devil on my
+shoulder telling me to write this stupid little thing is gone now. Feel free to
+review <(https://github.com/NateChoe1/ied)[my code]>, although keep in mind that
+I hacked it together pretty quickly while learning Rust.
