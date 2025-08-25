@@ -38,9 +38,12 @@ generator written in Go.
 .p|<(https://github.com/NateChoe1/tytc)[tytc]>: A Youtube client that runs in
 the shell, written in shell script.
 
+.p|<https://github.com/NateChoe1/ied)[IED]>: A tool to programmatically create
+very large zip bombs, written in Rust.
+
 #2|Experience
 
-.p|2024-present: Student at the University of Texas at Dallas
+.p|2024-present: Computer science student at the University of Texas at Dallas
 
 .p|2024: Worked on Maestro through ACM Research at UTD, developing a multimodal
 music-text embedding model trained on synthetic data.

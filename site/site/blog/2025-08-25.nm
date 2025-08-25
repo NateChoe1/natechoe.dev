@@ -1,0 +1,494 @@
+//Solving CRCs
+
+.p|<(https://github.com/NateChoe1/zip-bomb/blob/main/crc-bf.c)[Recently]>, I had
+to solve three problems:
+
+1-|Given a file `f` and some set of offsets `o`, replace the four bytes at each
+  |offset of `o` with some constant `c`, such that the CRC-32 checksum of the
+  |file is now `t`.
+ -|Do the same, except that the CRC-32 checksum of the file should equal `c`.
+ -|Find some CRC-32 checksum `p` such that appending the byte `b` doesn't change
+  |the checksum.
+
+.p|Here are some examples of solutions to all three:
+
+```"$ cat crc32.c
+   "#include <stdio.h>
+   "#include <stdint.h>
+   "
+   "int main(void) {
+   "	uint32_t checksum = 0xffffffff;
+   "	for (;;) {
+   "		int c = getchar();
+   "		if (c == EOF) {
+   "			break;
+   "		}
+   "		checksum ^= c;
+   "		for (int i = 0; i < 8; ++i) {
+   "			uint32_t mask = (checksum & 1) ? 0xedb88320 : 0;
+   "			checksum >>= 1;
+   "			checksum ^= mask;
+   "		}
+   "	}
+   "	checksum = ~checksum;
+   "	printf("%02x%02x%02x%02x\n",
+   "			(checksum)       & 0xff,
+   "			(checksum >> 8)  & 0xff,
+   "			(checksum >> 16) & 0xff,
+   "			(checksum >> 24) & 0xff);
+   "	return 0;
+   "}
+   "$ cc crc32.c -o crc32
+   "$
+   "$ # Problem number 1
+   "$ printf 'Change the following four bytes: "\xda\x06\x9f\xd6" such that the CRC-32 of this file is 0xdeadbeef' | ./crc32
+   "deadbeef
+   "$
+   "$ # Problem number 2
+   "$ $ printf 'The CRC-32 checksum of this file is "\x36\x4a\x09\xca"' | ./crc32
+   "364a09ca
+   "$
+   "$ # Problem number 3
+   "$ printf "\xb4\xe5\xac\x90The letter U can't change this checksum! " | ./crc32
+   "80569f24
+   "$ printf "\xb4\xe5\xac\x90The letter U can't change this checksum! U" | ./crc32
+   "80569f24
+   "$ printf "\xb4\xe5\xac\x90The letter U can't change this checksum! UUUUUUUUU" | ./crc32
+   "80569f24
+
+.p|This blog post is going to go over some basics of how CRCs work, as well as
+explain how all of these problems can be solved.
+
+#2|How CRCs work (for programmers)
+
+.p|See <(https://www.youtube.com/watch?v=izG7qT0EpBw)[this Ben Eater]> video for
+a different explanation.
+
+.p|A CRC is a checksum algorithm, its goal is to check if a message got
+corrupted while being transmitted or stored. A very simple checksum algorithm
+might look like this:
+
+$</site/code.sh python
+$|value = 0
+$|MODULUS = 65521 # the largest prime number that fits into 16 bits
+$|for bit in message:
+$|    value *= 2
+$|    value += bit
+$|print(value % MODULUS)
+
+.p|With this code, we take our binary message, convert it to a number, then
+calculate a modulus over some prime number. If our message is very long though,
+these big integer operations can get very slow, so we can move the modulus
+inside of the loop to keep everything small.
+
+$</site/code.sh python
+$|value = 0
+$|MODULUS = 65521
+$|for bit in message:
+$|    value *= 2
+$|    value += bit
+$|    value %= MODULUS
+$|print(value)
+
+.p|A modulus is just a repeated subtraction though, so we can rewrite our code
+again:
+
+$</site/code.sh python
+$|value = 0
+$|MODULUS = 65521
+$|for bit in message:
+$|    value *= 2
+$|    value += bit
+$|    while value >= MODULUS:
+$|        value -= MODULUS
+$|print(value)
+
+.p|`value` will never actually exceed `modulus*2`, so we can change that `while`
+to an `if`:
+
+$</site/code.sh python
+$|value = 0
+$|MODULUS = 65521
+$|for bit in message:
+$|    value *= 2
+$|    value ^= bit
+$|    if value >= MODULUS:
+$|        value -= MODULUS
+$|print(value)
+
+.p|This subtraction is actually quite difficult to model mathematically. As an
+example, let's look at the expression `4-3`:
+
+```" 100
+   "-011
+   "====
+   " 001
+
+.p|As you can see, in the second column `0-1=0`, but in the third column
+`0-1=1`. This happens because carry-overs allow for our bit columns to "mix"
+together in hard-to-predict ways.
+
+>.p|Interview question, from the
+<(https://proveitmath.org/wp-content/uploads/2020-admissions-test.pdf)[Prove It!
+Math Academy 2020 entrance exam]>. Only two people got this question right, and
+although I passed exam, I wasn't one of them:
+
+ .p|If we didn't have bitwise carry-overs in addition, would the
+<(https://en.wikipedia.org/wiki/Collatz_conjecture)[Collatz conjecture]> be
+true?
+
+.p|We could just get rid of carry-overs entirely, so that `0-1=1` with no
+carry-over to the next bit. This operation is called
+<(https://en.wikipedia.org/wiki/XOR_gate)[xor]>, and it still produces versatile
+checksums while being easier to analyze.
+
+$</site/code.sh python
+$|value = 0
+$|MODULUS = 0x11021
+$|for bit in (message + [0]*16):  # i'll explain why we add these zeros later
+$|    value *= 2
+$|    value += bit
+$|    if value & 0x10000:
+$|        value ^= MODULUS
+$|print(value)
+
+.p|I took that modulus from
+<(https://en.wikipedia.org/wiki/Cyclic_redundancy_check)[Wikipedia]>, there are
+lots of values that work reasonably well here.
+
+.p|Let's see what this function generates for the message `0110111001100011`:
+
+```"  01101110011000110000000000000000   initial message
+   "^  10001000000100001
+   "----------------------------------
+   "  00101010011010110100000000000000   xor #1
+   "^   10001000000100001
+   "----------------------------------
+   "  00001000011011110110000000000000   xor #2
+   "^     10001000000100001
+   "----------------------------------
+   "  00000000111011100110100000000000   xor #3
+   "          10001000000100001
+   "----------------------------------
+   "  00000000011001100111100010000000   xor #4
+   "^          10001000000100001
+   "----------------------------------
+   "  00000000001000100111000011000000   xor #5
+   "^           10001000000100001
+   "----------------------------------
+   "  00000000000000000111010011100000   xor #6 (final)
+   "Result: 0111010011100000
+
+.p|Interestingly, if we replace those final 16 bits of our message with this
+result, something interesting happens:
+
+```"  01101110011000110111010011100000   initial message
+   "^  10001000000100001
+   "----------------------------------
+   "  00101010011010110011010011100000   xor #1
+   "^   10001000000100001
+   "----------------------------------
+   "  00001000011011110001010011100000   xor #2
+   "^     10001000000100001
+   "----------------------------------
+   "  00000000111011100001110011100000   xor #3
+   "^         10001000000100001
+   "----------------------------------
+   "  00000000011001100000110001100000   xor #4
+   "^          10001000000100001
+   "----------------------------------
+   "  00000000001000100000010000100000   xor #5
+   "^           10001000000100001
+   "----------------------------------
+   "  00000000000000000000000000000000   xor #6 (final)
+   "Result: 0000000000000000
+
+.p|The padding bits and our base result cancel out, giving us a checksum value
+of zero.
+
+#2|How CRCs work (for mathematicians)
+
+.p|Mathematicians still see this operation as a division, just not over the
+integers. The key insight is that any binary string can be converted into a
+polynomial. For example, the message `1001` can be represented as `1*x^3 + 0*x^2
++ 0*x^1 + 1*x^0`, or just `x^3 + 1`. We also perform all of these operations
+over mod 2 so that subtractions are still xors. To show how this might work,
+here's a worked example of `11001` divided by `111`:
+
+
+```"                                  1*x^2         + 1*x^0
+   "                .--------------------------------------
+   "1*x^2 + 1*x + 1 | 1*x^4 + 1*x^3 + 0*x^2 + 0*x^1 + 1*x^0
+   "                - 1*x^4 + 1*x^3 + 1*x^2
+   "                  -------------------------------------
+   "                                  1*x^2 + 0*x^1 + 1*x^0
+   "                                - 1*x^2 + 1*x^1 + 1*x^1
+   "                                  ---------------------
+   "                                          1*x^1 + 0*x^0
+
+.p|Our final result is `x^2+1 R x`, so the final CRC is `10`. This way of
+viewing CRCs helps us make some guarantees about the effectiveness of our
+polynomial. Let's say we're trying to transmit the message `11001`, but a
+<(https://www.wired.com/story/shark-cables/)[shark bites our fiber optic cable]>
+and we accidentally transmit the message `11011`. If the intended message is
+`M(x)`, the transmitted message is `m(x)`, and the CRC polynomial is `c(x)`, let
+the difference of `m(x) - M(x) = e(x) = 1*x^1`. In other words,
+`m(x) = M(x) + e(x)`. If we want our CRC to detect our error, we have to make
+sure that `e(x) mod c(x)` is rarely zero. It turns out that for any 1 bit error,
+as long as `c(x)` has at least two nonzero coefficients, `e(x)` is never zero.
+
+.p|To show this, let's divide `x^5` by `x^2+x+1`
+
+```"  100000
+   "^ 111
+   "--------
+   "  011000
+   "^  111
+   "--------
+   "  000100
+   "^    111
+   "--------
+   "  000011
+
+.p|With each step, the lowest order bit is always going to be changed from `0`
+to `1`, so when we're finished we'll always have a nonzero remainder.
+
+.p|CRCs are also really good at detecting burst errors. Let's say we have some
+message, but suddenly 12 consecutive bits in the middle are all randomized.
+
+```"0011101110100101001010010110001101000100010011101000
+   "0011101110100101000110011000011101000100010011101000
+   "                  ************ <- cosmic ray hits wire, these 16 bits are
+   "                                  randomized
+
+.p|This error can be represented with the polynomial `e(x) = E(x) * x^k`, where
+`k` is the position of the error and `E(x)` is some polynomial of order 11. If
+we're using a CRC polynomial of order 16, then we know that `E(x)` is nonzero
+and that `x^k` is nonzero. If our CRC polynomial is
+<(https://en.wikipedia.org/wiki/Irreducible_polynomial)[irreducible]>, then we
+know that `e(x)` is also nonzero, and that any burst error shorter than 16 bits
+will always be detected.
+
+#2|How CRCs work (for programmers again)
+
+.p|Let's look back at the CRC code I introduced at the beginning of this
+article:
+
+$</site/code.sh c
+$|#include <stdio.h>
+$|#include <stdint.h>
+$|
+$|int main(void) {
+$|	uint32_t checksum = 0xffffffff; /* step 1 */
+$|	for (;;) {
+$|		int c = getchar();
+$|		if (c == EOF) {
+$|			break;
+$|		}
+$|		checksum ^= c; /* step 2 */
+$|
+$|		/* step 3 */
+$|		for (int i = 0; i < 8; ++i) {
+$|			uint32_t mask = (checksum & 1) ? 0xedb88320 : 0;
+$|			checksum >>= 1;
+$|			checksum ^= mask;
+$|		}
+$|	}
+$|
+$|	checksum = ~checksum; /* step 4 */
+$|	printf("%02x%02x%02x%02x\n",
+$|			(checksum)       & 0xff,
+$|			(checksum >> 8)  & 0xff,
+$|			(checksum >> 16) & 0xff,
+$|			(checksum >> 24) & 0xff);
+$|	return 0;
+$|}
+
+.p|I've labeled what I believe to be the four most important steps in this code.
+To be honest, I don't really understand steps 1 and 4, they could be removed and
+you'd still have a perfectly good CRC. My best guess is that if your message is
+made entirely of zero bits, the final CRC value changes depending on your
+message length. I've included them here to remain standards compliant.
+
+.p|In the simple Python example from earlier, we padded our message with 16 zero
+bits. This could be avoided by multiplying each of our message bits by `x^16`.
+
+$</site/code.sh python
+$|value = 0
+$|MODULUS = 0x11021
+$|for bit in message:
+$|    value <<= 1
+$|    value ^= bit << 16
+$|    if value & 0x10000:
+$|        value ^= MODULUS
+$|print(value)
+
+.p|We could also switch the order of the addition and multiplication:
+
+$</site/code.sh python
+$|value = 0
+$|MODULUS = 0x11021
+$|for bit in message:
+$|    value ^= bit << 15
+$|    value <<= 1
+$|    if value & 0x10000:
+$|        value ^= MODULUS
+$|print(value)
+
+.p|We can also xor many bits of our message at once:
+
+$</site/code.sh python
+$|value = 0
+$|MODULUS = 0x11021
+$|for byte in message:
+$|    value ^= bit << 8
+$|    for i in range(8):
+$|        value <<= 1
+$|        if value & 0x10000:
+$|            value ^= MODULUS
+$|print(value)
+
+.p|Now the C code is starting to make more sense:
+
+$</site/code.sh c
+$|#include <stdio.h>
+$|#include <stdint.h>
+$|
+$|int main(void) {
+$|	uint32_t checksum = 0xffffffff; /* step 1 */
+$|	for (;;) {
+$|		int c = getchar();
+$|		if (c == EOF) {
+$|			break;
+$|		}
+$|		checksum ^= c; /* step 2 */
+$|
+$|		/* step 3 */
+$|		for (int i = 0; i < 8; ++i) {
+$|			uint32_t mask = (checksum & 1) ? 0xedb88320 : 0;
+$|			checksum >>= 1;
+$|			checksum ^= mask;
+$|		}
+$|	}
+$|
+$|	checksum = ~checksum; /* step 4 */
+$|	printf("%02x%02x%02x%02x\n",
+$|			(checksum)       & 0xff,
+$|			(checksum >> 8)  & 0xff,
+$|			(checksum >> 16) & 0xff,
+$|			(checksum >> 24) & 0xff);
+$|	return 0;
+$|}
+
+.p|The only interesting thing is that we're storing our polynomials in
+little-endian. This means that to represent `x^2+x`, instead of using `110`, we
+use `011`. This allows us to get rid of one of our bit shifts.
+
+#2|The extended Euclidean algorithm
+
+.p|Here's an interesting
+<(https://en.wikipedia.org/wiki/Diophantine_equation)[Diophantine equation]>:
+
+```"1031x + 65521y = 1
+
+.p|`x` and `y` have to be integers, but they're allowed to be negative.
+
+.p|This is a specific case of the more general form:
+
+```"a*x + b*y = gcd(a, b)
+
+.p|Where `gcd` is the
+<(https://en.wikipedia.org/wiki/Greatest_common_divisor)[greatest common
+divisor]>.
+
+.p|Solving for the gcd can be done with the
+<(https://en.wikipedia.org/wiki/Euclidean_algorithm)[Euclidean algorithm]>:
+
+$</site/code.sh python
+$|def gcd(a, b):
+$|    if b > a:
+$|        return gcd(b, a)
+$|    if b == 0:
+$|        return a
+$|    return gcd(b, a % b)
+
+.p|This code relies on the fact that `gcd(a, b) = gcd(b, a % b)`, and that
+`gcd(a, 0) = a`. Here's what it might look like in practice:
+
+```"65521 = 63*1031 + 568
+   "1031  = 1*568   + 463
+   "568   = 1*463   + 105
+   "463   = 4*105   + 43
+   "105   = 2*43    + 19
+   "43    = 2*19    + 5
+   "19    = 3*5     + 4
+   "5     = 1*4     + 1
+   "4     = 4*1     + 0
+
+.p|We can rearrange these terms like this:
+
+```"1 = 1*5 - 1*4
+   "  = 1*5 - 1*(19 - 3*5)
+   "  = 4*5 - 1*19
+   "  = 4*(43-2*19) - 1*19
+   "  = 4*43 - 9*19
+   "  = 4*43 - 9*(105 - 2*43)
+   "  = 22*43 - 9*105
+   "  = 22*(463-4*105) - 9*105
+   "  = 22*463 - 97*105
+   "  = 22*463 - 97*(568-1*463)
+   "  = 119*463 - 97*568
+   "  = 119*(1031-1*568) - 97*568
+   "  = 119*1031 - 216*568
+   "  = 119*1031 - 216*(65521 - 63*1031)
+   "  = 13727*1031 - 216 * 65521
+
+.p|There's our answer: `x=13727`, `y=-216`. This reversing trick is called the
+<(https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm)[extended Euclidean
+algorithm]>. Our result has three major implications:
+
+```"13727*1031 = 1    (mod 65521)
+   "1/1031 = 13727    (mod 65521)
+   "x/1031 = x*13727  (mod 65521)
+
+.p|This same trick also works for polynomials, so we can figure out that:
+
+```"x*(x+1) = 1    (mod x^2+x+1)
+   "1/x = x+1      (mod x^2+x+1)
+   "y/x = y*(x+1)  (mod x^2+x+1)
+
+#2|Returning to our problems
+
+#3|Problem 1: Fixing a CRC to a constant
+
+.p|If we take our message and zero out the bits at each offset, we can construct
+this polynomial:
+
+```"M(x) = m(x) + o(x)*c(x)
+
+.p|Where `m(x)` is the original message with zeroed out bits, `o(x)` are the
+offsets, and `c(x)` is some 32 bit polynomial. We want to fix our polynomial, so
+
+```"M(x) = f(x)
+   "m(x) + o(x)*c(x) = f(x)
+   "c(x) = (f(x) - m(x) / o(x)
+
+#3|Problem 2: CRC quines
+
+.p|Here we do the same thing, except `M(X) = c(x)` instead of `f(x)`
+
+```"M(x) = m(x) + o(x)*c(x)
+   "M(x) = c(x)
+   "m(x) + o(x)*c(x) = c(x)
+   "o(x)*c(x) - c(x) = -m(x)
+   "c(x)*(o(x) - 1) = -m(x)
+   "c(x) = -m(x) / (o(x)-1)
+
+#3|Problem 3: CRC fixed points
+
+.p|Our problem statement has changed slightly but it's still not too bad:
+
+```"p(x)*x^8 + c(x) = p(x)
+   "p(x)*x^8 - p(x) = -c(x)
+   "p(x)*(x^8 - 1) = -c(x)
+   "p(x) = -c(x) / (x^8-1)
