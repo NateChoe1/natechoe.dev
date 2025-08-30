@@ -38,7 +38,7 @@ generator written in Go.
 .p|<(https://github.com/NateChoe1/tytc)[tytc]>: A Youtube client that runs in
 the shell, written in shell script.
 
-.p|<https://github.com/NateChoe1/ied)[IED]>: A tool to programmatically create
+.p|<(https://github.com/NateChoe1/ied)[IED]>: A tool to programmatically create
 very large zip bombs, written in Rust.
 
 #2|Experience
