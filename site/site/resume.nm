@@ -4,7 +4,7 @@
 
 .p|Email: <(mailto:nate@natechoe.dev)[<nate@natechoe.dev>]>
 
-.p|<(https://natechoe.dev/resume.html)[See this r\&eacute\;um\&eacute\; on
+.p|<(https://natechoe.dev/resume.html)[See this r\&eacute\;sum\&eacute\; on
 natechoe.dev]>
 
 #2|Summary
@@ -23,7 +23,7 @@ natechoe.dev.
 
 .p|<(https://github.com/NateChoe1/nmark)[nmark]>: A markup language written from
 scratch in C, used in combination with ncdg to generate this
-r\&eacute\;um\&eacute\;.
+r\&eacute\;sum\&eacute\;.
 
 .p|<(https://gist.github.com/NateChoe1/65809afa76f786c33df865de75c32eee)[testmaker]>:
 an all-pairs test set generator written in Python, currently being used in
