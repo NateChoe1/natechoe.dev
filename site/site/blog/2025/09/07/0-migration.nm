@@ -1,0 +1,11 @@
+//I've migrated natechoe.dev blog links
+
+.p|I've migrated all of the natechoe.dev blog links to a new URL format. I don't
+think that there are too many people hyperlinking onto blog posts here, so this
+shouldn't affect too many people. If you have an old broken link, here's the
+change:
+
+```"/blog/YYYY-MM-DD.html => /blog/YYYY/MM/DD/0-migrated.html
+
+.p|I could go through all of my old blog posts and write actual slugs for them,
+but I'm way too lazy to do that. I could get AI to do it, but that's cringe.

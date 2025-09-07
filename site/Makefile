@@ -1,7 +1,7 @@
 NM = $(shell find -name *.nm)
 NM_IM = $(NM:.nm=.ncdg.ignored)
 SRCS = $(shell find -name *.ncdg)
-BLOG = $(shell find site/blog -maxdepth 1 -type f | grep -E "[0-9]{4}-[0-9]{2}-[0-9]{2}")
+BLOG = $(shell find site/blog -type f -regextype egrep -regex '.*/[0-9]{4}/[0-9]{2}/[0-9]{2}/.*')
 HTML = $(SRCS:.ncdg=.html) $(NM:.nm=.html)
 CDEPS = /tor-data/natechoe-dev-onion/hostname /site/head.html /site/tail.html
 
