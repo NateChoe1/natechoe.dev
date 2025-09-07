@@ -116,8 +116,8 @@ $|    if value >= MODULUS:
 $|        value -= MODULUS
 $|print(value)
 
-.p|This subtraction is actually quite difficult to model mathematically. As an
-example, let's look at the expression `4-3`:
+.p|This subtraction is quite difficult to model mathematically. As an example,
+let's look at the expression `4-3`:
 
 ```" 100
    "-011
@@ -131,7 +131,7 @@ together in hard-to-predict ways.
 >.p|Interview question, from the
 <(https://proveitmath.org/wp-content/uploads/2020-admissions-test.pdf)[Prove It!
 Math Academy 2020 entrance exam]>. Only two people got this question right, and
-although I passed exam, I wasn't one of them:
+although I passed the exam, I wasn't one of them:
 
  .p|If we didn't have bitwise carry-overs in addition, would the
 <(https://en.wikipedia.org/wiki/Collatz_conjecture)[Collatz conjecture]> be
@@ -154,7 +154,7 @@ $|print(value)
 
 .p|I took that modulus from
 <(https://en.wikipedia.org/wiki/Cyclic_redundancy_check)[Wikipedia]>, there are
-lots of values that work reasonably well here.
+lots of other values that work reasonably well here.
 
 .p|Let's see what this function generates for the message `0110111001100011`:
 
@@ -179,8 +179,8 @@ lots of values that work reasonably well here.
    "  00000000000000000111010011100000   xor #6 (final)
    "Result: 0111010011100000
 
-.p|Interestingly, if we replace those final 16 bits of our message with this
-result, something interesting happens:
+.p|If we replace those final 16 bits of our message with this result, something
+interesting happens:
 
 ```"  01101110011000110111010011100000   initial message
    "^  10001000000100001
@@ -210,10 +210,10 @@ of zero.
 
 .p|Mathematicians still see this operation as a division, just not over the
 integers. The key insight is that any binary string can be converted into a
-polynomial. For example, the message `1001` can be represented as `1*x^3 + 0*x^2
-+ 0*x^1 + 1*x^0`, or just `x^3 + 1`. We also perform all of these operations
-over mod 2 so that subtractions are still xors. To show how this might work,
-here's a worked example of `11001` divided by `111`:
+polynomial. For example, the message `1001` can be represented as
+`1*x^3 + 0*x^2 + 0*x^1 + 1*x^0`, or just `x^3 + 1`. We also perform all of these
+operations over mod 2 so that subtractions are still xors. To show how this
+might work, here's a worked example of `11001` divided by `111`:
 
 
 ```"                                  1*x^2         + 1*x^0
