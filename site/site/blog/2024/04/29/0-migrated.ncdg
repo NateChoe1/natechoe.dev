@@ -1,7 +1,7 @@
 @%/site/head.html@
 @=header Sorry Cloudflare!@
 
-<p>In <a href=/blog/2024-04-20.ncdg>a previous blog post</a>, I talked about
+<p>In <a href=/blog/2024/04/20/0-migrated.html>a previous blog post</a>, I talked about
 setting up Cloudflare as a "secondary DNS" with their API. It turns out,
 Cloudflare really doesn't like when you use nameservers other than their own
 without letting them know. Cloudflare recently sent me an automated email asking
