@@ -23,6 +23,6 @@ create_entry() {
 	fi
 }
 
-find . -type f -regextype egrep -regex '\./[0-9]{4}/.*' | cut -b 3- | sort -r | while read file ; do
+find . -type f -regextype egrep -regex '\./[0-9]{4}/[0-9]{2}/[0-9]{2}/[0-9].*' | cut -b 3- | sort -r | while read file ; do
 	create_entry "$file"
 done > posts

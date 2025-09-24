@@ -6,7 +6,7 @@
 <p>If I pick a number between 1 and 1000, while only telling you higher or lower for each of the guesses, how would you play?</p>
 <div id="higherlowergame">
 	<p class="noscript">You seem to have javascript disabled. It's ok, I still love you :)</p>
-	<script src="/resources/higherlower.js"></script>
+	<script src="higherlower.js"></script>
 </div>
 <p>I spent an embarassingly long time writing the javascript to make that game happen. I even took extra care in releasing it under the <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL v 3.0</a>. for the 3 people who use LibreJS.</p>
 <p>Anyways, the ideal strategy is (obviously) not to go through every single number. The ideal strategy is to remove half the numbers in every guess by just guessing the middle. For example, if your first guess is 500, and my fantastic code response "higher", then you've just eliminated 500 numbers. After that, you can 750 to eliminate 250 numbers, and so on. Using this strategy you can find the answer in 9 or 10 guesses every time, which is far better than doing it in 1000.<p>
@@ -18,12 +18,12 @@
 </code></pre>
 <p>As you can see from my crude imagery, in order to add the 3 to this sorted list, the 4, 5, and 6 all had to shift over to the right. This takes time, time which we don't have. We've lost the ability to just add things to the end of our list thanks to our insistence on sorting. What if there was some way to get the blazing efficiency of binary search, but the dynamicallity of just a regular old array.</p>
 <p>Introducing binary search trees! Just store the middle element, and the 2 elements to the left and the right.</p>
-<img src="/resources/good-bst.png" alt="Example of a balanced binary tree">
+<img src="good-bst.png" alt="Example of a balanced binary tree">
 <p>To insert an element, just find out where it should go, and put it there! Just one problem though, these trees aren't always balanced!</p>
-<img src="/resources/unbalanced-bst.png" alt="Example of an unbalanced binary tree">
+<img src="unbalanced-bst.png" alt="Example of an unbalanced binary tree">
 <p>If only there was a function to take an unbalanced binary tree and make it balanced.</p>
 <p>Let's define a new term, a faux-balanced tree. A tree with the same number of elements (plus or minus 1) on the left and right sides. This isn't the same as a truly balanced tree, which says that the deepest end of the tree and the shallowest end shouldn't be more than 1 level apart. All truly balanced trees are faux-balanced, but not all faux-balanced trees are truly balanced.</p>
-<img src="/resources/faux-vs-true-bst.png" alt="Side by side comparison of a faux balanced tree and a truly balanced tree">
+<img src="faux-vs-true-bst.png" alt="Side by side comparison of a faux balanced tree and a truly balanced tree">
 <p>If every single node in a tree is faux-balanced, then the whole tree is truly balanced. This means that if we can get a single node faux-balanced, then faux-balance the children, we can truly balance an entire tree. The implication of this is that if we are able to move a single node from one side of a tree to the other, we can balance a binary search tree. This does, however, mean that we have to change the root node, as there are always going to be a certain number of elements less than the root node, and a certain number of elements greater than the root node, and we can't change either of those numbers without either changing the list, or changing the root node itself.</p>
 <p>Just focusing on moving a node from the left side of a tree to the right side, we have to remove a node from the left side, replace the root node, and add to the right side. The only possible contender for the new root node is the largest node on the left side, the only possible contender for the node to remove from the left side is the new root that we just removed, and the only contender for the new node on the right side is the old root node.</p>
 <p>This leads to our final algorithm:</p>

@@ -120,11 +120,11 @@ access each page, although I'm not entirely sure how to replicate this.</p>
 <p>The chain eventually ends in a subdomain of deviceconnectnetwork.co.in, which
 has a fake captcha screen.</p>
 
-<img src=/resources/deviceconnect-base.png alt="Fake captcha displayed on deviceconnectnetwork.co.in">
+<img src=deviceconnect-base.png alt="Fake captcha displayed on deviceconnectnetwork.co.in">
 
 <p>Clicking on the captcha leads the page to ask for notifications.</p>
 
-<img src=/resources/deviceconnect-notif.png alt="deviceconnectnetwork.co.in
+<img src=deviceconnect-notif.png alt="deviceconnectnetwork.co.in
 asking for notifications">
 
 <p>I stopped here because I didn't want some random spammer sending me
