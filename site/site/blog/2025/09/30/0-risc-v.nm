@@ -1,0 +1,11 @@
+//The RISC-V spec is really nice
+
+.p|You should <(https://riscv.org/specifications/ratified/)[read it]>. I've
+written a lot on this website about <(/blog/2025/07/11/0-migrated.html)[bad]>
+<(/blog/2022/06/06/0-migrated.html)[technical writing]>, so I thought it would
+be nice to appreciate it when I see something executed very well.
+
+.p|I really have no idea what it is they do so much better than everyone else,
+maybe the difference is just that I've gotten better at reading dense technical
+literature, maybe the typesetting is just cleaner, but somehow I get the feeling
+that they put a lot of care into making their spec readable.
