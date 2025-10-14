@@ -1,0 +1,77 @@
+//A quick nerd snipe
+
+.p|I'm writing this article to <(https://xkcd.com/356/)[nerd snipe]> a friend I
+met at the <(https://baduk.club/)[go club]> with a strong pure math background.
+
+.p|Here's a checksum function, implemented in the Go programming language:
+
+$</site/code.sh go
+$|func crc32(data []byte) [4]byte {
+$|	var checksum uint32 = 0xffffffff
+$|	for _, v := range(data) {
+$|		checksum ^= uint32(v)
+$|		for _ = range(8) {
+$|			var mask uint32 = 0
+$|			if checksum & 1 != 0 {
+$|				mask = 0xedb88320
+$|			}
+$|			checksum >>= 1;
+$|			checksum ^= mask;
+$|		}
+$|	}
+$|	checksum = ^checksum
+$|	return [4]byte {
+$|		byte((checksum)       & 0xff),
+$|		byte((checksum >> 8)  & 0xff),
+$|		byte((checksum >> 16) & 0xff),
+$|		byte((checksum >> 24) & 0xff),
+$|	}
+$|}
+
+.p|This is called a
+<(https://en.wikipedia.org/wiki/Cyclic_redundancy_check)[CRC]>, or Cyclic
+Redundancy Check. This checksum is not cryptographically secure, and is mainly
+used simply because it has strong error detection properties and is easy to
+implement in hardware. It's commonly used in environments where bit flips are
+likely to occur, such as with Bluetooth networks. This algorithm can be modeled
+as a polynomial modulus, as described in
+<(https://en.wikipedia.org/wiki/Computation_of_cyclic_redundancy_checks)[this
+Wikipedia article]> and <(https://youtu.be/izG7qT0EpBw)[this Youtube video]>.
+
+.p|To show why this checksum isn't secure, implement (or describe how to
+implement) the following function:
+
+$</site/code.sh go
+$|func crack_crc32(data []byte, offset int, target [4]byte) [4]byte {
+$|	// your implementation here, you should not modify `data` or `target`
+$|}
+$|
+$|func crack_crc32_verify(data []byte, offset int, target [4]byte) {
+$|	result := crack_crc32(data, offset, target)
+$|
+$|	data[offset+0] = result[0]
+$|	data[offset+1] = result[1]
+$|	data[offset+2] = result[2]
+$|	data[offset+3] = result[3]
+$|
+$|	if crc32(data) == target {
+$|		fmt.Println("Success")
+$|	} else {
+$|		fmt.Println("Failure")
+$|	}
+$|}
+
+<<details>
+<<summary>Hint</summary>
+
+.p|Modular arithmetic over an irreducible polynomial like this forms a
+<(https://en.wikipedia.org/wiki/Finite_field)[finite field]> (see also:
+<(https://youtu.be/x1v2tX4_dkQ)[this lecture]>), meaning that
+multiplication is a reversible operation (see also the
+<(https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm)[extended Euclidean
+algorithm]>).
+
+<</details>
+
+.p|A writeup of my solution to this problem, as well as a couple of other
+related problems, see <(/blog/2025/08/25/0-migrated.html)[this other blog post]>
