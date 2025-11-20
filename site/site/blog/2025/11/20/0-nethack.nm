@@ -1,0 +1,424 @@
+//Let's compile NetHack!
+
+.p|Lately I've been addicted to an old video game called
+<(https://www.nethack.org/)[NetHack]>. In it, you play as an explorer navigating
+the Mazes of Menace trying to obtain the Amulet of Yendor for your god. NetHack
+is a roguelike, so its levels are procedurally generated and death is permanent.
+It's also very hard; the first time I played was probably around 7 years ago and
+I still haven't beaten it.
+
+.p|NetHack is based on an earlier game called Hack from 1982, and has been in
+continuous development since 1987. It's
+<(https://github.com/NetHack/NetHack)[open source]>, released under a variant of
+the GPL. On a whim I've decided to try compiling this wonderful game. I haven't
+done it yet, but I'm hoping that the process will make for an interesting blog
+post.
+
+#2|2025-11-20, 2:38 AM CST
+
+.p|I started by consulting the README, which contained this text:
+
+```"The files sys/*/Install.* were written to guide you in configuring the
+   "program for your operating system.  The files win/*/Install.* are
+   "available, where necessary, to help you in configuring the program
+   "for particular windowing environments.  Reading them, and the man pages,
+   "should answer most of your questions.
+
+.p|I then looked at those files:
+
+```"$ ls sys/
+   "amiga  atari  be  mac  msdos  os2  share  unix  vms  wince  winnt
+   "$ ls sys/unix/
+   "Install.unx   Makefile.utl       XCode.xcconfig  gitinfo.sh   snd86unx.shr
+   "Makefile.dat  NetHack.xcodeproj  cpp1.shr        hints        sysconf
+   "Makefile.doc  NewInstall.unx     cpp2.shr        mkmkfile.sh  unixmain.c
+   "Makefile.src  README.linux       cpp3.shr        nethack.sh   unixres.c
+   "Makefile.top  README.xcode       depend.awk      setup.sh     unixunix.c
+   "$ ls sys/unix/Install.*
+   "sys/unix/Install.unx
+
+.p|`sys/unix/Install.unx` begins with this ominous heading:
+
+```"                Instructions for installing NetHack 3.6
+   "                           on a UNIX system
+   "                =======================================
+   "NB: We are gradually replacing this process with the process documented in
+   "the file NewInstall.unx.
+   "
+   "0.  Read this entire file before starting, and come back to the Notes
+   "    below if you have any problems.  If you are trying to use X11,
+   "    also read all of win/X11/Install.X11, or read win/Qt/Install.Qt
+   "    if you are using Qt or KDE under X11.  For help in controlling
+   "    and running the game after it is installed, see the '?' command
+   "    within the game and doc/Guidebook (non-installers want to know
+   "    about those things too).
+
+.p|"Read this entire file before starting, and come back to the Notes below if
+you have any problems." The fact that this warning is probably necessary scares
+me. Luckily there seems to be a new, simpler process.
+
+```"$ cd sys/unix
+   "$ sh setup.sh hints/linux
+   "$ cd ../..
+   "$ make all
+   "( cd src ; make )
+   "make[1]: Entering directory '/home/nate/nethack/src'
+   "cc -g -O -I../include -DNOTPARMDECL -DDLB -DCOMPRESS=\"/bin/gzip\" -DCOMPRESS_EXTENSION=\".gz\" -DSYSCF -DSYSCF_FILE=\"/home/nate/nh/install/games/lib/nethackdir/sysconf\" -DSECURE -DTIMED_DELAY -DHACKDIR=\"/home/nate/nh/install/games/lib/nethackdir\" -DDUMPLOG -DCONFIG_ERROR_SECURE=FALSE -DCURSES_GRAPHICS -c monst.c
+   "In file included from ../include/unixconf.h:323,
+   "                 from ../include/global.h:136,
+   "                 from ../include/config.h:581,
+   "                 from monst.c:6:
+   "/usr/include/stdlib.h:601:13: error: conflicting types for ‘srand48’; have ‘void(long int)’
+   "  601 | extern void srand48 (long int __seedval) __THROW;
+   "      |             ^~~~~~~
+   "In file included from ../include/unixconf.h:320:
+   "../include/system.h:99:8: note: previous declaration of ‘srand48’ with type ‘void(void)’
+   "   99 | E void srand48();
+   "      |        ^~~~~~~
+   "In file included from ../include/unixconf.h:324:
+   "/usr/include/unistd.h:464:21: error: conflicting types for ‘sleep’; have ‘unsigned int(unsigned int)’
+   "  464 | extern unsigned int sleep (unsigned int __seconds);
+   "      |                     ^~~~~
+   "../include/system.h:358:12: note: previous declaration of ‘sleep’ with type ‘unsigned int(void)’
+   "  358 | E unsigned sleep();
+   "      |            ^~~~~
+   "make[1]: *** [Makefile:657: monst.o] Error 1
+   "make[1]: Leaving directory '/home/nate/nethack/src'
+   "make: *** [Makefile:161: nethack] Error 2
+
+.p|After getting all of these errors I realized that this was probably going to
+take longer than expected and decided to start writing this blog post.
+
+#2|2025-11-20 3:00 AM CST
+
+.p|I started by generating makefiles:
+
+```"2.  Your Makefiles may still be in sys/unix with tags on the end of them.
+   "    If so, run "sh setup.sh hints/unix" in that directory to
+   "    distribute the Makefiles to places they can do their work.
+
+```"$ sh setup.sh hints/unix 
+
+.p|Then I updated `include/config.h`.
+
+.p|I want to enable wizard mode.
+
+$</site/code.sh c
+$|#define WIZARDS "*"
+
+.p|Some specific file paths to my system:
+
+$</site/code.sh c
+$|/* #define GREPPATH "/bin/grep" */
+$|#define GREPPATH "/usr/bin/grep"
+
+$</site/code.sh c
+$|#define COMPRESS "/usr/bin/gzip"
+$|#define COMPRESS_EXTENSION ".gz"
+
+.p|I found this comment funny.
+
+$</site/code.sh c
+$|/*
+$| * Uncomment the following line if your compiler falsely claims to be
+$| * a standard C compiler (i.e., defines __STDC__ without cause).
+$| * Examples are Apollo's cc (in some versions) and possibly SCO UNIX's rcc.
+$| */
+$|/* #define NOTSTDC */ /* define for lying compilers */
+
+.p|I didn't change `HACKDIR` yet, I'll specify it if the default starts causing
+problems.
+
+
+#2|2025-11-20 3:08 AM CST
+
+.p|Same errors. I at least now know that the problem can probably be solved by
+changing `system.h`, although that was kind of obvious from the error message.
+
+```"
+   "$ make
+   "( cd src ; make )
+   "make[1]: Entering directory '/home/nate/nethack/src'
+   "touch ../src/config.h-t
+   "cc -O -I../include -c monst.c
+   "In file included from ../include/unixconf.h:323,
+   "                 from ../include/global.h:136,
+   "                 from ../include/config.h:587,
+   "                 from monst.c:6:
+   "/usr/include/stdlib.h:601:13: error: conflicting types for ‘srand48’; have ‘void(long int)’
+   "  601 | extern void srand48 (long int __seedval) __THROW;
+   "      |             ^~~~~~~
+   "In file included from ../include/unixconf.h:320:
+   "../include/system.h:99:8: note: previous declaration of ‘srand48’ with type ‘void(void)’
+   "   99 | E void srand48();
+   "      |        ^~~~~~~
+   "In file included from ../include/unixconf.h:324:
+   "/usr/include/unistd.h:464:21: error: conflicting types for ‘sleep’; have ‘unsigned int(unsigned int)’
+   "  464 | extern unsigned int sleep (unsigned int __seconds);
+   "      |                     ^~~~~
+   "../include/system.h:358:12: note: previous declaration of ‘sleep’ with type ‘unsigned int(void)’
+   "  358 | E unsigned sleep();
+   "      |            ^~~~~
+   "make[1]: *** [Makefile:636: monst.o] Error 1
+   "make[1]: Leaving directory '/home/nate/nethack/src'
+   "make: *** [Makefile:140: nethack] Error 2
+
+#2|2025-11-20 3:10 AM CST
+
+.p|`srand48()` is a K&R declaration.
+
+.p|Originally (in volume 1 of
+/<(https://en.wikipedia.org/wiki/The_C_Programming_Language)[The C Programming
+Language]>/), function declarations in C looked like this:
+
+$</site/code.sh c
+$|int main(argc, argv)
+$|    int argc;
+$|    char **argv;
+$|{
+$|	puts("Hello world!");
+$|	return 0;
+$|}
+
+.p|Actually, the default type for everything was an `int`, so this code could be
+rewritten like this:
+
+$</site/code.sh c
+$|main(argc, argv)
+$|    char **argv;
+$|{
+$|	puts("Hello world!");
+$|	return 0;
+$|}
+
+.p|Some functions like `printf` can take an arbitrary number of arguments, which
+is denoted like this:
+
+$</site/code.sh c
+$|printf();
+
+.p|To denote a function with no arguments, you'd add an explicit `void` to the
+parameter list:
+
+$</site/code.sh c
+$|void some_function(void);
+
+.p|Nowadays, we use this syntax:
+
+$</site/code.sh c
+$|void some_function();           /* no arguments */
+$|void some_function(first, ...); /* arbitrary arguments */
+
+.p|`system.h` defines `srand48` and `sleep` as K&R declarations with arbitrary
+arguments, which is misinterpreted by my modern compiler as modern declarations
+with no arguments.
+
+.p|This should be an easy fix, just add this line to `src/Makefile` and
+`util/Makefile`
+
+$</site/code.sh make
+$|CFLAGS=-ansi -O2 -I../include
+
+.p|The `-ansi` tells GCC to use an old version of the C standard which still
+supports K&R declarations.
+
+#2|2025-11-20 3:23 AM
+
+```"/usr/bin/ld: cannot find -ltermlib: No such file or directory
+   "collect2: error: ld returned 1 exit status
+   "make[1]: *** [Makefile:576: Sysunix] Error 1
+   "make[1]: Leaving directory '/home/nate/nethack/src'
+   "make: *** [Makefile:140: nethack] Error 2
+
+.p|Linker error. There isn't a note in `Install.unx` about this, but there are
+some other interesting historical notes:
+
+```"12. Yes, Virginia, you compile NetHack for a NeXT as if it ran UNIX instead
+   "    of Mach.  Just tell NetHack you're a BSD system (Mach is extremely
+   "    close to BSD UNIX for traditional system calls, so this is also a
+   "    likely thing to try for any other programs you want to compile).
+
+#2|2025-11-20 3:30 AM
+
+.p|`termlib` seems to be an alias to
+<(https://www.gnu.org/software/termutils/manual/termcap-1.3/html_node/termcap_3.html)[Termcap]>,
+an outdated interface which has been replaced with
+<(https://www.man7.org/linux/man-pages/man5/terminfo.5.html)[terminfo]>.
+Apparently I don't even have it installed on my system, I can't even find it as
+an Artix package except on the AUR. Seems I'll have to compile from
+<(https://ftpmirror.gnu.org/termcap/)[source]>
+
+#2|2025-11-20 3:37 AM
+
+.p|217 lines of error messages while compiling termcap
+
+```"$ ./configure
+   "creating cache ./config.cache
+   "checking for gcc... gcc
+   "checking whether we are using GNU C... yes
+   "checking whether gcc accepts -g... yes
+   "checking for ranlib... ranlib
+   "checking for a BSD compatible install... /usr/bin/install -c
+   "checking how to run the C preprocessor... gcc -E
+   "checking for string.h... yes
+   "checking for unistd.h... yes
+   "checking whether cross-compiling... yes
+   "checking for ANSI C header files... no
+   "updating cache ./config.cache
+   "creating ./config.status
+   "creating Makefile
+   "$ make
+   "gcc -c  -DHAVE_STRING_H=1 -DHAVE_UNISTD_H=1  -DTERMCAP_FILE=\"/etc/termcap\" -I. -I. -g termcap.c
+   "termcap.c:44:7: warning: conflicting types for built-in function ‘malloc’; expected ‘void *(long unsigned int)’ [-Wbuiltin-declaration-mismatch]
+   "   44 | char *malloc ();
+   "      |       ^~~~~~
+   "termcap.c:1:1: note: ‘malloc’ is declared in header ‘<stdlib.h>’
+   "  +++ |+#include <stdlib.h>
+   "    1 | /* Work-alike for termcap, plus extra features.
+   "termcap.c:45:7: warning: conflicting types for built-in function ‘realloc’; expected void *(void *, long unsigned int)’ [-Wbuiltin-declaration-mismatch]
+   "   45 | char *realloc ();
+   "      |       ^~~~~~~
+   "termcap.c:45:7: note: ‘realloc’ is declared in header ‘<stdlib.h>’
+   "termcap.c: In function ‘memory_out’:
+   "termcap.c:96:3: error: implicit declaration of function ‘exit’ [-Wimplicit-function-declaration]
+   "   96 |   exit (1);
+   "[...]
+   "$ make 2>&1 | wc -l
+   "217
+
+.p|Compiling with an older C standard seems to work, although with a lot of
+errors:
+
+```"$ make CFLAGS=-ansi
+   "gcc -c  -DHAVE_STRING_H=1 -DHAVE_UNISTD_H=1  -DTERMCAP_FILE=\"/etc/termcap\" -I. -I. -ansi termcap.c
+   "termcap.c:44:7: warning: conflicting types for built-in function ‘malloc’; expected ‘void *(long unsigned int)’ [-Wbuiltin-declaration-mismatch]
+   "   44 | char *malloc ();
+   "      |       ^~~~~~
+   "termcap.c:1:1: note: ‘malloc’ is declared in header ‘<stdlib.h>’
+   "  +++ |+#include <stdlib.h>
+   "    1 | /* Work-alike for termcap, plus extra features.
+   "[102 lines of warnings in total]
+
+#2|2025-11-20 3:41 AM
+
+.p|Oh no.
+
+```"$ make
+   "( cd src ; make )
+   "make[1]: Entering directory '/home/nate/nethack/src'
+   "Linking nethack.
+   "cc  -o nethack monst.o objects.o allmain.o alloc.o apply.o artifact.o attrib.o ball.o bones.o botl.o cmd.o dbridge.o decl.o detect.o dig.o display.o dlb.o do.o do_name.o do_wear.o dog.o dogmove.o dokick.o dothrow.o drawing.o dungeon.o eat.o end.o engrave.o exper.o explode.o extralev.o files.o fountain.o hack.o hacklib.o invent.o isaac64.o light.o lock.o mail.o makemon.o mapglyph.o mcastu.o mhitm.o mhitu.o minion.o mklev.o mkmap.o mkmaze.o mkobj.o mkroom.o mon.o mondata.o monmove.o mplayer.o mthrowu.o muse.o music.o o_init.o objnam.o options.o pager.o pickup.o pline.o polyself.o potion.o pray.o priest.o quest.o questpgr.o read.o rect.o region.o restore.o rip.o rnd.o role.o rumors.o save.o shk.o shknam.o sit.o sounds.o sp_lev.o spell.o sys.o steal.o steed.o teleport.o timeout.o topten.o track.o trap.o u_init.o uhitm.o vault.o vision.o vis_tab.o weapon.o were.o wield.o windows.o wizard.o worm.o worn.o write.o zap.o posixregex.o  ioctl.o unixmain.o unixtty.o unixunix.o unixres.o getline.o termcap.o topl.o wintty.o  version.o -ltermcap 
+   "/usr/bin/ld: unixtty.o: in function `init_linux_cons':
+   "unixtty.c:(.text+0x64a): undefined reference to `has_colors'
+   "/usr/bin/ld: termcap.o: in function `tty_startup':
+   "termcap.c:(.text+0x7ce): undefined reference to `tparm'
+   "/usr/bin/ld: termcap.c:(.text+0x837): undefined reference to `tparm'
+   "/usr/bin/ld: termcap.c:(.text+0x988): undefined reference to `tparm'
+   "collect2: error: ld returned 1 exit status
+   "make[1]: *** [Makefile:576: Sysunix] Error 1
+   "make[1]: Leaving directory '/home/nate/nethack/src'
+   "make: *** [Makefile:140: nethack] Error 2
+
+#2|2025-11-20 3:43 AM
+
+.p|Seems like setting `WINTTYLIB=-lncurses` fixed everything. You may need
+`WINTTYLIB=$(shell pkg-config ncurses)`.
+
+```"$ ./nethack 
+   "/usr/games/lib/nethackdir: No such file or directory
+   "Cannot chdir to /usr/games/lib/nethackdir.
+
+.p|Added this to `config.h`:
+
+$</site/code.sh c
+$|#define HACKDIR "/home/nate/tmp/nethack"
+
+#2|2025-11-20 3:57 AM
+
+```"$ ./nethack
+   "Unable to open SYSCF_FILE.
+   "
+   "$ touch /home/nate/tmp/nethack/sysconf
+
+.p|I then got the message "Cannot open file perm. Is NetHack installed
+correctly?"
+
+```"$ touch /home/nate/tmp/nethack/perm
+   "$ ./nethack
+
+.p|"Shall I pick character's race, role, gender and alignment for you? [ynaq]"
+After I selected my character, I got this message:
+
+```"Oops...
+   "
+   "Hit space to continue:
+   "
+   "Program initialization has failed.
+   "Report error to "wizard".
+   "Cannot open dungeon description - "dungeon" file!
+
+```"$ touch /home/nate/tmp/nethack/dungeon
+   "$ ./nethack
+
+```"Program initialization has failed.
+   "Report error to "wizard".
+   "Premature EOF on dungeon description file!
+   "Expected 40 bytes - got 0.
+
+.p|Seems I can't hack my way out of this one.
+
+#2|2025-11-20 4:02 AM
+
+.p|In `Makefile`
+
+$</site/code.sh make
+$|PREFIX=/home/nate/tmp/usr
+$|HACKDIR=$(PREFIX)/games/lib/$(GAME)dir
+
+$</site/code.sh make
+$|GAMEUID  = nate
+$|GAMEGRP  = nate
+
+.p|In `config.h`
+
+$</site/code.sh c
+$|#define HACKDIR "/home/nate/tmp/usr/games/lib/nethackdir"
+
+```"$ make
+   "[long output omitted]
+   "$ make install
+   "[long output omitted]
+   "$ cd ./src
+   "$ ./nethack
+   "Unable to open SYSCF_FILE
+   "
+   "$ touch /home/nate/tmp/usr/games/lib/nethackdir/sysconf
+   "$ ./nethack
+
+
+```"Be careful!  New moon tonight.
+   "
+   "
+   "
+   "                                ------------
+   "                                |...@......|
+   "                                |....d.....|
+   "                                ..o........|
+   "                                --.---------
+   "
+   "
+   "
+   "
+   "
+   "
+   "
+   "
+   "
+   "
+   "
+   "
+   "
+   "[Nate the Rambler              ] St:16 Dx:10 Co:10 In:12 Wi:9 Ch:18 Neutral
+   "Dlvl:1 $:799 HP:10(10) Pw:2(2) AC:10 Xp:1/0 T:1
+
+.p|Very nice.
