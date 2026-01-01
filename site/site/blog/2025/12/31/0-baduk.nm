@@ -1,0 +1,309 @@
+//On the game of go
+//@%/site/baduk.html@
+
+.p|If you were wondering why the past two months' blog posts have been
+significantly lower quality than usual, it's because I haven't been programming
+very much lately. For example in the month of November I've probably written
+fewer than 50 lines of code. Meanwhile in that same time I've solved well over
+1000 go problems. Rather than forcing myself to put out some random garbage
+about software, I've decided to just write about the things I've actually been
+doing.
+
+#2|The rules
+
+.p|I should note that there isn't a single official ruleset for this game.
+Various national level organizations create their own rulesets which are
+basically equivalent in the vast majority of games except for a few edge cases.
+In this section I'll generally go over the American Go Association (AGA) rules,
+but I'll mention whenever something differs slightly.
+
+.p|The rules of go are very simple; players take turns placing down black and
+white pieces called stones on the intersections of a grid, with black going
+first (these diagrams were made with
+<(https://yewang.github.io/besogo/)[BesoGo]>):
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[9]ST[0];B[ce];W[fc];B[ei];W[ia])
+</div>
+
+.p|By the way, the little dots at C7, G7, etc. are basically just for
+decoration, you can ignore them for now. Also you may notice that the letter "I"
+is missing from the coordinates, this is to distinguish it from the letter "L"
+and the number 1.
+
+.p|When stones of one color are completely surrounded, they are removed from the
+board:
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[9]ST[0];B[ee];W[ed];B[ia];W[fe];B[ib];W[ef];B[ic];W[de])
+</div>
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[9]ST[0];B[ee];W[ed];B[fe];W[fd];B[ia];W[ge];B[ib];W[ff];B[ic];W[ef];B[id];W[de])
+</div>
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[9]ST[0];B[ie];W[he];B[ia];W[id];B[ha];W[if])
+</div>
+
+.p|Here's a slightly more complicated capture:
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[9]ST[0]AB[dd][de][df][ed][ef][fd][fe][ff];W[dc];B[ia];W[ec];B[ib];W[fc];B[ic];W[gd];B[id];W[ge];B[ie];W[gf];B[if];W[fg];B[ig];W[eg];B[ih];W[dg];B[ii];W[cf];B[hi];W[ce];B[gi];W[cd];B[fi];W[ee])
+</div>
+
+.p|More formally, orthogonally adjacent stones form "strings", and the empty
+spaces around those stones form "liberties" (marked in this diagram by
+triangles). Here, stones "A" and "B" form their own individual one-stone
+strings, the stones marked with squares are all part of a single string, the
+ones marked with circles are part of a different string, and so on. Note that H7
+does not count as stone B's liberty, as it is occupied by a white stone rather
+than an empty space.
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[9]ST[0]AB[bb][bf][bg][bh][cf][ch][df][dg][dh][fc][fd][hg][hh][ic][ih]AW[hc]CR[fc][fd]SQ[bf][bg][bh][cf][ch][df][dg][dh]TR[ab][af][ag][ah][ba][bc][be][bi][cb][ce][cg][ci][de][di][ec][ed][ef][eg][eh][fb][fe][gc][gd][gg][gh][hf][hi][ib][id][ig][ii]MA[hg][hh][ih]LB[bb:A][ic:B])
+</div>
+
+.p|When all of the liberties of a string are filled in by enemy stones, it is
+removed from the board. This gives us the first two rules of go.
+
+>.|Rules of go:
+ 1-|Players alternate placing stones on the intersections of a grid, with black
+   |going first.
+  -|When a string of stones runs out of liberties, it is removed from the board.
+
+.p|Here's <(https://online-go.com/game/81769067)[a game]> I played recently.
+This game was played with Japanese rules, but we'll look at this game as if it
+were played with American rules. I was playing as white:
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[9]ST[0];B[fe];W[de];B[eg];W[fd];B[ee];W[ed];B[dd];W[cd];B[dc];W[cc];B[ce];W[df];B[db];W[be];B[dg];W[cf];B[gd];W[ge];B[fc];W[ef];B[ff];W[fg];B[gf];W[gg];B[ec];W[cg];B[fh];W[gh];B[eh];W[fi];B[ch];W[ei];B[dh];W[bh];B[hg];W[hh];B[ig];W[cb];B[ca];W[ba];B[da];W[ab];B[ih];W[ci];B[hi];W[di];B[ii];W[gi];B[he];W[];B[]CR[aa][ab][ac][ad][ae][af][ag][ah][ai][ba][bb][bc][bd][be][bf][bg][bh][bi][cb][cc][cd][ce][cf][cg][ch][ci][de][df][dg][dh][di][ef][eg][eh][ei][fg][fh][fi][gg][gh][gi][hh]SL[ca][da][db][dc][dd][ea][eb][ec][ed][ee][fa][fb][fc][fd][fe][ff][ga][gb][gc][gd][ge][gf][ha][hb][hc][hd][he][hf][hg][hi][ia][ib][ic][id][ie][if][ig][ih][ii])
+</div>
+
+.p|At move 50 after black played H5, I passed instead of playing a stone. My
+opponent passed at move 51. Since both players passed back to back, the game
+finished. In the end I controlled the circle points and my opponent controlled
+the square points. I had 42 points and my opponent had 39, so I won.
+
+.p|Instead of passing at move 51, black could have chosen to fight back and play
+a stone in my area, but both players are strong enough to know that this would
+have been hopeless:
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[9]ST[0]AB[ca][da][db][dc][dd][ec][ee][fc][fe][ff][gd][gf][he][hg][hi][ig][ih][ii]AW[ab][ba][be][bh][cb][cc][cd][cf][cg][ci][de][df][di][ef][ei][fg][fi][gg][gh][gi][hh];B[bd];W[bc];B[ad];W[ae];B[bg];W[ag];B[ah];W[ai];B[dh];W[ch];B[dg];W[eg];B[bf];W[af];B[eh];W[fh];B[bg];W[bf];B[];W[ac])
+</div>
+
+.p|Flailing around in your opponent's area like this is generally considered bad
+etiquette, but if we were to keep playing anyways the board would eventually end
+up as something like this:
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[9]ST[0]AB[ca][da][db][dc][dd][ea][eb][ec][ed][ee][fa][fb][fc][fd][fe][ff][ga][gb][gc][gd][ge][gf][ha][hb][hc][hd][he][hf][hg][hi][ib][id][ie][if][ig][ih][ii]AW[aa][ab][ac][ad][ae][af][ah][ba][bb][bc][bd][be][bf][bg][bh][bi][cb][cc][cd][ce][cf][cg][ch][ci][de][df][dg][dh][di][ef][eg][eh][ei][fg][fh][fi][gg][gh][gi][hh]TR[ag][ai](;B[ic];W[ia])(;B[ia];W[ic]))
+</div>
+
+.p|At this point black must pass. The two triangle points would be a
+self-capture; most rulesets \&mdash\; including AGA rules \&mdash\; forbid this
+but <(https://senseis.xmp.net/?IngRules)[some]>
+<(https://senseis.xmp.net/?NewZealandRules)[don't]>. This doesn't matter in most
+games because a self-capture would usually be a mistake anyways. Since the two
+triangle points are forbidden, the only other options are to play J7, J9, or to
+pass. J7 and J9 are huge blunders because they allow white to capture all of
+black's stones, so black must pass. After black passes, white is in a similar
+position and must pass as well.
+
+.p|All of this is to say that passing is sometimes a good move. This gives us
+the next two rules:
+
+>.|Rules of go:
+ 1-|Players alternate placing stones on the intersections of a grid, with black
+   |going first.
+  -|When a string of stones runs out of liberties, it is removed from the board.
+  -|The game ends when both players pass back to back.
+  -|The winner is the player who has surrounded the most area.
+
+.p|We're almost done. To explain the next rule let's look at this sequence:
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[9]ST[0];B[ef];W[ff];B[de];W[ge];B[ed];W[fd];B[fe];W[ee];B[fe];W[ee];B[fe];W[ee];B[fe])
+</div>
+
+.p|When black plays F5, white's best move is to capture at E5. Then when white
+captures at E5, black's best move is to capture back at F5. This shape is called
+a "ko". To prevent situations like this, players are not allowed to play a move
+that repeats a previous board position. This means that black is allowed to play
+that first F5 move, and white is allowed to capture at E5, but black is not
+allowed to take back at F5 because that would repeat the board position from two
+moves ago. In other words the triangle move in this diagram is illegal and black
+must play somewhere else.
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[9]ST[0];B[ef];W[ff];B[de];W[ge];B[ed];W[fd];B[fe];W[ee]TR[fe];B[df];W[fe])
+</div>
+
+>.|Rules of go:
+ 1-|Players alternate placing stones on the intersections of a grid, with black
+   |going first.
+  -|When a string of stones runs out of liberties, it is removed from the board.
+  -|The game ends when both players pass back to back.
+  -|The winner is the player who has surrounded the most area.
+  -|Players are not allowed to repeat previous board positions.
+
+.p|The final rule was only added in the 20th century. Black has a slight
+advantage for going first, so white gets some extra points at the end to
+compensate. This bonus, called "komi", is 7.5 points in AGA rules, but many
+rulesets use 6.5 points; 7 points is probably fair but the 0.5 point ensures
+that games of go never end in a draw.
+
+>.|Rules of go:
+ 1-|Players alternate placing stones on the intersections of a grid, with black
+   |going first.
+  -|When a string of stones runs out of liberties, it is removed from the board.
+  -|The game ends when both players pass back to back.
+  -|The winner is the player who has surrounded the most area.
+  -|Players are not allowed to repeat previous board positions.
+  -|White gets 7.5 extra points at the end of the game to make compensate for
+   |black's first move advantage.
+
+#2|The 19x19 board
+
+.p|All of the examples I've been showing have been on a 9x9 board. This is a
+great board size; it's still about as complex as chess and leads to interesting
+games even at the <(https://www.youtube.com/watch?v=5tnwHFyfWUo)[professional
+level]>. Most games, however, are played on a much larger 19x19 board.
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[19]ST[0])
+</div>
+
+.p|Something about this board size feels just right. The board is big enough
+that you can form frameworks and loosely outline large areas, but it's small
+enough that each individual fight connects together to form a larger landscape.
+Here's a simple example game to show what I mean:
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[19]ST[0];B[pd];W[dd];B[dp];W[pp];B[nq];W[oq];B[np];W[pn];B[jp]TR[fq];W[fq];B[eq];W[fp];B[dn]SQ[jp])
+</div>
+
+.p|With the first four moves both players rush to take the open corners. They do
+this because it's the most efficient way to surround some area at the very
+beginning of the game. With move 5 black approaches white's corner. This move
+generally aims at the bottom side of the board, but sometimes it can be
+sacrificed to steal the corner.
+
+.p|With move 6 white solidifies their corner, preventing many potential
+invasions. Now that white's corner is stronger, this move also threatens to
+begin surrounding the black stone with a move at O4. Black responds to the
+threat by playing O4 first. Now that black's two stones are stronger, white has
+a weakness at Q5; if black plays there they will gain a strong outside influence
+while reducing white's corner to a small area. White fixes this by playing at
+Q6. Now that white's three stones are stronger, black has a weakness at K4; if
+white plays there first then black will be surrounded on two sides and forced to
+run into the center. Black fixes this by playing at K4.
+
+.p|At this point white's corner and black's side are both completely settled.
+Black takes the side, white solidifies the corner, and neither side has a single
+strong move to start an attack on the other. We're also beginning to see the
+outlines of each player's final areas, as each player begins claiming the empty
+spaces on the board.
+
+.p|Now that black has some control over the bottom side, white can't really
+approach black's corner in the way that black approached white. If white plays
+at the triangle point and we play out the same sequence of moves we played
+earlier, black's stone at K4 neatly prevents white's extension.
+
+.p|The fact that the 19x19 board is big enough to allow this sort of outlining
+but small enough to allow these conflicts feels very intentional to me. On a
+smaller 13x13 board this same corner sequence stretches across pretty much the
+whole side.
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[13]ST[0];B[jd];W[dd];B[dj];W[jj];B[hk];W[ik];B[hj];W[jh]TR[dj])
+</div>
+
+.p|Meanwhile on a larger 25x25 board you can comfortably fit this sequence onto
+both corners with no problems.
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[25]ST[0];B[vd];W[dd];B[dv];W[vv];B[tw];W[uw];B[tv];W[vt];B[pv];W[fw];B[ew];W[fv];B[dt];W[jv])
+</div>
+
+.p|The 19x19 board is large enough that strategic outlining matters, but small
+enough that small local fights can come together to form large global ones. This
+property became very clear in
+<(https://ps.waltheri.net/database/game/13084/)[this famous game]> between Cho
+Chikun (white) and Takemiya Masaki (black). Cho Chikun is known for playing very
+territorially; he's willing to give up influence on the board in exchange for
+solid points.  Takemiya Masaki is known for the exact opposite; he's perfectly
+willing to give up an entire corner in order to gain strength on the outside. We
+can see this very clearly in the first 31 moves of the game:
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[19]ST[0];B[pd];W[cq];B[pp];W[cc];B[pj];W[nc];B[lc];W[qc];B[qd];W[pc];B[od];W[nb];B[me];W[nq];B[lq];W[qq];B[qp];W[pq];B[op];W[rq];B[np];W[nr];B[lo];W[dj];B[dd];W[cd];B[de];W[eb];B[he];W[ep];B[hk];W[mi]TR[mi];B[ki];W[ph];B[nh];W[oi];B[ni];W[oj];B[pk];W[nj];B[mj];W[ol];B[pl];W[qf];B[of];W[qi];B[rj];W[ml];B[lj];W[kl];B[om];W[nl];B[dk];W[il];B[hl];W[im];B[cj];W[cf];B[hm];W[pm];B[qm];W[pn];B[on];W[rd];B[re];W[rc];B[qe];W[nn];B[qn];W[io];B[fp];W[eq];B[kn];W[km];B[hp];W[ip];B[iq];W[jj];B[lm];W[ll];B[ik];W[jk];B[jn];W[in];B[hq];W[ji];B[jm];W[jl];B[hi];W[rf];B[oh];W[pi];B[sf];W[jg];B[lh];W[je];B[jf];W[if];B[ih];W[jh];B[kf];W[ig];B[ie];W[gg];B[df];W[ce];B[dg];W[gi];B[ec];W[fb];B[gh];W[fh];B[hh];W[ge];B[gd];W[ff];B[fe];W[gf];B[hc];W[gj];B[hj];W[ej];B[ek];W[ci];B[bk];W[gn];B[fo];W[fk];B[fl];W[el];B[fm];W[bi];B[di];W[ei];B[dh];W[eh];B[dn];W[bn];B[cn];W[bm];B[cm];W[qj];B[rk];W[sg];B[se];W[rh]TR[fi][qg];B[bo];W[bp];B[cp];W[ao];B[co];W[br])
+</div>
+
+.p|Cho's first two moves are 3-3 points, which completely surround a small
+number of points in the corner with no potential for invasion. Takemiya chooses
+to play three star points, broadly gesturing at a large scale framework on the
+right side, albeit with potential for invasion.
+
+.p|Cho approaches Takemiya's corners and Takemiya pincers twice, allowing Cho to
+take all four corners while developing a very powerful framework on the right
+side. If Cho doesn't do something about that it could easily turn into an 80
+point territory.
+
+.p|Rather than invading or reducing immediately, Cho chooses to play a move on
+the left side, allowing Takemiya to attack the top left corner and gain even
+more influence. Cho ignores the framework /again/, and Takemiya adds another
+move to threaten an even larger area.
+
+.p|With move 32 at N11, Cho brings us into the middle game. If white
+can save that one stone or sacrifice it effectively, black doesn't have enough
+points and white wins. If black can kill that stone, black's strategy has worked
+and black wins.
+
+.p|For the rest of the game white tries to make shape and counterattack, and
+evenually manages to save a massive dragon that stretches across the whole board
+with two eyes. Takemiya eventually resigned after move 152. If the board were
+larger, white would have had more room to run and surviving would be
+significantly easier. If the board were smaller, black's influence would have
+been much more powerful and killing would be significantly easier. This specific
+board size feels well-tuned so that games like this can be exciting.
+
+#2|Handicaps and ranks
+
+.p|If two people of drastically different strengths play a game of go, they can
+use a handicap to keep the game somewhat interesting. I have a friend that plays
+go who is slightly weaker than me, so when we play I give him two moves in a row
+at the start and take white.
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[19]ST[0]AB[dp][pd])
+</div>
+
+.p|This initial board state is good for black, but I'm a stronger player so over
+the course of a 200 move game on a 19x19 board I can try to catch up. The end
+result is that I win and lose around half of the time, which is much more fun
+than winning every time. Conversely at the Dallas Go Club there are some very
+strong players that give me six stones handicap. On this board I would take
+black:
+
+p<<div class="besogo-viewer" maxwidth="550" orient="portrait" panels="control" portratio="none" nowheel="true" coord="western">
+(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.2-alpha]SZ[19]ST[0]AB[dd][dj][dp][pd][pj][pp])
+</div>
+
+.p|The go ranking system is defined in terms of these handicaps. A complete
+beginner is 30 kyu (pronounced like "30 queue", abbreviated 30k), and each level downwards is one
+stone stronger. At the time of writing I am a 6 kyu, so I would give 2 stones
+handicap to an 8 kyu and take two stones handicap from a 4 kyu. Once you get
+past 1 kyu, you hit amateur 1 dan (pronounced like "1 don", abbreviated 1d),
+then amateur 2 dan, and so on.  These are equivalent to black belts in martial
+arts. The weakest professional go players are around amateur 7 dan in
+strength. Professionals then have their own ranking system separate from amateur
+ranks, going from 1 dan professional (abbreviated "1p") to 9 dan professional.
+Note that these ranks are based on tournament performances and not actual
+strength, a 9p might give just 2 stones to a 1p.
+
+.p|I should note that these ranks aren't entirely precise; theoretically I
+should take 8 stones handicap from a 3 dan, but in practice each additional
+handicap beyond around 4 stones makes the game significantly harder to win as
+white than a single rank of difference, so I usually just take 5 or 6.
