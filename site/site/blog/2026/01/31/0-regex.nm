@@ -1,0 +1,667 @@
+//A regular expression to match multiples of three
+
+.p|Here's a simple regular expression that matches non-negative multiples of
+two:
+
+```"[0-9]*[02468]
+
+.p|This matches any string of digits followed by a single even digit. This works
+because an integer is even if and only if it ends with `0`, `2`, `4`, `6`, or
+`8` in its decimal expansion. We can make another to match multiples of five:
+
+```"[0-9]*[05]
+
+.p|Let's try to create one that matches multiples of three. Luckily, three has a
+really nice divisibility rule: A number is a multiple of 3 if and only if the
+sum of its digits is also a multiple of 3. Here are some examples:
+
+```"241: 2 + 4 + 1 = 7.  Since 7 is not a multiple of 3, 241 isn't either.
+   "954: 9 + 5 + 4 = 18. Since 18 is a multiple of 3, 954 is as well.
+
+.p|Here's a sketch of a proof of how this works:
+
+```"Take some number. We'll use 954 as an example.
+   "The string "954" really means 9*100 + 5*10 + 4*1
+   "
+   "9*100    + 5*10    + 4*1 =
+   "9*(99+1) + 5*(9+1) + 4*1
+   "
+   "Mod 3, the 99 and 9 terms cancel out, so 954 is congruent to 9+5+4 mod 3.
+
+.p|To create our regex, let's assume for now that the our value is representable
+with just `1`\ s, and `2`\ s in decimal. Let's also assume that we'll never have
+two `1`\ s in a row. Here's a regex that solves this simpler problem:
+
+```"(12|21|22(12)*2)*
+
+.p|This regex works by splitting our number into smaller runs which each add to
+a multiple of 3. If the entire string can be split up into these runs, then the
+entire string is a multiple of 3. There are 3 cases:
+
+1-|Starts with `1`: We can't have two 1's in a row, so we must have `12`
+ -|Starts with `21`: This is already a multiple of 3
+ -|Starts with `22`: If we see a `1`, we must see a `2` next, which forms a subrun
+  |which is a multiple of 3. At some point we'll see a third `2` and this run will
+  |end.
+
+.p|To handle two `1`\ s in a row, we can replace each `2` with `2|11`
+
+```"(1(2|11)|(2|11)1|(2|11)(2|11)(1(2|11))*(2|11))*
+
+.p|To handle `0`\ s, we can insert `0*` runs between each character:
+
+```"0*((10*(2|10*1)|(2|10*1)0*10*|(2|10*1)0*(2|10*1)0*(10*(2|10*1)0*)*(2|10*1))0*)*
+
+.p|To handle the other 7 digits, we can replace each `0` with `[0369]`, each
+`1` with `[147]`, and each `2` with `[258]`.
+
+```"[0369]*(([147][0369]*([258]|[147][0369]*[147])|([258]|[147][0369]*[147])[0369]*[147][0369]*|([258]|[147][0369]*[147])[0369]*([258]|[147][0369]*[147])[0369]*([147][0369]*([258]|[147][0369]*[147])[0369]*)*([258]|[147][0369]*[147]))[0369]*)*
+
+.p|In the rest of this article, we'll explore an algorithm to generate regular
+expressions that match multiples of any number, as well as some other very
+beautiful algorithms at the core of computer science.
+
+#2|Mathematically defining regular expressions
+
+.p|There are five types of regular expressions. The first is just the empty
+string, which matches the empty string. This is normally denoted with a
+lowercase epsilon, but I don't feel like encoding unicode into this article, so
+I'll just represent it as empty parenthesis `()`
+
+```"$ echo '' | grep '()' # empty string
+
+.p|We'll discuss this a bit more later. The second type of regular expression is
+a single character, which matches that specific character:
+
+```"$ echo 'a' | grep 'a' # single character
+   "a
+   "$ echo 'b' | grep 'b' # single character
+   "b
+   "$ echo 'c' | grep 'c' # single character
+   "c
+   "$ echo 'd' | grep 'd' # single character
+   "d
+   "$ echo 'o' | grep 'o' # single character
+   "o
+   "$ echo 't' | grep 't' # single character
+   "t
+
+.p|The third type of regular expression is a concatenation of two other regular
+expressions. These concatenations can chain:
+
+```"$ echo 'ca'  | grep 'ca'  # concatenation of `c` and `a`
+   "ca
+   "$ echo 'cat' | grep 'cat' # concatenation of `ca` and `t`
+   "cat
+   "$ echo 'do'  | grep 'do'  # concatenation of `d` and `o`
+   "do
+   "$ echo 'dog' | grep 'dog' # concatenation of `do` and `g`
+   "dog
+
+.p|The fourth type of regular expression is a choice; we can take two other
+regular expressions and form their union. These also chain:
+
+```"$ echo 'cat' | grep 'cat|dog'  # choice of `cat` and `dog`
+   "cat
+   "$ echo 'dog' | grep 'cat|dog'  # choice of `cat` and `dog`
+   "dog
+   "$ echo 'cat'   | grep 'cat|dog|bunny'  # choice of `cat|dog` and `bunny`
+   "cat
+   "$ echo 'dog'   | grep 'cat|dog|bunny'  # choice of `cat|dog` and `bunny`
+   "dog
+   "$ echo 'bunny' | grep 'cat|dog|bunny'  # choice of `cat|dog` and `bunny`
+   "bunny
+
+.p|Many regular expression implementations provide some syntactic sugar with
+choices. Here are some examples:
+
+```"$ echo 'dog' | grep 'dogs?'   # equivalent to dog(s|())
+   "dog
+   "$ echo 'car' | grep 'ca[rtb]' # equivalent to ca(r|t|b)
+   "car
+
+.p|The final type of regular expression is the called Kleene star. We can take a
+regular expression and repeat it 0 or more times, where each repetition must
+follow the same pattern, although they don't necessarily have to have the same
+text:
+
+```"$ echo 'a'   | grep 'a*' # Kleene star
+   "a
+   "$ echo 'aaa' | grep 'a*' # Kleene star
+   "aaa
+   "$ echo ''    | grep 'a*' # Kleene star
+   "
+   "$ echo 'aba' | grep '(a|b)*' # Kleene star.
+   "aba
+
+.p|There's also some syntactic sugar here:
+
+```"$ echo 'a' | grep 'a+' # equivalent to aa*
+   "a
+
+.p|Every true regular expression can be defined as a composition of these five
+building blocks. I should note that some regular expression implementations also
+provide extensions like backreferences:
+
+```"$ echo '001001' | grep -P '([01]*)\1'
+   "001001
+
+.p|In that example, the `\\1` must contain the exact same text as matched by the
+first set of parentheses. This functionality is impossible to replicate with the
+model of regular expressions we've discussed so far, and is fundamentally
+incompatible with many of the ideas we'll discuss in the rest of this article.
+These implementations use different algorithms from the ones we're discussing
+here, with some tradeoff between functionality and performance.
+
+#2|A digression on DFAs
+
+.p|A DFA, or Deterministic Finite Automaton, is one of the simplest possible
+computer programs. Here's a simple example of one:
+
+```"    0             0
+   "   .-v           .-v
+   "   ---     1     ---
+   "-->| | --------> |O|
+   "   --- <-------- ---
+   "           1
+
+.p|This DFA takes some binary string as an input and outputs its
+parity. Essentially, we just count the number of 1's in the string and return
+true if that number is odd. To evaluate it, we start at the start node (the one
+on the left with an arrow pointing to it), and follow the arrows until we reach
+the end of our string. If we end up at an accept state (here there's only one on
+the right, but there can be multiple) we output true. Otherwise, we output
+false. Here's a basic implementation in C:
+
+$</site/code.sh c
+$|bool evaluate_dfa(char *string) {
+$|	int state;
+$|
+$|	state = 0;
+$|	for (int i = 0; string[i] != '\0'; ++i) {
+$|		state = transition(state, string[i]);
+$|	}
+$|
+$|	switch (state) {
+$|	case 0:
+$|		return false;
+$|	case 1:
+$|		return true;
+$|	}
+$|
+$|	unreachable();
+$|}
+$|
+$|int transition(int current_state, char c) {
+$|	switch (current_state) {
+$|	case 0:
+$|		switch (c) {
+$|		case '0':
+$|			return 0;
+$|		case 1:
+$|			return 1;
+$|		}
+$|		break;
+$|	case 1:
+$|		switch (c) {
+$|		case '0':
+$|			return 1;
+$|		case '1':
+$|			return 0;
+$|		}
+$|	}
+$|	unreachable();
+$|}
+
+.p|Interestingly, this DFA is equivalent to taking the
+<(https://en.wikipedia.org/wiki/Exclusive_or)[xor]> of all of the bits in our
+string.
+
+#2|On NFAs
+
+.p|An NFA, or Nondeterministic Finite Automaton, is like an upgraded DFA. As the
+name suggests, we allow nondeterminism, which means that at any point we're
+allowed to have multiple valid transitions, as well as empty string transitions.
+Here's an NFA that matches the words "cat", "car", and "dog":
+
+```"    ---  c  ---  a  ---  t  ---
+   "--> | | --> | | --> | | --> |O|
+   "    --- -.  ---     ---     ---
+   "     |   |
+   "     |  c|  ---  a  ---  r  ---
+   "   ()|   '> | | --> | | --> |O|
+   "     |      ---     ---     ---
+   "     v
+   "    ---  d  ---  o  ---  g  ---
+   "    | | --> | | --> | | --> |O|
+   "    ---     ---     ---     ---
+
+.p|Note that from the start node there are two valid transitions with the letter
+`c`. Also note that there's an empty string transition from the start node to
+the bottom left node. I like to imagine those as teleport pads; at any point we
+can jump from the start to the end of the transition without reading in more of
+the string. The NFA matches if there's /any/ path from the start to any accept
+node. NFAs are harder to parse than DFAs, but they're often easier to construct.
+
+#2|Compiling regular expressions to NFAs
+
+.p|Interestingly, each of our five types of regular expressions has a direct
+translation to an NFA. The empty string and single character cases are trivial:
+
+```"    ---  ()  ---
+   "--> | | ---> |O|
+   "    ---      ---
+
+```"    ---  a  ---
+   "--> | | --> |O|
+   "    ---     ---
+
+.p|Concatenation is also easy. Suppose we have two NFAs corresponding to two
+regular expressions that each have one accept node. We can just connect the
+first accept node and connect it to the second start node with an empty string
+transition.
+
+
+```"    ---  r1  ---  ()  ---  r2  ---
+   "--> | | ---> | | ---> | | ---> |O|
+   "    ---      ---      ---      ---
+
+.p|Choices are pretty much the same. We have to be careful to make sure that
+there's always one accept node though.
+
+```"    ---  ()  ---  r1  ---  ()  ---
+   "--> | | ---> | | ---> | | ---> |O|
+   "    --- .    ---      --- .--> ---
+   "        |()  ---  r2  --- |()
+   "        '--->| | ---> | | '
+   "             ---      ---
+
+.p|The Kleene star is built in three steps. First we insert a new start and
+accept node for our regular expression.
+
+```"    ---  ()  ---  re  ---  ()  ---
+   "--> | | ---> | | ---> | | ---> |O|
+   "    ---      ---      ---      ---
+
+.p|Then we add an empty string transition to allow for repetitions.
+
+```"    ---  ()  ---  re  ---  ()  ---
+   "--> | | ---> | | ---> | | ---> |O|
+   "    ---      --- <--- ---      ---
+   "                  ()
+
+.p|Finally we add a second empty string transition to allow for the zero
+repetitions case.
+
+```"    ---  ()  ---  re  ---  ()  ---
+   "--> | | ---> | | ---> | | ---> |O|
+   "    ---      --- <--- ---      ---
+   "     |            ()            ^
+   "     |                          |
+   "     '--------------------------'
+   "                  ()
+
+.p|If you're confused why these two additional states are necessary, try
+compiling the following regular expression by hand. In particular, consider the
+string `b`:
+
+```"(ab*)*
+
+#2|Parsing NFAs
+
+.p|When I first learned about NFAs, my first intuition for a parsing algorithm
+was to use <(https://en.wikipedia.org/wiki/Depth-first_search)[depth-first
+search]> (DFS), where we try every possible path for every possible choice,
+backtracking if some path fails to accept. It turns out that this is a terrible
+idea, as it reduces to exponential time for NFAs like this:
+
+```"     a       a
+   "    .-v     .-v
+   "    ---  a  ---
+   "--> | | --> | |
+   "    --- <-- ---
+   "     |   a
+   "    b|
+   "     v
+   "    ---
+   "    |O|
+   "    ---
+
+.p|If we try to match the strings of the form `aa...aa` with this NFA using
+depth-first search, we'll have two choices at each `a` character: we either stay
+at the current node or switch to the other node. Each choice doubles the number
+of paths we have to check, so parsing this NFA ends up taking exponential time.
+
+.p|Breadth-first search is a much better idea. Consider this NFA:
+
+```"                      a
+   "    1                .-v
+   "    ---  ()  ---  c  ---  a  ---  t  ---
+   "--> | | ---> | | --> | | --> | | --> |O|
+   "    ---      ---     ---     ---     ---
+   "     |       2       3       4       5
+   "     |
+   "     |                o
+   "     |               .-v
+   "     |   ()  ---  c  ---  o  ---  g  ---
+   "     '-----> | | --> | | --> | | --> |O|
+   "             ---     ---     ---     ---
+   "             6       7       8       9
+
+.p|This is equivalent to the regular expression `ca+t|co+g`, although it isn't a
+direct translation for simplicity. I've also numbered each node. Let's parse the
+string `caaat`. At first we're either in states 1, 2, or 6. Let's mark each of
+these nodes with an asterisk:
+
+```"(step 0)
+   "                      a
+   "    1*               .-v
+   "    ---  ()  ---  c  ---  a  ---  t  ---
+   "--> | | ---> | | --> | | --> | | --> |O|
+   "    ---      ---     ---     ---     ---
+   "     |       2*      3       4       5
+   "     |
+   "     |                o
+   "     |               .-v
+   "     |   ()  ---  c  ---  o  ---  g  ---
+   "     '-----> | | --> | | --> | | --> |O|
+   "             ---     ---     ---     ---
+   "             6*      7       8       9
+
+.p|Next we see a `c`. There are two possibilities: either we start at node 2 and
+end up at node 3, or we start at node 6 and end up at node 7.
+
+```"(step 1)
+   "                      a
+   "    1                .-v
+   "    ---  ()  ---  c  ---  a  ---  t  ---
+   "--> | | ---> | | --> | | --> | | --> |O|
+   "    ---      ---     ---     ---     ---
+   "     |       2       3*      4       5
+   "     |
+   "     |                o
+   "     |               .-v
+   "     |   ()  ---  c  ---  o  ---  g  ---
+   "     '-----> | | --> | | --> | | --> |O|
+   "             ---     ---     ---     ---
+   "             6       7*      8       9
+
+.p|Next we see an `a`. Now there's two possible transitions, both from state 3.
+
+```"(step 2a)
+   "                      a
+   "    1                .-v
+   "    ---  ()  ---  c  ---  a  ---  t  ---
+   "--> | | ---> | | --> | | --> | | --> |O|
+   "    ---      ---     ---     ---     ---
+   "     |       2       3*      4*      5
+   "     |
+   "     |                o
+   "     |               .-v
+   "     |   ()  ---  c  ---  o  ---  g  ---
+   "     '-----> | | --> | | --> | | --> |O|
+   "             ---     ---     ---     ---
+   "             6       7       8       9
+
+.p|Next we see another `a`. It turns out that the new state set is exactly the
+same. This repeats until we've parsed all of our `a` characters.
+
+```"(steps 2a-4a)
+   "                      a
+   "    1                .-v
+   "    ---  ()  ---  c  ---  a  ---  t  ---
+   "--> | | ---> | | --> | | --> | | --> |O|
+   "    ---      ---     ---     ---     ---
+   "     |       2       3*      4*      5
+   "     |
+   "     |                o
+   "     |               .-v
+   "     |   ()  ---  c  ---  o  ---  g  ---
+   "     '-----> | | --> | | --> | | --> |O|
+   "             ---     ---     ---     ---
+   "             6       7       8       9
+
+.p|Finally we see a `t` and end up at an accept state.
+
+```"(step 5a)
+   "                      a
+   "    1                .-v
+   "    ---  ()  ---  c  ---  a  ---  t  ---
+   "--> | | ---> | | --> | | --> | | --> |O|
+   "    ---      ---     ---     ---     ---
+   "     |       2       3       4       5*
+   "     |
+   "     |                o
+   "     |               .-v
+   "     |   ()  ---  c  ---  o  ---  g  ---
+   "     '-----> | | --> | | --> | | --> |O|
+   "             ---     ---     ---     ---
+   "             6       7       8       9
+
+.p|Let's try this again with the string `cooog`
+
+```"(step 0)
+   "                      a
+   "    1*               .-v
+   "    ---  ()  ---  c  ---  a  ---  t  ---
+   "--> | | ---> | | --> | | --> | | --> |O|
+   "    ---      ---     ---     ---     ---
+   "     |       2*      3       4       5
+   "     |
+   "     |                o
+   "     |               .-v
+   "     |   ()  ---  c  ---  o  ---  g  ---
+   "     '-----> | | --> | | --> | | --> |O|
+   "             ---     ---     ---     ---
+   "             6*      7       8       9
+
+```"(step 1)
+   "                      a
+   "    1                .-v
+   "    ---  ()  ---  c  ---  a  ---  t  ---
+   "--> | | ---> | | --> | | --> | | --> |O|
+   "    ---      ---     ---     ---     ---
+   "     |       2       3*      4       5
+   "     |
+   "     |                o
+   "     |               .-v
+   "     |   ()  ---  c  ---  o  ---  g  ---
+   "     '-----> | | --> | | --> | | --> |O|
+   "             ---     ---     ---     ---
+   "             6       7*      8       9
+
+```"(steps 2b-4b)
+   "                      a
+   "    1                .-v
+   "    ---  ()  ---  c  ---  a  ---  t  ---
+   "--> | | ---> | | --> | | --> | | --> |O|
+   "    ---      ---     ---     ---     ---
+   "     |       2       3       4       5
+   "     |
+   "     |                o
+   "     |               .-v
+   "     |   ()  ---  c  ---  o  ---  g  ---
+   "     '-----> | | --> | | --> | | --> |O|
+   "             ---     ---     ---     ---
+   "             6       7*      8*      9
+
+```"(step 5b)
+   "                      a
+   "    1                .-v
+   "    ---  ()  ---  c  ---  a  ---  t  ---
+   "--> | | ---> | | --> | | --> | | --> |O|
+   "    ---      ---     ---     ---     ---
+   "     |       2       3       4       5
+   "     |
+   "     |                o
+   "     |               .-v
+   "     |   ()  ---  c  ---  o  ---  g  ---
+   "     '-----> | | --> | | --> | | --> |O|
+   "             ---     ---     ---     ---
+   "             6       7       8       9*
+
+.p|This breadth-first algorithm runs in `O(k^2*n)` time, where `k` is the number
+of nodes in our NFA and `n` is the length of our string. The reason why this is
+so much faster than a depth-first approach is that we're not repeating a lot of
+work. There might be 1024 ways to end up at state 1 after 10 characters. With
+DFS we had to check all 1024 paths and their continuations, but with BFS we
+acknowledge that the journey to end up at some state doesn't affect its
+continuation, so all of these paths can be treated the same.
+
+#2|Converting NFAs to DFAs
+
+.p|We secretly just converted our NFA into a DFA.
+
+```"                                         a
+   "                                        .-v
+   "    ----------  c  ----------  a  ---------------  t  --------------------
+   "--> | step 0 | --> | step 1 | --> | steps 2a-4a | --> | step 5a (accept) |
+   "    ----------     ----------     ---------------     --------------------
+   "                       |
+   "                       |       o  ---------------  g  --------------------
+   "                       '--------> | steps 2b-4b | --> | step 5b (accept) |
+   "                                  ---------------     --------------------
+   "                                        '-^
+   "                                         o
+
+.p|Each step in our breadth-first search can be fully described as a subset of
+states. Each reachable subset of NFA states corresponds to a new state in our
+DFA, with a deterministic transition function between subsets. Since there are a
+finite number of states, there are a finite number of subsets of states, so this
+conversion is always possible. In the worst case, if we have an `n` node NFA, we
+have a `2^n` node DFA.
+
+.p|We've just discovered an `O(n)` algorithm to match regular expressions. First
+we compile it to an NFA, then we compile the NFA to a DFA, then we parse the
+DFA.
+
+#2|Converting NFAs to regular expressions
+
+.p|Let's convert this NFA to a regular expression:
+
+```"     0         0
+   "    .-v       .-v
+   "    ---   1   ---
+   "--> |O| ----> | |
+   "    --- <---- ---
+   "     ^|   2   ^|
+   "   1 || 2     ||
+   "     |v     2 || 1
+   "    --- ------'|
+   "    | | <------'
+   "    ---
+   "    '-^
+   "     0
+
+.p|This NFA happens to also be a DFA. Every DFA is an NFA, but not every NFA is
+a DFA. This NFA matches multiples of 3; the top left state corresponds to
+multiples of 3, the top right state corresponds to multiples of 3 plus 1, and
+the bottom left state corresponds to multiples of 3 plus 2. Notably, this type
+of DFA can be created for multiples of any number in any base.
+
+.p|First we add a new start and accept state, and add empty string transitions
+to the old ones.
+
+```"   ---
+   "   |O|     0         0
+   "   ---    .-v       .-v
+   "    ^---- ---   1   ---
+   "      ()  | | ----> | |
+   "    .---> --- <---- ---
+   "    | ()   ^|   2   ^|
+   "   ---   1 || 2     ||
+   "-->| |     |v     2 || 1
+   "   ---    --- ------'|
+   "          | | <------'
+   "          ---
+   "          '-^
+   "           0
+
+.p|We'll call every node other than the start and accept nodes the "middle"
+nodes. We're also going to treat this as a generalized NFA, where the
+transitions can be any regular expression rather than just a single character or
+an empty string. We're going to simplify this GNFA one step at a time by
+removing middle nodes. For any given middle node, there are some paths that lead
+into it, some paths that lead out of it, and potentially some paths that lead
+into themselves. We can simply connect each pair with its own path.
+
+```"      c
+   "   a .-v  d
+   "A -> --- -> C
+   "   b | |  e
+   "B -> --- -> D
+
+```"  ac*d
+   "A ----> C
+   "
+   "  ac*e
+   "A ---->  D
+   "
+   "  bc*d
+   "B ---->  C
+   "
+   "  bc*e
+   "B ---->  D
+
+.p|We remove middle node 0
+
+```"   --- .------------------.
+   "   |O|<'           0|20*1 |
+   "   ---<.            .-v   |20*
+   "    ^  |       0*1  ---   |
+   "    |  |10*  .----> | |---'
+   "    |0*'---. |      ---
+   "    |.-----+-'      ^|
+   "   --- 0*2 |        ||
+   "-->| |----v|  10*1|2||1|20*2
+   "   ---    --- ------'|
+   "          | | <------'
+   "          ---
+   "          '-^
+   "         0|10*2
+
+.p|Then node 1
+
+```"   ---
+   "   |O|<----.
+   "   ---     |
+   "    ^      |
+   "    |r1    |r2
+   "    |      |
+   "    |      |
+   "   --- r3  |
+   "-->| |----v|
+   "   ---    ---
+   "          | |
+   "          ---
+   "          '-^
+   "           r4
+   "
+   "r1: 0*|0*1(0|20*1)*20*
+   "r2: 10*|(10*1|2)(0|20*1)*(20*)
+   "r3: 0*2|0*1(0|20*1)*1|20*2
+   "r4: 0|10*2|(10*1|2)(0|10*2)*(1|20*2)
+
+.p|Then node 2
+
+```"   ---
+   "   |O|
+   "   ---
+   "    ^
+   "    |re
+   "    |
+   "   ---
+   "-->| |
+   "   ---
+   "
+   "re: 0*|0*1(0|20*1)*20*|(0*2|0*1(0|20*1)*1|20*2)(0|10*2|(10*1|2)(0|10*2)*(1|20*2))*(10*|(10*1|2)(0|20*1)*(20*))
+
+#2|Conclusion
+
+.p|In this article, we introduced DFAs and NFAs, showed that regular expressions
+can be converted to NFAs, showed that NFAs can be converted to DFAs, and that
+DFAs and NFAs can be convereted to regular expressions. Each of these ideas are
+really just different representations of the same underlying class of languages,
+called the regular languages. Checkmate,
+<(https://stackoverflow.com/questions/4518307/can-i-use-regular-expressions-to-search-for-multiples-of-a-number)[random
+StackOverflow thread from 2010]>.
