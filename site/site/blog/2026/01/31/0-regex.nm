@@ -66,7 +66,7 @@ beautiful algorithms at the core of computer science.
 .p|There are five types of regular expressions. The first is just the empty
 string, which matches the empty string. This is normally denoted with a
 lowercase epsilon, but I don't feel like encoding unicode into this article, so
-I'll just represent it as empty parenthesis `()`
+I'll just represent it as empty parenthesis `\0()`
 
 ```"$ echo '' | grep '()' # empty string
 
