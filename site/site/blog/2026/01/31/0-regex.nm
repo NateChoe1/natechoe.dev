@@ -257,8 +257,8 @@ translation to an NFA. The empty string and single character cases are trivial:
    "    ---     ---
 
 .p|Concatenation is also easy. Suppose we have two NFAs corresponding to two
-regular expressions that each have one accept node. We can just connect the
-first accept node and connect it to the second start node with an empty string
+regular expressions that each have one accept node. We can just take the first
+accept node and connect it to the second start node with an empty string
 transition.
 
 
