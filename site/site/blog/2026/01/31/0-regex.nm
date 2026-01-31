@@ -595,13 +595,13 @@ into themselves. We can simply connect each pair with its own path.
    "A ----> C
    "
    "  ac*e
-   "A ---->  D
+   "A ----> D
    "
    "  bc*d
-   "B ---->  C
+   "B ----> C
    "
    "  bc*e
-   "B ---->  D
+   "B ----> D
 
 .p|We remove middle node 0
 
