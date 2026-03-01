@@ -1,0 +1,576 @@
+//Three proofs involving regular languages
+//@%/site/katex.html@
+
+.p|In <(/blog/2026/01/31/0-regex.html)[the last blog]> we discussed regular
+languages \&mdash\; the set of languages that can be described using regular
+expressions. We introduced Nondeterministic Finite Automata (NFAs),
+Deterministic Finite Automata (DFAs), and showed that regexes, NFAs, and DFAs
+are actually just three different representations of the same underlying class
+of languages.
+
+.p|That article was pretty dense and I had to leave out some extra details which
+I feel are too interesting not to share. This article is sort of a companion to
+the last one, with three additional interesting proofs. I will assume that you
+have read the previous article, and understand what DFAs and NFAs are, the
+mathematical definition of regular expressions, and the fact that these three
+ideas are all interchangable.
+
+#2|The pumping lemma
+
+.p|Here's a simple Python function that checks if a binary string contains the
+same number of zeros and ones:
+
+$</site/code.sh python
+$|def same_zeros_ones(string):
+$|    num_zeros = 0
+$|    num_ones = 0
+$|    for char in string:
+$|        if char == '0':
+$|            num_zeros += 1
+$|        elif char == '1':
+$|            num_ones += 1
+$|    return num_zeros == num_ones
+
+.p|Is it possible to implement this function as a regular expression? More
+formally, is the language of binary strings with an equal number of zeros and
+ones regular? In Python, we would want some code like this:
+
+$</site/code.sh python
+$|import re
+$|
+$|def same_zeros_ones(string):
+$|    return re.match(r'^[insert some regex here]$', string)
+
+.p|The next paragraphs will spoil the answer, so feel free to stop here and
+think about this problem.
+
+.p|Rather than thinking about regular expressions, it's much easier to ask if
+this language can be implemented using a DFA. If we can implement this algorithm
+as a DFA, then we could just convert this DFA to a regular expression and have
+our solution. Inversely, if we can't implement this as a DFA, then we can't
+implement it as a regular expression either, since every regular expression can
+be converted to an equivalent DFA.
+
+.p|We're going to do a proof by contradiction. We'll start by assuming that this
+language /can/ be implemented with a DFA, and then show that we can construct a
+string which our DFA falsely accepts. Suppose we have some DFA with \\(n\\)
+nodes that matches this language. Consider the string \\(0^n1^n\\).
+
+>.|NOTE: In automata theory, superscripts usually denote string reptition, so
+  |something like \\(0^5\\) is equivalent to the string \\(00000\\), or five
+  |repetitions of \\(0\\).
+
+.p|Within the first \\(n\\) characters of our string, we will see \\(n+1\\)
+different states, if you include the initial state, the state after the final
+\\(0\\) character, and everything in between. Since there are only \\(n\\)
+states in our DFA, we know that at least 2 of these states are duplicates (this
+is called the <(https://en.wikipedia.org/wiki/Pigeonhole_principle)[pigeonhole
+principle]>, and is a very useful tool in discrete math). For the following
+example, let's assume that \\(n=10\\), and that the duplicated state \\(S\\) is
+at positions \\(3\\) and \\(7\\).
+
+```"00000000001111111111
+   "   ^   ^
+   "   the states at these two points are identical
+
+.p|We know that at position \\(3\\) we are in state \\(S\\), and that after four
+\\(0\\) characters we are back at the same state \\(S\\). If we then repeat
+those four characters again we would be back at \\(S\\), and the rest of the
+string would bring us to some accept state.
+
+```"000 (0000)^n 0001111111111
+   "    ^
+   "    this part of the string doesn't actually change the state, so we can
+   "    repeat it as many times as we want, or not repeat it at all, and the
+   "    entire string would still be accepted by our DFA
+
+.p|When we repeat this section of the string, it's no longer part of our
+language, since there are now more \\(0\\)s than \\(1\\)s. This means that our
+DFA fails to match our language, since it has some false positives. Since this
+process can be applied to any potential DFA, we know that the language itself is
+non-regular, and that no potential DFA can match it.
+
+.p|The pumping lemma states: for any regular language \\(L\\), there is some
+integer \\(p\\), called the /pumping length/, such that for any string
+\\(s \\in L, |s| \\ge p\\) we can write \\(s = uvw\\), where
+\\(|uv| \\le p\\), \\(|v| \\ge 1\\), \\(\\forall n \\in ℕ\_0, uv^nw \\in L\\). Or in
+English, any string in \\(L\\) longer than \\(p\\) can be split into three
+parts, where the non-empty middle part can be repeated any number of times and
+still yield a string in \\(L\\), and where the middle part occurs entirely
+within the first \\(p\\) characters of \\(s\\). In the example before,
+\\(n=10\\), and the "middle part" was the string of 4 \\(0\\) characters that we
+repeated.
+
+.p|Here are three sample problems using the pumping lemma. I encourage you to
+solve these yourself before reading on.
+
+1-|Show that the language \\(0^n10^n\\) is not regular using the pumping lemma.
+ -|Show that the language \\(0^n1^m, n\\ge m\\) is not regular using the pumping
+  |lemma.
+ -|Show that the language \\(0^n1^m\\), \\(n \\ne m\\) is not regular. You may
+  |use any method to solve this problem, but there are bonus points for using
+  |the pumping lemma as described above.
+ -|Construct a language which satisfies the pumping lemma, but which isn't
+  |regular (hard).
+
+.p|The first problem is pretty simple. Suppose that the language is regular, let
+\\(p\\) be the pumping length. Construct \\(s = 0^p10^p\\). This string can be
+divided into \\(s = uvw\\), where \\(|uv| \\le p\\), \\(|v| \\ge 1\\),
+\\(\\forall n \\in ℕ\_0, uv^nw \\in L\\). Construct
+\\(s_1 = uv^2w = 0^{p+|v|}10^p\\). This string obviously isn't in our language,
+so we have a contradiction. Therefore our target language isn't regular.
+
+.p|I included this problem for two reasons. The first is that it makes a good
+one paragraph review of the pumping lemma. The second is that it shows that Perl
+"regular" expressions aren't actually regular, because in Perl this language is
+matched by the regular expression `(0*)1\\1`. Any implementation of
+Perl-Compatible Regular Expressions (PCRE) can't use a simple NFA or DFA, and
+must use some other, likely slower, implementation. One popular choice is to
+compile the regex to <(https://swtch.com/~rsc/regexp/regexp2.html)[a
+nondeterministic virtual machine]>.
+
+.p|The second problem requires some creativity. Suppose the language is regular
+and has pumping length \\(p\\). If we construct something like
+\\(s=0^p1^p=uvw\\) and try to pump \\(0^{p+n|v|}1^p\\), for any positive \\(n\\)
+it seems like every pumpable string is still in the language, so we can't prove
+irregularity. The trick is to construct \\(uv^0w=0^{p-|v|}1^p\\), which isn't
+part of the language and gives us our contradiction.
+
+.p|The third problem is easy to solve in general, but hard to solve using the
+pumping lemma. If we try, for example, to pump the string \\(0^p1^{p+1}\\), with
+\\(s=uvw\\), it could be that \\(|v|=2\\), so any potential pump is still in the
+language. We could try constructing the string \\(0^p1^{p+|v|}\\), which
+can be pumped to show that the language isn't regular, but the naive pumping
+lemma makes no guarantee that this string is constructable, and that the extra
+\\(1\\) characters at the end of the string won't affect \\(|v|\\) at the
+beginning of the string. It won't; the underlying logic that proves the pumping
+lemma still holds for this string, but a student taking a test who blindly
+memorized the pumping lemma without learning the underlying logic wouldn't be
+able to prove that.
+
+.p|Luckily for our student, it's still possible to show that this language is
+non-regular using just the pumping lemma by constructing the string
+\\(0^p1^{p!+p}\\). Regardless of the value of \\(|v|\\), we know that \\(p!\\)
+is divisible by \\(|v|\\), since the construction of \\(p!\\) must include
+\\(|v|\\) as a factor. This means that there's always some \\(n\\) that we can
+use to pump \\(uv^nw\\) where \\(0^{p+n|v|}1^{p!+p}\\) isn't in the
+language because \\(p+n|v|=p!+p\\).
+
+.p|The final problem is by far the hardest of them all. So far we've been
+looking at binary strings, but we could choose any alphabet for our language.
+For this solution, we'll use the alphabet \\(\\Sigma = \\{0,1,2,3\\}\\). The
+definition of our language is as follows:
+
+p<<div>\[\displaystyle
+\begin{align*}
+L = &\{s=uvwxy \mid u,y \in \Sigma*; |v|=|w|=|x|=1; v=w \lor v=x \lor w=x \} \, \cup \\
+    &\{s \mid s \, \text{has an equal number of 2s and 3s}\}
+\end{align*}
+\]</div>
+
+.p|This is a pretty long definition. Our language contains strings that match
+one of two conditions. The first condition states that there is a consecutive
+run of three characters in the string with a duplicate character. Something like
+\\(31210\\) would work since the substring \\(121\\) contains two \\(1\\)s,
+something like \\(012013012\\) wouldn't since there's no such three character
+substring.
+
+.p|The second condition is pretty self explanatory, if a string contains an
+equal number of 1s and 2s, it's part of our string. Something like
+\\(012012013013\\) would work, since there are two \\(2\\)s and two \\(3\\)s.
+Something like \\(1122\\) satisfies both conditions, and is in our language.
+
+.p|The first condition allows us to pump our string with \\(p=5\\). Since our
+language has only 4 symbols, we know that any length 5 string must contain at
+least one duplicate character (the pigeonhole principle strikes again!) There
+are two possibilities: either the substring already satisfies the first
+condition, or it doesn't.
+
+.p|If the substring satisfies the first condition, then we can just pump some
+other part of the string. For example, the string \\(01023\\) already satisfies
+the first condition, so we can just pump \\(23\\).
+
+.p|If the substring doesn't already satisfy the first condition, then we can
+pump two characters in between the duplicate characters. For example, with the
+string \\(01230\\) we can pump \\(12\\). If we pump with \\(n=0\\), we end up
+with \\(030\\) which satisfies the first condition. If we pump with some
+\\(n>1\\) (for example \\(n=2\\)) we end up with \\(0121230\\), which also
+satisfies the first condition. That shows that this language is pumpable.
+
+.p|Now we have to show that this language isn't regular. Consider strings of the
+form \\((012)^n(013)^n\\). These strings are all part of our language by the
+second condition only. Suppose that this is a regular language which can be
+processed using a DFA with \\(p\\) states. After the first \\(3n\\) characters
+(after the initial run of \\(012\\) reptitions) we end up at some state which
+will only accept \\(n\\) repetitions of \\(013\\). For each value of \\(n\\)
+from \\(0\\) to \\(p\\), we end up at some state after \\(3n\\) characters. By
+the pigeonhole principle, at least one of these states must be duplicates.
+Suppose that these duplicates occur at \\(n=a\\) and \\(n=b\\), ending at shared
+state \\(S\\). We know that \\((012)^a\\) gets us from the start state to state
+\\(S\\), and \\((013)^b\\) gets us from state \\(S\\) to an accept state. This
+means that \\((012)^a(013)^b\\) gets us from the start state to an accept state.
+Since \\(a \\neq b\\), this is a contradiction. Therefore, this language isn't
+regular. The pumping lemma is necessary to show that a language is regular, but
+not sufficient.
+
+.p|That final step is a specific application of the
+<(https://en.wikipedia.org/wiki/Myhill%E2%80%93Nerode_theorem)[Myhill-Nerode
+theorem]>. We'll discuss this a bit later, but for now let's take a brief
+intermission and talk about logic gates.
+
+#2|Functional completeness
+
+.p|Here's a truth table of three variables. Note that every output is a `0`,
+except for one output which is a `1`. Can you implement `f(a, b, c)` using only
+`and`, `or`, and `not`?
+
+```"a b c  f(a, b, c)
+   "-----------------
+   "0 0 0  0
+   "0 0 1  0
+   "0 1 0  0
+   "0 1 1  1
+   "1 0 0  0
+   "1 0 1  0
+   "1 1 0  0
+   "1 1 1  0
+
+.p|Here's my Python solution:
+
+$</site/code.sh python
+$|def f(a, b, c):
+$|    return (not a) and b and c
+
+.p|Here's three more truth tables of the same form. Again, the goal is to write
+a one-liner that implements each of them. The meta-goal is to describe a general
+procedure to generate implementations for these truth tables.
+
+```"a b c  g(a, b, c)   a b c  h(a, b, c)   a b c  i(a, b, c)
+   "-----------------   -----------------   -----------------
+   "0 0 0  0            0 0 0  0            0 0 0  0
+   "0 0 1  0            0 0 1  0            0 0 1  1
+   "0 1 0  0            0 1 0  0            0 1 0  0
+   "0 1 1  0            0 1 1  0            0 1 1  0
+   "1 0 0  0            1 0 0  1            1 0 0  0
+   "1 0 1  0            1 0 1  0            1 0 1  0
+   "1 1 0  1            1 1 0  0            1 1 0  0
+   "1 1 1  0            1 1 1  0            1 1 1  0
+
+.p|Here are my three solutions:
+
+$</site/code.sh python
+$|def g(a, b, c):
+$|    return a and b and (not c)
+$|
+$|def h(a, b, c):
+$|    return a and (not b) and (not c)
+$|
+$|def i(a, b, c):
+$|    return (not a) and (not b) and c
+
+.p|Hopefully the general pattern is obvious now. Here's a new truth table, with
+more than a single `1` in the output. Can you implement this with `and`, `or`,
+and `not`?
+
+```"a b c  M(a, b, c)
+   "-----------------
+   "0 0 0  0
+   "0 0 1  1
+   "0 1 0  0
+   "0 1 1  1
+   "1 0 0  1
+   "1 0 1  0
+   "1 1 0  1
+   "1 1 1  0
+
+.p|Here's my solution:
+
+$</site/code.sh python
+$|def M(a, b, c):
+$|    return f(a, b, c) or g(a, b, c) or h(a, b, c) or i(a, b, c)
+
+.p|If we really wanted to, we could also replace these function calls with their
+raw definitions.
+
+$</site/code.sh python
+$|def M(a, b, c):
+$|    return ((not a) and b and c) or
+$|           (a and b and (not c)) or
+$|           (a and (not b) and (not c)) or
+$|           ((not a) and (not b) and c)
+
+.p|It should be clear now that any truth table can be implemented with just
+`and`, `or`, and `not`. First we extract each `1` in the output into its own
+separate truth table, solve each of the simpler truth tables, then `or` all of
+the newly created formulas. This is called the sum-of-products (SOP)
+representation of a boolean function. There's also the product-of-sums (POS)
+representation where we isolate each `0` into its own table, solve those using
+`or` gates, and then `and` the results. Since these techniques can implement any
+arbitrary truth table, we say that `and`, `or`, and `not` are /functionally
+complete/.
+
+.p|Interestingly, `nor` individually is also functionally complete, with these
+implementations of `not`, `or`, and `and`:
+
+$</site/code.sh python
+$|# definition of nor. python doesn't have a native nor operator, so we have to
+$|# implement it ourselves.
+$|def nor(a, b):
+$|    return not (a or b)
+$|
+$|def not_n(a):
+$|    return nor(a, a)
+$|
+$|def or_n(a, b):
+$|    return not_n(nor(a, b))
+$|
+$|def and_n(a, b):
+$|    return not_n(or_n(not_n(a), not_n(b)))
+$|
+$|# similar functions can be created with nand as well
+
+.p|The final step is the most interesting, since it's possible to construct an
+`and` gate from just `not` gates and `or` gates. This is one of two
+<(https://en.wikipedia.org/wiki/De_Morgan%27s_laws)[De Morgan's Laws]>. The
+other one shows that it's possible to construct an `or` gate from `and` gates
+and `not` gates, and together they are fundamental theorems of formal logic.
+When I first learned about these laws, I felt that I had a very strong intuitive
+understanding of them even if I didn't know what they were called. I think you
+might too; in the 1977 video game <(https://en.wikipedia.org/wiki/Zork)[Zork]>
+there's an invocation ritual in which you have to light some candles, ring a
+bell, then read a book to gain entrance to the Land of the Dead. We might
+implement that like this:
+
+$</site/code.sh python
+$|if lit_candles() and rung_bell() and read_book():
+$|    allow_entrance()
+
+.p|Alternatively, if it's easier to deny entrance to the Land rather than allow
+it, we might write it like this:
+
+$</site/code.sh python
+$|if not lit_candles() or not rung_bell() or not read_book():
+$|    deny_entrance()
+
+.p|It feels very intuitively obvious to me that these statements are essentially
+inverses of each other, De Morgan's laws are just a generalization of this
+intuition.
+
+.p|Getting back to regular languages, here's four problems of increasing
+difficulty:
+
+1-|Show that the union (or) of two regular languages is also a regular language
+ -|Show that the complement (not) of a regular language is also a regular
+  |language
+ -|Show that the intersection (and) of two regular languages is also a regular
+  |language
+ -|Show that regular languages are functionally complete
+
+.p|If you know the mathematical definition of regular expressions, then problem
+1 is trivial. Given two regular expressions `r1` and `r2`, their union by
+definition is just `r1|r2`.
+
+.p|Problem 2 is a bit harder, but it's quite simple when we realize we're
+supposed to use DFAs. If you take some DFA, turn all the non-accepting states
+into accept states, then turn all of the accept states into non-accepting
+states, the newly formed DFA will be the complement of the old one, accepting
+every string that the old one rejects, and rejecting every string that the old
+one accepts.
+
+.p|Problem 3 involves De Morgan's laws. Given two regular languages `r1` and
+`r2`, their intersection can be calculated with `not(or(not(r1), not(r2)))`.
+
+.p|Problem 4 follows from the fact that `and`, `or`, and `not` are all
+functionally complete. Since we've just implemented each of those operations
+individually, we know that regular expressions are functionally complete.
+
+.p|This is a very surprising result. It means that any program of this form:
+
+$</site/code.sh python
+$|import re
+$|def scary_pattern_match(s):
+$|    patterns = [
+$|        r"pattern1",
+$|        r"pattern2",
+$|        ...
+$|    ]
+$|    results = [bool(re.match(pattern, s)) for pattern in patterns]
+$|    return transform(results)
+
+.p|where `patterns` could be literally any (finite, obviously) list of regular
+expressions and `transform` could be literally any (pure) function can be
+translated into a single regular expression. This regular expression may be very
+long, probably of some crazy exponential size to its inputs, but it's still
+possible.
+
+#2|The Myhill-Nerode theorem
+
+.p|There's this concept in mathematics called an //equivalence relation//. A
+//relation// is just some operation that takes two inputs and outputs a boolean. For
+example, "greater than" is a relation, when we have something like
+\\(5>2\\), we have an operation that takes in two inputs (in this case \\(5\\)
+and \\(2\\)), and outputs a boolean (in this case \\(\\text{True}\\)). An
+equivalence relation \\(\\cong\\) is a relation which satisfies three properties:
+
+1-|For any \\(x\\), \\(x \\cong x\\). This means that "greater than" is not an
+  |equivalence relation, since for example \\(\\lnot 2 > 2\\)
+ -|For any \\(x\\) and \\(y\\), \\(x\\cong y \\iff y\\cong x\\). This means that "greater
+  |than or equal to" is also not an equivalence relation, since \\(5 \\ge 2\\),
+  |but \\(\\lnot 2 \\ge 5\\).
+ -|For any \\(x\\), \\(y\\), and \\(z\\),
+  |\\(x \\cong y \\land y \\cong z \\implies x \\cong z\\). Suppose that \\(\\cong\\) is the relation
+  |"is 1 apart", so \\(2\\cong 3\\) since \\(2\\) and \\(3\\) are one apart from each
+  |other. This would not be an equivalence relation, because even though
+  |\\(2\\cong 3\\) and \\(3\\cong 4\\), \\(\\lnot 2\\cong 4\\).
+
+.p|A classic example of an actual equivalence relation is
+<(https://en.wikipedia.org/wiki/Congruence_(geometry))[congruence]>. Two shapes
+are congruent if they are the same size and shape, but they can be rotated,
+moved, and even mirrored from each other. I imagine that equivalence relations
+split objects into buckets, where each objects within a bucket are related to
+each other, but objects between buckets aren't. These buckets are called
+/equivalence classes/.
+
+.p|Every language defines an equivalence relation where two strings are
+related if they have the same set of suffixes in the language. Consider for
+example the language defined by the regular expression \\(0*1\*\\). In this
+language, \\(00 \\cong 00000\\), but \\(\\lnot 00 \\cong 001\\).
+
+```"Define the following strings:
+   "(1): 00
+   "(2): 00000
+   "(3): 001
+   "(4): 01
+   "
+   "(1) ~= (2)
+   "(1) !~= (3)
+   "(3) ~= (4)
+   "
+   "Exercise: Prove that (1) ~= (4) using the definition of an equivalence
+   "          class.
+   "
+   "Consider the suffix 01. The string (1).(4) (00 01) is in L. The string (2).(4)
+   "(00000 01) is also in L. It can be seen that any suffix that could be added to
+   "(1) and yield a string in L could also be added to (2) and yield a string in L,
+   "and vice versa. Therefore, (1) ~= (2).
+   "
+   "However, (3).(4) (001 01) /isn't/ in L. Therefore, (1) !~= (3).
+
+.p|The Myhill-Nerode theorem states that a language is regular if and only if
+this equivalance relation defines a finite number of equivalence classes.
+
+.p|This can be shown by treating each equivalence class as a state within a DFA.
+To get the transitions between these states, we can suppose that for some
+equivalence class \\(c_1\\), we have a string \\(s\\) which is a member of that
+class. Then, for any character \\(w\\), we say that the string \\(sw\\) is a
+member of equivalence class \\(c_2\\). We simply add a transition from \\(c_1\\)
+to \\(c_2\\) by character \\(w\\).
+
+.p|We can show that the DFA generated by this equivalence relation is the
+smallest possible DFA that matches a language. Suppose we have a DFA like this:
+
+```"       0
+   "      .-v
+   "   0  --- 1 ---
+   " .--->| |-->|X|
+   " |    ---   ---
+   "---
+   "| |
+   "---
+   " |    --- 1 ---
+   " '--->| |-->|X|
+   "   1  ---   ---
+   "      '-^
+   "       0
+
+.p|This DFA is equivalent to the regular expression \\((0|1)0*1\\). It's also
+not the smallest possible DFA that matches this regular expression; this is:
+
+```"         0
+   "        .-v
+   "--- 0/1 --- 1 ---
+   "| |---->| |-->|X|
+   "---     ---   ---
+
+.p|Still, with that first DFA we can define an equivalence relation where
+two strings are related if and only if they end up at the same node of the DFA.
+With this relation, \\(0 \\thicksim 000\\), but \\(\\lnot 0 \\thicksim 1\\).
+Note that in this language, \\(0 \\cong 1\\), and in the simplest possible DFA
+\\(0 \\thicksim 1\\), but in the specific implementation of the language given
+by the first DFA, \\(\\lnot 0 \\thicksim 1\\).
+
+.p|We say that \\(\\thicksim\\) is a /refinement/ of \\(\\cong\\). This means
+that \\(a \\thicksim b \\implies a \\cong b\\). In other words, any two strings
+that end at a specific state are always in the same equivalence class, although
+two strings in the same equivalence class (such as \\(0\\) and \\(1\\)) may not
+end up at the same state. The DFA formed directly from the equivalence class is
+therefore the smallest possible DFA that matches a given regular language.
+
+.p|We can use this fact to simplify DFAs into their smallest possible
+counterparts. Let the equivalence relation \\(a \\cong^n b\\) denote that
+\\(a\\) and \\(b\\) are indistinguishable by any suffix of length \\(n\\) or
+less. For example, with the language defined by \\(0*(11|10*10*1)\\),
+\\(00 \\cong^2 010\\), even though \\(\\lnot 00 \\cong 010\\).
+\\(00 \\cong^2 010\\) because you can append any two character suffix to either
+string, and they will either both will be in the language, or neither will.
+
+.p|Note that as \\(n\\) increases, this equivalence relation gets more and
+more refined, until eventually we end up with \\(\\cong\\) itself. If we didn't
+end up with \\(\\cong\\), then we'd just keep refining our equivalence
+relation forever and end up with infinitely many equivalence classes, which
+would mean that our original language wasn't regular.
+
+.p|To minimize a DFA, we start by assigning each state to an equivalence class
+in \\(\\cong^0\\). This creates two classes, one for the non-accepting states, and
+one for the accepting states. In the examples that follow, I'll be referencing
+this DFA.
+
+```"         0
+   "        .-v
+   "     0  --- 1 ---
+   "   .--->| |-->|X|
+   "   |    ---   ---
+   "  ---    1     2
+   "  | |
+   "0 ---    3     4
+   "   |    --- 1 ---
+   "   '--->| |-->|X|
+   "     1  ---   ---
+   "        '-^
+   "         0
+
+p<<div>\(\displaystyle
+C_{0,0}=\{0,1,3\} \\
+C_{0,1}=\{2,4\}
+\)</div>
+
+.p|We then refine this equivalence relation to \\(\\cong^1\\) by figuring out
+which states within a single equivalence class can be distinguished by a single
+character. In this case, states \\(\\{1, 3\\}\\) can be distinguished from state
+\\(0\\) because there is a transition from those states to \\(C_{0,1}\\) which
+doesn't exist for state \\(0\\).
+
+p<<div>\(\displaystyle
+C_{1,0}=\{0\} \\
+C_{1,1}=\{1,3\} \\
+C_{1,2}=\{2,4\}
+\)</div>
+
+.p|We can try refining again to \\(\\cong^2\\), but we'll find that no more
+refinements can be made. This means that our equivalence relation is fully
+refined, and that we can use these classes to form a new DFA.
+
+```"         0
+   "        .-v
+   "--- 0/1 --- 1 ---
+   "| |---->| |-->|X|
+   "---     ---   ---
+
+#2|Conclusion
+
+.p|This was a very mathematics-heavy article, so sorry about that. There's still
+more to talk about within automata theory; we saw from the pumping lemma that
+regular languages aren't all-powerful, but there are other types of languages
+which can be processed using other more powerful tools. In the future I may
+write about context-free languages (CFLs) context-free grammars (CFGs) and stack
+machines, but I'll end this article here for now.
