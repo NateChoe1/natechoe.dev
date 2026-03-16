@@ -405,8 +405,8 @@ possible.
 
 #2|The Myhill-Nerode theorem
 
-.p|There's this concept in mathematics called an //equivalence relation//. A
-//relation// is just some operation that takes two inputs and outputs a boolean. For
+.p|There's this concept in mathematics called an /equivalence relation/. A
+/relation/ is just some operation that takes two inputs and outputs a boolean. For
 example, "greater than" is a relation, when we have something like
 \\(5>2\\), we have an operation that takes in two inputs (in this case \\(5\\)
 and \\(2\\)), and outputs a boolean (in this case \\(\\text{True}\\)). An
