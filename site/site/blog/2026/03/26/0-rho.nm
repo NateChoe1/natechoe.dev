@@ -1,0 +1,759 @@
+//Pollard's rho algorithm
+//@%/site/katex.html@
+
+.p|Let's write some Python to factorize an integer!
+
+$</site/code.sh python
+$|# returns a nontrivial factor of n, or 0 if none are found
+$|def find_factor(n):
+$|    for x in range(2, n):
+$|        if n % x == 0:
+$|            return x
+$|    return 0
+
+.p|This code is really inefficient, but it'll serve as a decent introduction to
+a few topics that will be important for the rest of this article. The
+interesting line here is `if n % x == 0`. In Python, a `%\0` denotes the
+/modulo/ operator, and it calculates the remainder of a division. For example,
+\\(30\\) divided by \\(7\\) is \\(4\\text{R}2\\), so `30 // 7 == 4` and `30 % 7 == 2`. We can check if one
+number `n` is divisible by another number `x` by checking if `n % x == 0`. This
+code just checks every number from \\(2\\) to \\(n-1\\) to check if any of them
+are factors, and returns the first one it finds.
+
+.p|This code runs in something like \\(n-2\\) steps, since we check \\(n-2\\)
+numbers for our division. We can do better by only checking odd factors and 2.
+Here's a proof of that, along with some formal mathematical definitions. This
+may feel a bit long winded, but this should establish a decent foundation that
+we can use to prove other more important things later. I've borrowed some
+terminology from
+/<(https://math.libretexts.org/Bookshelves/Combinatorics_and_Discrete_Mathematics/A_Spiral_Workbook_for_Discrete_Mathematics_(Kwong)/05%3A_Basic_Number_Theory/5.03%3A_Divisibility)[A
+Spiral Workbook for Discrete Mathematics]>/ by Harris Kwong:
+
+>#2|Definitions
+ .|Given two integers \\(a\\) and \\(b\\), \\(a|b\\) (read as \\(a\\) /divides/
+  |\\(b\\)) means that there exists some third integer \\(q\\) such that
+  |\\(aq=b\\). We may also say that \\(a\\) is a /factor/ of \\(b\\), that
+  |\\(a\\) is a /divisor/ of \\(b\\), that \\(b\\) is a /multiple/ of \\(a\\),
+  |or that \\(b\\) is /divisible/ by \\(a\\).
+ .|Similarly, \\(a \\nmid b\\) means that no such integer exists, and \\(a\\)
+  |does not divide \\(b\\).
+ .|The /trivial factors/ of an integer \\(n\\) are \\(-n\\), \\(-1\\), \\(1\\),
+  |and \\(n\\).
+ .|Some number \\(n\\) is /prime/ if and only if it has no nontrivial factors.
+ .|An integer \\(n\\) is /even/ if \\(2|n\\), and /odd/ otherwise.
+ #2|Statement
+ .|A number \\(n \\ge 3\\) is prime if and only if \\(2\\nmid n\\) and for any
+  |odd integer \\(k\\) where \\(2 < k < n\\), \\(k \\nmid n\\).
+ #2|Proof
+ .|Since this is an "if and only if" statement, we have to prove the statement
+  |both forwards and backwards. Let's start with the "if" part.
+ .|We're trying to prove that a number \\(n \\ge 3\\) is prime /if/
+  |\\(2 \\nmid n\\) and for any odd integer \\(k\\) where \\(2 < k < n\\),
+  |\\(k \\nmid n\\). We're going to use a proof by contradiction. Assume that
+  |there exists some integer \\(n \\ge 3\\) where \\(2 \\nmid n\\) and \\(k
+  |\\nmid n\\) for all odd \\(k\\) in the range, but \\(n\\) isn't prime.
+ .|Since \\(n\\) isn't prime, there exists some factor \\(p\\) where \\(p|n\\).
+  |We know that \\(p\\) isn't odd, since our assumption states that no odd
+  |number divides \\(n\\). Therefore \\(p\\) is even, and \\(2|p\\).
+ .|Since \\(p|n\\), there exists some integer \\(r\\) where \\(n = pr\\). Since
+  |\\(2|p\\), there exists some integer \\(q\\) where \\(p = 2q\\). We can
+  |rewrite this as \\(n = 2qr\\). Since \\(qr\\) is an integer, \\(2|n\\). This
+  |is a contradiction, since our assumption stated that \\(2 \\nmid n\\).
+  |Therefore the "if" part of our statement is true.
+ .|Now we have to prove the "only if" part of the statement. We do this by
+  |changing the order of the implication.
+  |For any integer \\(n \\ge 3\\), if \\(n\\) is prime then \\(2 \\nmid n \\)
+  |and for any odd integer \\(k\\) where \\(2 < k < n\\), \\(k \\nmid n\\).
+ .|This direction is much easier. Since \\(n\\) is prime, its only positive
+  |factors are \\(1|n\\) and \\(n|n\\). This means that \\(2 \\nmid n\\) and for
+  |all \\(k\\) other than \\(1\\) and \\(n\\) (which aren't in our bounds), \\(k
+  |\\nmid n\\).
+
+.p|With this proof, we can safely rewrite our code like this:
+
+$</site/code.sh python
+$|# returns a nontrivial factor of n, or 0 if none are found
+$|def find_factor(n):
+$|    # check if 2 is a factor
+$|    if n % 2 == 0:
+$|        return 2
+$|
+$|    # check if there are any odd factors
+$|    for x in range(3, n, 2):
+$|        if n % x == 0:
+$|            return x
+$|
+$|    # note that our proof means we don't have to check if there are any other
+$|    # even factors, since those should be covered by the 2 case.
+$|    return 0
+
+.p|This code runs in something like \\(n/2\\) steps in the worst case. We can
+make this code even faster by only checking numbers 1 or 5 above multiples of 6.
+I won't formally prove this one because it requires a proof by cases with six
+parts, but the gist is that potential factors 0, 2, and 4 above multiples of 6
+are just even, and numbers 3 above multiples of 6 are divisible by 3.
+
+$</site/code.sh python
+$|def find_factor(n):
+$|    if n != 2 and n % 2 == 0:
+$|        return 2
+$|    if n != 3 and n % 3 == 0:
+$|        return 3
+$|
+$|    for x in range(6, n, 6):
+$|        if x-1 < n and n % (x-1) == 0:
+$|            return x-1
+$|        if x+1 < n and n % (x+1) == 0:
+$|            return x+1
+$|    return 0
+
+.p|This code runs in something like \\(n/3\\) steps in the worst case. We could
+extend this to filter out higher percentages of primes with even more cases.
+Right now we're only checking certain offsets of multiples of 6 (specifically
+values 1 and 5 above multiples of 6). The next step up would be to check offsets
+of multiples of 30, then offsets of multiples of 210. The \\(i\\)th optimal
+multiple value is given by \\(p_1 \\cdot p_2 \\cdot p_3 \\cdot ... \\cdot p_i\\)
+where \\(p = 2, 3, 5, 7, 11, 13\\), the prime numbers. As we multiply more
+primes, we filter more and more potential factors.  In general any potential
+optimization of this code which just adds more cases will run in \\(Rn\\) steps,
+where \\(R\\) is some constant. Using the
+<(https://en.wikipedia.org/wiki/Prime_number_theorem)[prime number theorem]>,
+it's possible to show that as the number of cases we check approaches infinity,
+\\(R\\) approaches 0. Proving this is way outside of the scope of this article,
+though I may write about it some other day.
+
+.p|This code can be optimized futher. The following code runs in \\(\\sqrt{n}\\)
+steps. 
+
+$</site/code.sh python
+$|def find_factor(n):
+$|    # math.isqrt returns the square root of a number rounded down. i'm using
+$|    # it here to avoid floating point rounding errors.
+$|    for x in range(2, math.isqrt(n)+1):
+$|        if n % x == 0:
+$|            return x
+$|    return 0
+
+>#2|Statement
+ .|If a number \\(n\\) has nontrivial factors, it must have at least one
+  |nontrivial factor \\(p\\) such that \\(p \\le \\sqrt{n}\\).
+ #2|Proof
+ .|This is going to be a proof by contradiction. Assume that there exists some
+  |integer \\(n\\) with nontrivial factors, but where every factor is greater
+  |than \\(\\sqrt{n}\\). \\(n = pq\\), where \\(p\\) and \\(q\\) are both
+  |greater than \\(\\sqrt{n}\\). This is a contradiction, since \\(pq\\)
+  |must be greater than \\(n\\), therefore \\(n\\) doesn't exist.
+
+.p|Recall that our first optimization where we just kept adding more cases could
+be expanded infinitely. We could have an algorithm that ran in \\(n\\) steps,
+\\(n/2\\) steps, \\(n/3\\) steps, even \\(n/1000000\\) steps if we had enough
+cases. This new code, however, runs in \\(\\sqrt{n}\\) steps, which is strictly
+faster than any optimized version of the old code. In general if we have an
+algorithm that runs in \\(n/k\\) steps, this new code will catch up and become
+faster for inputs larger than \\(k^2\\). To express the fact that this new code
+is intrinsically faster than any level of optimization of the old code, we
+remove any constant coefficients and terms smaller than the "main" one when
+analyzing it, so the old code is \\(O(n)\\), and the new code is
+\\(O(\\sqrt{n})\\), where the \\(O\\) indicates that there might be some minor
+speedups or slowdowns that don't impact the "true" runtime of the code over the
+long run.
+
+.p|Here's some <(https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm)[new
+code]> that runs in \\(O(\\sqrt{\\sqrt{n}}) = O(n^{1/4})\\) time.
+
+$</site/code.sh python
+$|def gcd(a, b):
+$|    if b > a:
+$|        return gcd(b, a)
+$|    if b == 0:
+$|        return a
+$|    return gcd(b, a % b)
+$|
+$|def find_factor(n):
+$|    def g(x):
+$|        return (x*x+1) % n
+$|    tortoise = hare = 1
+$|    while True:
+$|        tortoise = g(tortoise)
+$|        hare = g(g(hare))
+$|
+$|        # there may be a factor, but we couldn't find it
+$|        if tortoise == hare:
+$|            return 0
+$|
+$|        f = gcd(n, abs(tortoise - hare))
+$|        if f != 1:
+$|            return f
+
+.p|I should node that nobody really knows the runtime of this algorithm. There's
+a very convincing argument that it runs in \\(O(n^{1/4})\\) time, but nobody has
+ever formally proven this fact to the same level of certainty that we've been
+proving things so far. In fact, for some non-prime inputs (such as 28) it
+doesn't find any factors at all. Although we can't formally prove that
+\\(O(n^{1/4})\\) runtime, we can experimentally verify it by just running the
+code with a very large input and measuring how long it takes.
+
+$</site/code.sh python
+$|p = 999999999989
+$|q = 999999999959
+$|n = p*q
+$|print("%d\t%d" % (n, find_factor(n)))
+$|
+$|# $ time python3 factorize.py
+$|# 999999999948000000000451	999999999989
+$|#
+$|# real    0m3.532s
+$|# user    0m3.518s
+$|# sys     0m0.010s
+
+.p|There's a general rule in competitive programming that a program which takes
+10 million steps to execute will probably finish execution within the 3-5 second
+time limit that many competitions use. If we wanted to factorize this integer
+using trial division, we would have to check all of the approximately one
+trillion potential factors of this very large number, which is around 100
+thousand times more than our rule of thumb allows. The fourth root of our input,
+however, is pretty much exactly one million. Allowing for some constant time or
+logarithmic slowdowns, that aligns with our general rule quite well. Before we
+can understand how this algorithm works, we have to discuss linked lists and
+Floyd's cycle-detection algorithm.
+
+#2|Linked lists and Floyd's cycle-detection algorithm
+
+.p|In the alphabet, which two letters come before and after the letter `L`? If
+you're like me it's much easier to figure out which letter comes next than to
+figure out which letter comes before. At least in my mind, years of singing
+<(https://en.wikipedia.org/wiki/The_ABC_Song)[the alphabet song]> as a child has
+ingrained the forwards order of the alphabet into my brain much more strongly
+than the backwards order. There's a strong mental association from `L` to `M`,
+but not the other way around. Maybe this isn't a universal experience and this
+analogy will fall completely flat to most of my audience, but for me the network
+of neurological pathways in my brain probably has some subgraph that looks like
+this:
+
+```"A -> B -> C -> D -> ... -> Y -> Z
+
+.p|This is all just a silly analogy for an actual data structure in computer
+science called a /linked list/. Essentially if you want to store a list of data,
+you can store it as a bunch of node structures, where each node has some
+associated value as well as a pointer to a "next" node. In C that would look
+like this:
+
+$</site/code.sh c
+$|struct Node {
+$|	char value;
+$|	struct Node *next;
+$|};
+
+.p|We can construct our alphabet linked list with the following, slightly
+verbose code:
+
+$</site/code.sh c
+$|struct Node *new_node(char value, struct Node *next) {
+$|	struct Node *ret;
+$|
+$|	ret = malloc(sizeof(struct Node));
+$|	ret->value = value;
+$|	ret->next = next;
+$|	return ret;
+$|}
+$|
+$|struct Node *make_alphabet(void) {
+$|	struct Node *ret;
+$|
+$|	ret = NULL;
+$|	ret = new_node('Z', ret);
+$|	ret = new_node('Y', ret);
+$|	ret = new_node('X', ret);
+$|
+$|	/* ... 20 lines omitted */
+$|
+$|	ret = new_node('C', ret);
+$|	ret = new_node('B', ret);
+$|	ret = new_node('A', ret);
+$|
+$|	return ret;
+$|}
+
+.p|We can test our code with this `main` function:
+
+$</site/code.sh c
+$|int main(void) {
+$|	struct Node *alphabet;
+$|
+$|	alphabet = make_alphabet();
+$|	printf("%c\n", alphabet->value);
+$|	printf("%c\n", alphabet->next->value);
+$|	printf("%c\n", alphabet->next->next->value);
+$|
+$|	return 0;
+$|}
+$|
+$|/* $ cc -o alphabet alphabet.c
+$| * $ ./alphabet
+$| * A
+$| * B
+$| * C
+$| * $
+$| */
+
+.p|Here, `alphabet` is a `struct Node`, which has two fields: `value` and
+`next`. `alphabet->value` is just `A`. `alphabet->next` is another `struct Node`
+with the same two fields. `alphabet->next->value` is just `B`, and
+`alphabet->next->next` is another `struct Node` with the same two fields. This
+goes on 26 times until we hit the node with value `Z`. At that point
+`Z_node->next` is `NULL`. We could write some code to go through our entire list
+and print each node like this:
+
+
+$</site/code.sh c
+$|int main(void) {
+$|	struct Node *alphabet, *pointer;
+$|
+$|	alphabet = make_alphabet();
+$|
+$|	pointer = alphabet;
+$|	while (pointer != NULL) {
+$|		printf("pointer = %p; pointer->value = %c; pointer->next = %p\n",
+$|				pointer, pointer->value, pointer->next);
+$|		pointer = pointer->next;
+$|	}
+$|	printf("pointer = %p\n", pointer);
+$|	return 0;
+$|}
+
+.p|This yielded the following output:
+
+```"$ valgrind ./alphabet
+   "pointer = 0x4a6e810; pointer->value = A; pointer->next = 0x4a6e7c0
+   "pointer = 0x4a6e7c0; pointer->value = B; pointer->next = 0x4a6e770
+   "pointer = 0x4a6e770; pointer->value = C; pointer->next = 0x4a6e720
+   "pointer = 0x4a6e720; pointer->value = D; pointer->next = 0x4a6e6d0
+   "pointer = 0x4a6e6d0; pointer->value = E; pointer->next = 0x4a6e680
+   "pointer = 0x4a6e680; pointer->value = F; pointer->next = 0x4a6e630
+   "pointer = 0x4a6e630; pointer->value = G; pointer->next = 0x4a6e5e0
+   "pointer = 0x4a6e5e0; pointer->value = H; pointer->next = 0x4a6e590
+   "pointer = 0x4a6e590; pointer->value = I; pointer->next = 0x4a6e540
+   "pointer = 0x4a6e540; pointer->value = J; pointer->next = 0x4a6e4f0
+   "pointer = 0x4a6e4f0; pointer->value = K; pointer->next = 0x4a6e4a0
+   "pointer = 0x4a6e4a0; pointer->value = L; pointer->next = 0x4a6e450
+   "pointer = 0x4a6e450; pointer->value = M; pointer->next = 0x4a6e400
+   "pointer = 0x4a6e400; pointer->value = N; pointer->next = 0x4a6e3b0
+   "pointer = 0x4a6e3b0; pointer->value = O; pointer->next = 0x4a6e360
+   "pointer = 0x4a6e360; pointer->value = P; pointer->next = 0x4a6e310
+   "pointer = 0x4a6e310; pointer->value = Q; pointer->next = 0x4a6e2c0
+   "pointer = 0x4a6e2c0; pointer->value = R; pointer->next = 0x4a6e270
+   "pointer = 0x4a6e270; pointer->value = S; pointer->next = 0x4a6e220
+   "pointer = 0x4a6e220; pointer->value = T; pointer->next = 0x4a6e1d0
+   "pointer = 0x4a6e1d0; pointer->value = U; pointer->next = 0x4a6e180
+   "pointer = 0x4a6e180; pointer->value = V; pointer->next = 0x4a6e130
+   "pointer = 0x4a6e130; pointer->value = W; pointer->next = 0x4a6e0e0
+   "pointer = 0x4a6e0e0; pointer->value = X; pointer->next = 0x4a6e090
+   "pointer = 0x4a6e090; pointer->value = Y; pointer->next = 0x4a6e040
+   "pointer = 0x4a6e040; pointer->value = Z; pointer->next = (nil)
+   "pointer = (nil)
+
+.p|Things get interesting when we start adding cycles. Since `pointer->next`
+could be any value, we could just set it to be some value that we've already
+seen before.
+
+$</site/code.sh c
+$|struct Node *make_alphabet(void) {
+$|	struct Node *ret, *g_node, *c_node;
+$|
+$|	ret = NULL;
+$|
+$|	ret = new_node('G', ret);
+$|	g_node = ret;
+$|	ret = new_node('F', ret);
+$|	ret = new_node('E', ret);
+$|	ret = new_node('D', ret);
+$|	ret = new_node('C', ret);
+$|	c_node = ret;
+$|	ret = new_node('B', ret);
+$|	ret = new_node('A', ret);
+$|
+$|	g_node->next = c_node
+$|
+$|	return ret;
+$|}
+
+.p|This yields an the following infinitely repeating output. I've added some
+breaks to make it clear when each loop starts:
+
+```"pointer = 0x4a6e220; pointer->value = A; pointer->next = 0x4a6e1d0
+   "pointer = 0x4a6e1d0; pointer->value = B; pointer->next = 0x4a6e180
+   "
+   "pointer = 0x4a6e180; pointer->value = C; pointer->next = 0x4a6e130
+   "pointer = 0x4a6e130; pointer->value = D; pointer->next = 0x4a6e0e0
+   "pointer = 0x4a6e0e0; pointer->value = E; pointer->next = 0x4a6e090
+   "pointer = 0x4a6e090; pointer->value = F; pointer->next = 0x4a6e040
+   "pointer = 0x4a6e040; pointer->value = G; pointer->next = 0x4a6e180
+   "
+   "pointer = 0x4a6e180; pointer->value = C; pointer->next = 0x4a6e130
+   "pointer = 0x4a6e130; pointer->value = D; pointer->next = 0x4a6e0e0
+   "pointer = 0x4a6e0e0; pointer->value = E; pointer->next = 0x4a6e090
+   "pointer = 0x4a6e090; pointer->value = F; pointer->next = 0x4a6e040
+   "pointer = 0x4a6e040; pointer->value = G; pointer->next = 0x4a6e180
+   "
+   "pointer = 0x4a6e180; pointer->value = C; pointer->next = 0x4a6e130
+   "pointer = 0x4a6e130; pointer->value = D; pointer->next = 0x4a6e0e0
+   "pointer = 0x4a6e0e0; pointer->value = E; pointer->next = 0x4a6e090
+   "... forever and ever
+
+.p|In our analogy, this would be like if I suffered a strange form of amnesia
+which left me convinced that the letter `C` comes after `G`. If I ever decided
+to sing the alphabet song, I'd continue repeating `CDEFG` over and over again
+forever, or at least until I realized that something strange had happened.
+Visually, this looping linked list looks like this:
+
+```"A -> B -> C -> D -> E
+   "          ^         |
+   "          |         |
+   "          G <- F <--'
+
+.p|Given some looping linked list like this,
+<(https://en.wikipedia.org/wiki/Cycle_detection#Floyd's_tortoise_and_hare)[Floyd's
+cycle detection algorithm]> finds the first node in the loop; in this example,
+that would be `C`. The important assumption is that it's easy to go forwards in
+this chain but very difficult to go backwards, and that we can easily check if
+two nodes are the same. The obvious solution is to just go through the list,
+keep track of which nodes we've already seen, and return the first duplicate we
+see.
+
+$</site/code.sh c
+$|struct Node *find_loop(struct Node *head) {
+$|	/* hopefully we don't have more than 100 nodes in our list */
+$|	struct Node *pointer, *seen_nodes[100];
+$|	int i, num_seen_nodes;
+$|
+$|	num_seen_nodes = 0;
+$|
+$|	pointer = head;
+$|	while (pointer != NULL) {
+$|		/* if we've already seen the current node, just return it */
+$|		for (i = 0; i < num_seen_nodes; ++i) {
+$|			if (pointer == seen_nodes[i]) {
+$|				return pointer;
+$|			}
+$|		}
+$|
+$|		/* else, mark the current node as already seen and move on */
+$|		seen_nodes[num_seen_nodes] = pointer;
+$|		++num_seen_nodes;
+$|		pointer = pointer->next;
+$|	}
+$|
+$|	/* we hit a NULL node so there's no infinite loop */
+$|	return NULL;
+$|}
+
+.p|This code isn't ideal; I used a fixed length array to store the already seen
+nodes since C doesn't have any clean native way to implement dynamic lists, and
+a simple array makes this code run in \\(O(n^2)\\) time when something smarter
+like a <(https://en.wikipedia.org/wiki/Hash_table)[hash table]> could get it
+done in \\(O(n)\\) time. Despite its flaws, this code still works.
+
+$</site/code.sh c
+$|int main(void) {
+$|	struct Node *alphabet, *pointer;
+$|
+$|	alphabet = make_alphabet();
+$|	printf("The loop starts at %c\n", find_loop(alphabet)->value);
+$|	return 0;
+$|}
+
+```"$ ./alphabet
+   "The loop starts at C
+
+.p|Regardless of what data structure you use to keep track of your nodes, this
+code will still always take \\(O(n)\\) memory, since we have to keep track of
+every node. Floyd's cycle detection algorithm runs in \\(O(n)\\) time and
+\\(O(1)\\) (constant) memory. I imagine that this algorithm was discovered
+entirely accidentally while Robert Floyd was thinking about this function:
+
+$</site/code.sh c
+$|struct Node *mystery_function(struct Node *head) {
+$|	struct Node *tortoise, *hare;
+$|
+$|	tortoise = hare = head;
+$|	do {
+$|		tortoise = tortoise->next;
+$|		hare = hare->next->next;
+$|	} while (tortoise != hare);
+$|	return tortoise;
+$|}
+
+.p|Here we imagine the linked list as a race track, with a
+<(https://en.wikipedia.org/wiki/The_Tortoise_and_the_Hare)[tortoise and a hare]>
+starting at the beginning. With each loop iteration, the slow tortoise runs one
+step while the fast hare runs two steps. At some point the hare will lap the
+tortoise, and they will meet up at some point in the list. This function
+directly calculates that point.
+
+.p|First the tortoise and hare are both at the starting line.
+
+```"HT
+   "A -> B -> C -> D -> E
+   "          ^         |
+   "          |         |
+   "          G <- F <--'
+
+.p|The tortoise moves one step while the hare moves two:
+
+```"     T    H
+   "A -> B -> C -> D -> E
+   "          ^         |
+   "          |         |
+   "          G <- F <--'
+
+.p|Then again:
+
+```"          T         H
+   "A -> B -> C -> D -> E
+   "          ^         |
+   "          |         |
+   "          G <- F <--'
+
+.p|Then three more times until the hare catches up with the tortoise at `F`.
+
+```"               T
+   "A -> B -> C -> D -> E
+   "          ^         |
+   "          |         |
+   "          G <- F <--'
+   "          H
+   "
+   "               H    T
+   "A -> B -> C -> D -> E
+   "          ^         |
+   "          |         |
+   "          G <- F <--'
+   "
+   "A -> B -> C -> D -> E
+   "          ^         |
+   "          |         |
+   "          G <- F <--'
+   "               HT
+
+.p|The race can be divided into two sections. In the first two steps, the hare
+builds a lead while the tortoise approaches the loop. Then, over the next three
+steps the hare catches up with the tortoise inside of the loop, eventually
+lapping it at `F`. We can model this mathematically.
+
+>.|Suppose there are \\(k\\) nodes from the head of the list to the loop, and
+  |\\(n\\) nodes inside of the loop itself. After \\(k\\) steps, the tortoise is
+  |at the start of the loop, and the hare is \\(k\\) steps ahead of the
+  |tortoise. Since the loop is circular, we can also say that the hare is
+  |\\(n-k\\) steps behind the tortoise. The hare catches up with the tortoise by
+  |1 space each step, so after \\(n-k\\) steps they're in the same place. This
+  |occurs \\(n-k\\) nodes after the start of the loop, or \\(k\\) spaces before
+  |the start of the loop inside of the loop.
+
+.p|The interesting thing is that if we send one of our creatures back to the
+start of the race, they're both the same distance from the start of the loop. In
+the following example we've sent the tortoise back to node `A`, and now both the
+tortoise and hare are two steps away from node `C`, although on different paths.
+We can then have the tortoise and hare walk one step at a time until they meet
+up again.
+
+```"T
+   "A -> B -> C -> D -> E
+   "          ^         |
+   "          |         |
+   "          G <- F <--'
+   "               H
+
+.p|Tortoise and hare take one step:
+
+```"     T
+   "A -> B -> C -> D -> E
+   "          ^         |
+   "          |         |
+   "          G <- F <--'
+   "          H
+
+.p|Tortoise and hare take another step and meet up at `C`:
+
+```"          HT
+   "A -> B -> C -> D -> E
+   "          ^         |
+   "          |         |
+   "          G <- F <--'
+
+.p|This gives us Floyd's cycle detection algorithm:
+
+$</site/code.sh c
+$|struct Node *find_loop(struct Node *head) {
+$|	struct Node *tortoise, *hare;
+$|
+$|	/* run the race */
+$|	tortoise = hare = head;
+$|	do {
+$|		tortoise = tortoise->next;
+$|		hare = hare->next->next;
+$|	} while (tortoise != hare);
+$|
+$|	/* send the tortoise back to the start */
+$|	tortoise = head;
+$|
+$|	/* have the tortoise and hare walk one step at a time until they meet */
+$|	while (tortoise != hare) {
+$|		tortoise = tortoise->next;
+$|		hare = hare->next;
+$|	}
+$|
+$|	return tortoise;
+$|}
+
+.p|We now have one of the two key algorithms necessary to understand that
+magical factorization code. The other key algorthm predates Cleopatra.
+
+#2|Euclid's algorithm
+
+.p|The /greatest common divisor/ or GCD of two numbers \\(a\\) and \\(b\\),
+sometimes denoted \\((a, b)\\), is the greatest number \\(c\\) such that
+\\(c | a\\) and \\(c | b\\). In
+/<(https://en.wikipedia.org/wiki/Euclid%27s_Elements)[The Elements]>/, Euclid
+described an algorithm to calculate the GCD of two integers 2000 years before
+the first computers. The algorithm works based on the following two lemmas:
+
+>.|Lemma 1: For all positive integers \\(n\\), \\((n, 0) = n\\)
+ .|Lemma 2: For any pair of integers \\(a, b\\), \\((a, b) = (a-b, b)\\).
+
+.p|The first lemma can be proven quite easily.
+
+>.|Note that for all integers \\(n\\), \\(n | 0\\). This comes from the
+  |definition of divisibility; if \\(n | 0\\) there must be some integer
+  |\\(m\\) where \\(nm = 0\\). Let \\(m=0\\). Now, \\(nm = n \\cdot 0 = 0\\).
+ .|Since every integer divides \\(0\\), \\((n, 0)\\) is just the greatest divisor
+  |of \\(n\\), which for positive integers is just \\(n\\) itself.
+
+.p|The second lemma is a bit more complex.
+
+>.|We're trying to show that for any pair of integers, \\((a, b) = (a-b, b)\\).
+  |Let \\(d = (a, b)\\). By the definition of the GCD, \\(d\\) is the largest
+  |integer such that \\(d | a\\) and \\(d | b\\). By the definition of
+  |divisibility, there exist integers \\(p\\) and \\(q\\) where \\(a = dp\\) and
+  |\\(b = dq\\). To show that \\((a, b) = (a-b, b)\\), we have to show that
+  |\\(d\\) is the largest possible value such that \\(d |(a-b)\\) and
+  |\\(d | b\\).
+ .|We already know that \\(d | b\\), so we have to show that
+  |\\(d |(a-b)\\). \\(a-b = dp - dq = d(p-q)\\). Since \\(p-q\\) is an
+  |integer, \\(d |(a-b)\\).
+ .|Now we have to show that \\(d\\) is the largest possible value that satisfies
+  |this property. We'll do this by contradiction. Suppose there was some larger
+  |value \\(e\\) where \\(e | b\\) and \\(e |(a-b)\\), but
+  |\\(e \\nmid a\\). There must exist values \\(r\\) and \\(s\\) where
+  |\\(b = er\\) and \\(a-b = es\\). We can manipulate this into
+  |\\(a = e(s+r)\\). . Since \\(s+r\\) is an integer, \\(e | a\\). This is
+  |a contradiction, therefore \\((a-b, b) = d = (a, b)\\).
+
+.p|This leads to the following Python code:
+
+$</site/code.sh python
+$|def gcd(a, b):
+$|    # since (a, b) = (b, a) this line doesn't change our result. it does make
+$|    # the proceeding code a bit simpler though.
+$|    if a < b:
+$|        return gcd(b, a)
+$|
+$|    # at this point, a >= b
+$|
+$|    # lemma 1: (a, 0) = a
+$|    if b == 0:
+$|        return a
+$|
+$|    # lemma 2: (a, b) = (a-b, b)
+$|    return gcd(a-b, b)
+
+.p|We can replace that final subtraction with a modulo operator, since modulo is
+just repeated subtraction. It's also slightly more efficient to reverse the
+operands in the recursive call. These optimizations get us the following code:
+
+$</site/code.sh python
+$|def gcd(a, b):
+$|    if a < b:
+$|        return gcd(b, a)
+$|    if b == 0:
+$|        return a
+$|    return gcd(b, a % b)
+
+.p|The worst case input for this algorithm is two consecutive
+<(https://en.wikipedia.org/wiki/Fibonacci_sequence)[Fibonacci numbers]>, which
+takes \\(O(\\text{log}(n))\\) time where \\(n\\) is the larger of the two
+inputs. This is easiest to see with a concrete example. We'll start with a
+non-worst case example:
+
+```"gcd(24, 17) = gcd(17, 24 - 17*1) =
+   "gcd(17, 8)  = gcd(8,  17 - 8*2) =
+   "gcd(8, 1)   = gcd(1,  8  - 1*8) =
+   "gcd(1, 0)
+   "= 1
+
+.p|Note that in the reductions from \\((17, 8)\\) to \\((8, 1)\\) and from
+\\((8, 1)\\) to \\((1, 0)\\), we managed to do 2 and 8 subtractions at once with
+our modulus. In the worst case input we only do 1 subtraction at a time. We can
+prove this through induction; the smallest input with two distinct integers that
+takes one recursive step is \\((2, 1)\\). Therefore, the smallest input with two
+distinct integers that takes two recursive steps is the one that immediately
+reduces to the one that takes one recursive step, namely \\((3, 2)\\). The
+smallest input that takes three steps is \\((5, 3)\\), then \\((8, 5)\\), and so on
+with consecutive Fibonacci values. When we actually calculate the GCD of two
+consecutive Fibonnaci numbers it looks like this:
+
+```"gcd(21, 13) = gcd(13, 21 - 13*1) =
+   "gcd(13, 8)  = gcd(8,  13 - 8*1) =
+   "gcd(8, 5)   = gcd(5,  8  - 5*1) =
+   "gcd(5, 3)   = gcd(3,  5  - 3*1) =
+   "gcd(3, 2)   = gcd(2,  3  - 2*1) =
+   "gcd(2, 1)   = gcd(1,  2  - 1*2) =
+   "gcd(1, 0)
+   "= 1
+
+.p|It's well known that the \\(n\\)th Fibonnaci number can be approximated by
+\\(\\phi^n\\), where \\(\\phi = (\\sqrt{5}+1)/2\\). Therefore the worst case input
+can be calculated in \\(O(\\text{log}(n))\\) steps.
+
+#2|Pollard's rho algorithm
+
+.p|Suppose we have some integer \\(n = pq\\). If we want to factorize \\(n\\),
+we don't just have to find \\(p\\), we can also find any nontrivial multiple \\(kp\\) and
+then calculate \\((n, kp)\\) to get \\(p\\). We'll begin by defining some
+pseudorandom function \\(g(x)\\).
+
+$</site/code.sh python
+$|def g(x):
+$|    return (x*x+1) % n
+
+.p|Note that this function is closed under modulus. `g(x % p) % p = g(n) % p`
+Consider the chain of values \\(1, g(1), g(g(1)), ..., g^i(1) \\mod{p}\\).
+At some point we must have some duplicate value in this chain, at which point
+we'll a cycle. Suppose that this duplication happens at \\(a\\) and \\(b\\) mod
+\\(n\\). This means that \\(a \\equiv b \\mod{p}\\), but not necessarily
+\\(\\text{mod } n\\). We know that \\(a - b \\equiv 0 \\mod{p}\\). In other words
+\\(p |(a - b)\\). We can detect this cycle using a combination of Floyd's
+cycle detection algorithm and Euclid's GCD algorithm.
+
+$</site/code.sh python
+$|def gcd(a, b):
+$|    if b > a:
+$|        return gcd(b, a)
+$|    if b == 0:
+$|        return a
+$|    return gcd(b, a % b)
+$|
+$|def find_factor(n):
+$|    def g(x):
+$|        return (x*x+1) % n
+$|    tortoise = hare = 1
+$|    while True:
+$|        tortoise = g(tortoise)
+$|        hare = g(g(hare))
+$|
+$|        # there may be a factor, but we couldn't find it
+$|        if tortoise == hare:
+$|            return 0
+$|
+$|        f = gcd(n, abs(tortoise - hare))
+$|        if f != 1:
+$|            return f
