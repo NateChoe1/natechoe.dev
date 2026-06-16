@@ -1,0 +1,421 @@
+//Kronrod's optimal merge
+
+.p|This is an implementation of merge sort in C:
+
+$</site/code.sh c
+$|/* arr indexes span [left, right) */
+$|void sort_recursive(int *arr, int left, int right) {
+$|    if (right - left <= 1) {
+$|        return;
+$|    }
+$|
+$|    int mid = (left+right)/2;
+$|    sort_recursive(arr, left, mid);
+$|    sort_recursive(arr, mid, right);
+$|    merge(arr, left, mid, right);
+$|}
+$|
+$|void sort(int *arr, int n) {
+$|    sort_recursive(arr, 0, n);
+$|}
+
+.p|The algorithm itself is very simple. It sorts using a divide and conquer
+approach; to sort a array of elements we begin by sorting the left half, then
+the right half, then we merge the two halves together into our newly sorted
+list.  The actual merge step is implemented like this:
+
+$</site/code.sh c
+$|void merge(int *arr, int left, int mid, int right) {
+$|    int *buf = alloca((right - left) * sizeof(int));
+$|    int blen = 0;
+$|
+$|    int left_index = left;
+$|    int right_index = mid;
+$|    while (left_index < mid && right_index < right) {
+$|        if (arr[left_index] < arr[right_index]) {
+$|            buf[blen++] = arr[left_index++];
+$|        } else {
+$|            buf[blen++] = arr[right_index++];
+$|        }
+$|    }
+$|
+$|    while (left_index < mid) {
+$|        buf[blen++] = arr[left_index++];
+$|    }
+$|
+$|    /* this loop could be removed for a slight optimization, but i'm including
+$|     * it for semantic consistency. */
+$|    while (right_index < right_index) {
+$|        buf[blen++] = arr[right_index++];
+$|    }
+$|
+$|    memcpy(arr+left, buf, blen * sizeof(int));
+$|}
+
+.p|For the rest of this article I'm going to assume some level of familiarity
+with merge sort, as well as big O notation. This code works by allocating a
+temporary buffer (here called `buf`) and copying the elements of our subarray to
+it in sorted order. Then at the end we copy the buffer back into the original
+array. This merge step takes `O(n)` time and uses `O(n)` auxiliary memory for
+the temporary buffer. Kronrod's optimal merge does this without a temporary
+buffer.
+
+.p|We'll begin by defining two operations: `swap` and `permute`. Swap simply
+switches the positions of two equal sized subarrays.
+
+```"Given an array L, with two equal size subarrays L_a and L_b, swap them
+   "
+   "Input:
+   "  +---------------------------------------------+
+   "  |       | L_a |         | L_b |               |
+   "  +---------------------------------------------+
+   "
+   "Result:
+   "  +---------------------------------------------+
+   "  |       | L_b |         | L_a |               |
+   "  +---------------------------------------------+
+
+.p|I took this ASCII art diagram from
+<(https://sortingalgos.miraheze.org/wiki/Kronrod%27s_algorithm)[this article]>
+on the sorting algorithms wiki, which I wrote a few months ago but never
+bothered to post here. Here's some C code that implements this operation:
+
+$</site/code.sh c
+$|/* swaps two subarrays of size n, starting at indexes idx_a and idx_b */
+$|void swap(int *arr, int idx_a, int idx_b, int n) {
+$|    for (int i = 0; i < n; ++i) {
+$|        int backup = arr[idx_a+i];
+$|        arr[idx_a+i] = arr[idx_b+i];
+$|        arr[idx_b+i] = backup;
+$|
+$|        /* if you want to be cool, you could also use the xor swap
+$|        arr[idx_a+i] ^= arr[idx_b+i];
+$|        arr[idx_b+i] ^= arr[idx_a+i];
+$|        arr[idx_a+i] ^= arr[idx_b+i];
+$|         */
+$|    }
+$|}
+
+.p|This operation is implemented by swapping the corresponding elements of each
+subarray. This operation runs in `O(n)` time and `O(1)` memory, where `n` is the
+size of the swapped subarrays. The other operation, `permute`, switches the
+positions of two adjacent, potentially different-sized subarrays.
+
+```"Given an array L, with two adjacent subarrays L_a and L_b, permute them
+   "
+   "Input:
+   "  +---------------------------------------------+
+   "  |       | L_a |   L_b   |                     |
+   "  +---------------------------------------------+
+   "          ^     ^         ^
+   "          L_1   L_2       L_3
+   "
+   "Result:
+   "  +---------------------------------------------+
+   "  |       |   L_b   | L_a |                     |
+   "  +---------------------------------------------+
+
+.p|This is done by reversing the first subarray, reversing the second subarray,
+then reversing the entire thing.
+
+$</site/code.sh c
+$|/* reverses arr[idx_start:idx_end] */
+$|void reverse(int *arr, int idx_start, int idx_end) {
+$|    int forward_idx = idx_start;
+$|    int backward_idx = idx_end - 1;
+$|    while (forward_idx < backward_idx) {
+$|        arr[forward_idx] ^= arr[backward_idx];
+$|        arr[backward_idx] ^= arr[forward_idx];
+$|        arr[forward_idx] ^= arr[backward_idx];
+$|
+$|        ++forward_idx;
+$|        --backward_idx;
+$|    }
+$|}
+$|
+$|/* permutes arr[idx_start:idx_mid] with arr[idx_mid:idx_end] */
+$|void permute(int *arr, int idx_start, int idx_mid, int idx_end) {
+$|    reverse(arr, idx_start, idx_mid);
+$|    reverse(arr, idx_mid, idx_end);
+$|    reverse(arr, idx_start, idx_end);
+$|}
+
+.p|This runs in `O(n)` time and `O(1)` memory, where `n` is the total length of
+the permuted subarrays.
+
+.p|We're also going to need a square root function. Here's a neat one that runs
+in logarithmic time.
+
+$</site/code.sh c
+$|/* calculates floor(sqrt(n)). this function assumes 32-bit ints. */
+$|int isqrt(int n) {
+$|    int b = 1 << 15;
+$|    int r = 0;
+$|    while (b > 0) {
+$|        int c = r | b;
+$|        if (c*c <= n) {
+$|            r = c;
+$|        }
+$|        b >>= 1;
+$|    }
+$|    return r;
+$|}
+
+.p|For this algorithm we'll assume that each of the elements in our array are
+distinct. It's not too difficult to modify this algorithm to work even with
+duplicated elements though. We begin by dividing our array into `k` blocks, each
+of size `v`, where `v` is `isqrt(n)`.
+
+```"Given some list L, made up of two sorted sublists A and B, divide L into k
+   "sublists of size v
+   "
+   "L
+   "  +-----------------------------------+
+   "  |        A        |        B        |
+   "  +-----------------------------------+
+   "
+   "divides into
+   "  +-----------------------------------+
+   "  |A_1|A_2|A_3|A_4|α|B_1|B_2|B_3|B_4|β|
+   "  +-----------------------------------+
+
+
+.p|We may have some extra small blocks at the end of our two subarrays, here
+labeled `α\0` and `β\0`. We permute `α\0` and the full blocks of subarray `B` so
+that the two small blocks are adjacent.
+
+```"L
+   "  +-----------------------------------+
+   "  |A_1|A_2|A_3|A_4|α|B_1|B_2|B_3|B_4|β|
+   "  +-----------------------------------+
+   "
+   "Permutes into
+   "  +-----------------------------------+
+   "  |A_1|A_2|A_3|A_4|B_1|B_2|B_3|B_4|α|β|
+   "  +-----------------------------------+
+
+.p|Next we sort the full blocks using selection sort, using the first element of
+each block as a pivot. Selection sort uses `O(n^2)` comparisons, but since we
+only have `O(sqrt(n))` blocks we only use `O(n)` comparisons. Selection sort
+also uses `O(n)` swaps, where each swap takes `O(n)` time, but the `n` in both
+cases is actually the square root of the total number of elements, so swapping
+also takes `O(n)` time.
+
+```"L
+   "  +-----------------------------------+
+   "  |A_1|A_2|A_3|A_4|B_1|B_2|B_3|B_4|α|β|
+   "  +-----------------------------------+
+   "
+   "May sort into something like
+   "  +-----------------------------------+
+   "  |A_1|B_1|B_2|A_2|B_3|B_4|A_3|A_4|α|β|
+   "  +-----------------------------------+
+   "
+   "where A_1[0] < B_1[0] < B_2[0] < A_2[0] < ... < A_4[0]
+
+.p|At this point the subarray of full blocks is "almost sorted". Specifically,
+no element is more than `v` spaces ahead of its true rank in the sorted array.
+We can prove this with contradiction. Suppose without loss of generality that we
+have some element `x` from sublist `A` at index `j` where `x` is `v` spaces
+ahead of its true rank `i` in the sorted array. There are `i` elements smaller
+than `x` in the full blocks. There are `j_a + j_b` elements before `x` in the
+current array, where `j_a` accounts for the elements originally in list `A` and
+`j_b` accounts for the elements originally in list `B`. Every element from list
+`A` that comes before `x` is smaller than `x`, because the blocks are sorted.
+This means that `j - i = j_b - i_b`. In other words, only elements from list `B`
+can push element `x` forwards. Since the blocks are in sorted order, we can't
+have two blocks' worth of elements come before element `x`. Therefore, `j-i<v`.
+
+.p|The next step in our algorithm is to sort the first two blocks. Any algorithm
+would work here, even an `O(n^2)` one, since we're only sorting `O(sqrt(n))`
+elements. The preceding proof shows that the smallest `v` elements must show up
+here, so the first full block contains all of the proper elements.
+
+```"L
+   "  +-----------------------------------+
+   "  |A_1|B_1|B_2|A_2|B_3|B_4|A_3|A_4|α|β|
+   "  +-----------------------------------+
+   "
+   "After we sort the first two blocks, looks like
+   "  +-----------------------------------+
+   "  |L_1| x |B_2|A_2|B_3|B_4|A_3|A_4|α|β|
+   "  +-----------------------------------+
+   "
+   "L_1 is the true first block of the full blocks, x is some sorted data.
+
+.p|If we then merge each adjacent pair of blocks working left to right, after
+each merge the left block will contain all of the proper elements. Each merge
+starts by swapping the left merging block with `L_1`.
+
+```"L
+   "  +-----------------------------------+
+   "  |L_1| x |B_2|A_2|B_3|B_4|A_3|A_4|α|β|
+   "  +-----------------------------------+
+   "
+   "Swaps into
+   "  +-----------------------------------+
+   "  | x |L_1|B_2|A_2|B_3|B_4|A_3|A_4|α|β|
+   "  +-----------------------------------+
+
+.p|We then use the `L_1` block as a temporary buffer to merge `x` and `B_2`.
+
+```"L
+   "  +-----------------------------------+
+   "  | x |L_1|B_2|A_2|B_3|B_4|A_3|A_4|α|β|
+   "  +-----------------------------------+
+   "
+   "Using `L_1` as a temporary buffer, turns into
+   "  +-----------------------------------+
+   "  |L_1|L_2| x |A_2|B_3|B_4|A_3|A_4|α|β|
+   "  +-----------------------------------+
+
+.p|Note that in this process, the order of elements in `L_1` may change,
+although their actual contents won't. We continue using the first block as a
+temporary buffer to sort adjacent blocks until each of the full blocks are
+sorted.
+
+```"Eventually, L turns into:
+   "  +-----------------------------------+
+   "  |L_1|        sorted data        |α|β|
+   "  +-----------------------------------+
+
+.p|We then sort `L_1`, since the order of its elements may have shifted while
+merging.
+
+```"   +-----------------------------------+
+   "   |          sorted data          |α|β|
+   "   +-----------------------------------+
+
+.p|Then we sort the tail
+
+```"   +-----------------------------------+
+   "   |          sorted data          | T |
+   "   +-----------------------------------+
+
+.p|Now we merge the tail into the sorted data. Some elements from the tail will
+be greater than the greatest element in the sorted data. We leave those be and
+find the greatest element that should be a part of the sorted data.
+
+```"  +-----------------------------------+
+   "  |          sorted data          | T||
+   "  +-----------------------------------+
+   "T is sorted
+   "The block to the right of T is already in the correct spot
+
+.p|We permute `T` so that its new greatest element is in the correct spot.
+
+```"  +-----------------------------------+
+   "  |          sorted data      | T| S ||
+   "  +-----------------------------------+
+   "T is sorted
+   "The greatest element of T is in the correct position
+   "Every element to the right of T is in the correct position
+
+.p|We continue permuting, weaving elements of `T` into the sorted data. Each
+element of the sorted data is moved at most once and each element of `T` is
+moved at most `O(sqrt(n))` times, so the entire process takes `O(n)` time. In
+code the entire algorithm looks like this:
+
+$</site/code.sh c
+$|/* sorts a subarray in O(n^2) time and O(1) memory */
+$|void sort(int *arr, int left, int right);
+$|
+$|void merge(int *arr, int left, int mid, int right) {
+$|    int n = right - left;
+$|    int v = isqrt(n);
+$|
+$|    int ak = (mid - left) / v;
+$|    int bk = (right - mid) / v;
+$|    int k = ak + bk;
+$|
+$|    int alpha_start = left + ak*v;
+$|    int beta_start = mid + bk*v;
+$|
+$|    /* permute alpha to the end of the list */
+$|    permute(arr, alpha_start, mid, beta_start);
+$|    int tail_start = left + k*v;
+$|
+$|    /* sort the blocks using selection sort */
+$|    for (int i = 0; i < k-1; ++i) {
+$|        int min = i;
+$|        for (int j = i+1; j < k; ++j) {
+$|            if (arr[left + j*v] < arr[left + min*v]) {
+$|                min = j;
+$|            }
+$|        }
+$|        if (i == min) {
+$|            continue;
+$|        }
+$|        swap(arr, left + i*v, left + min*v, v);
+$|    }
+$|
+$|    /* sort the first two blocks */
+$|    sort(arr, left, left + 2*v);
+$|
+$|    /* merge each pair of adjacent blocks */
+$|    for (int i = 1; i < k-1; ++i) {
+$|        int ls = left;
+$|        int rs = left+(i+1)*v;
+$|        int bs = left+i*v;
+$|
+$|        swap(arr, ls, bs, v);
+$|
+$|        int li = 0;
+$|        int ri = 0;
+$|        int bi = 0;
+$|        while (li < v && ri < v) {
+$|            if (arr[ls+li] < arr[rs+ri]) {
+$|                arr[ls+li] ^= arr[bs+bi];
+$|                arr[bs+bi] ^= arr[ls+li];
+$|                arr[ls+li] ^= arr[bs+bi];
+$|                ++li;
+$|                ++bi;
+$|            } else {
+$|                arr[rs+ri] ^= arr[bs+bi];
+$|                arr[bs+bi] ^= arr[rs+ri];
+$|                arr[rs+ri] ^= arr[bs+bi];
+$|                ++ri;
+$|                ++bi;
+$|            }
+$|        }
+$|        swap(arr, ls+li, bs+bi, v-li);
+$|    }
+$|
+$|    /* resort the first block */
+$|    sort(arr, left, left+v);
+$|
+$|    /* sort the tail */
+$|    sort(arr, tail_start, right);
+$|
+$|    /* weave in the tail */
+$|    int tail_length = right - tail_start;
+$|    while (tail_start > left && tail_length > 0) {
+$|        while (arr[tail_start + tail_length-1] > arr[tail_start-1]) {
+$|            --tail_length;
+$|        }
+$|
+$|        int weave_idx = tail_start-1;
+$|        while (weave_idx >= left &&
+$|                arr[tail_start + tail_length-1] < arr[weave_idx]) {
+$|            --weave_idx;
+$|        }
+$|        ++weave_idx;
+$|        permute(arr, weave_idx, tail_start, tail_start + tail_length);
+$|
+$|        tail_start = weave_idx;
+$|    }
+$|}
+$|
+$|/* bubble sort. heap sort would obviously be faster but this is simpler */
+$|void sort(int *arr, int left, int right) {
+$|    int n = right - left;
+$|    for (int i = 0; i < n-1; ++i) {
+$|        for (int j = 0; j < n-1-i; ++j) {
+$|            if (arr[left+j] > arr[left+j+1]) {
+$|                arr[left+j] ^= arr[left+j+1];
+$|                arr[left+j+1] ^= arr[left+j];
+$|                arr[left+j] ^= arr[left+j+1];
+$|            }
+$|        }
+$|    }
+$|}
