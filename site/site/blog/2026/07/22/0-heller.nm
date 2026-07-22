@@ -1,0 +1,644 @@
+//An even loopier zip file
+
+.p|Circa 2005, Erling Ellingsen created the first <(https://alf.nu/ZipQuine)[zip
+quine]>, that is to say a zip file which contains itself. In 2010 Russ Cox
+created <(https://research.swtch.com/zip)[a gzip quine]> and documented the
+entire process of creating it. In 2024 Ruben Van Mello created a
+<(https://github.com/ruvmello/zip-quine-generator)[zip quine generator]> based
+on Cox's description of zip quines, and created the first ever "loopy" zip
+quine, that is to say a zip file `A` which contains another zip file `B` which
+contains the original zip file `A`.
+
+.p|In 2025 I began constructing zip bombs. I hand-crafted a twice-compressed
+<(https://github.com/NateChoe1/zip-bomb/tree/main/primitive)[1 terabyte]> zlib
+bomb, then wrote <(https://github.com/NateChoe1/ied)[a program]> to
+automatically generate finite zip bombs with extremely high compression ratios,
+then used some techniques from zip quines to build an
+<(https://github.com/NateChoe1/zip-bomb/tree/main/quine)[infinitely large]> zip
+bomb. Finally, last week I created my own
+<(https://github.com/NateChoe1/heller)[zip quine generator]> which can handle
+loopy zip quines of any order. For a sample, try extracting
+<(https://github.com/NateChoe1/heller/raw/refs/heads/main/examples/z1.zip)[this
+zip file]>.
+
+.p|Zip, zlib, and gzip are all just wrappers around the
+<(https://www.rfc-editor.org/info/rfc1951/)[Deflate]> compressed data format,
+which uses LZ77 compression under the hood. I created a toy
+<(https://natechoe1.github.io/lz77-puzzle/)[LZ77 model]>. The rest of this
+article is going to use snippets from there.
+
+#2|An intro to LZ77
+
+.p|LZ77 compressed data is made up of two directives: `print` and `repeat`. The
+`print` directive just prints out some number of literal bytes, or one line in
+our toy model.
+
+```"print 4
+   "a
+   "b
+   "c
+   "d
+
+```"a
+   "b
+   "c
+   "d
+
+.p|The second directive, `repeat`, takes in two arguments: a length and a
+distance. `repeat` will look back `distance` lines of the /output/ and copy
+`length` lines.
+
+```"print 4
+   "a
+   "b
+   "c
+   "d
+   "repeat 2 3
+
+```"a
+   "b
+   "c
+   "d
+   "b
+   "c
+
+.p|Note that the length could be longer than the distance. In that case we just
+copy over the newly created lines.
+
+```"print 2
+   "a
+   "b
+   "repeat 5 2
+
+```"a
+   "b
+   "a
+   "b
+   "a
+   "b
+   "a
+
+.p|Here's the actual Javascript code that implements the `repeat` block:
+
+$</site/code.sh javascript
+$|for (let j = 0; j < repLength; ++j) {
+$|  output.push(output[output.length - offset]);
+$|}
+
+#2|Zip quines, headers, footers, and junk
+
+.p|Can you create a quine in this model? That is to say, can you find some input
+which decompresses into its own code? This is a really hard puzzle, I encourage
+you to <(https://natechoe1.github.io/lz77-puzzle/)[try it for yourself]> before
+I spoil the answer in the next paragraph.
+
+.p|Here's a solution attributed to Russ Cox. I've labeled two especially
+important lines:
+
+```"print 0
+   "print 0
+   "print 0
+   "print 4
+   "print 0
+   "print 0
+   "print 0
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4     [1]
+   "print 4
+   "a              [2]
+   "b
+   "c
+   "d
+
+.p|The reason why this puzzle is hard is that our input always seems to be
+longer than our output. To illustrate this, let's try starting with a `print`
+block.
+
+```"print 4
+   "a
+   "b
+   "c
+   "d
+
+```"a
+   "b
+   "c
+   "d
+
+.p|The first line of our input must match the first line of our output, so line
+`a` must be `print 4`:
+
+```"print 4
+   "print 4
+   "b
+   "c
+   "d
+
+```"print 4
+   "b
+   "c
+   "d
+
+.p|Now the second lines of our input and output must match, so line `b` must
+also be `print 4`:
+
+```"print 4
+   "print 4
+   "print 4
+   "c
+   "d
+
+```"print 4
+   "print 4
+   "c
+   "d
+
+.p|Then the third line has to match, and the fourth, and so on. It's very easy
+to create an output that matches the beginning of our input, it's very
+difficult to create an input that matches the beginning of our output. Line
+`[1]` is the first point in our quine where the output overtakes the input.
+
+.p|Coincidentally, our quine must end with a `print 4` block, where the actual
+data that gets printed doesn't affect the final quine. I call these final four
+lines "junk", because you can put any four lines in there while still
+maintaining quine-ness. Also note that the first three lines of this quine could
+be essentially anything, so long as they don't produce any output. In the toy
+model, you can insert some arbitrary header and footer to your quines;
+everything before the first `<<<<<\0` line and everything after the last
+`>>>>>\0` line is completely ignored. In our model, this represents things like
+gzip headers and footers, which may contain metadata about the file such as its
+decompressed length or checksum.
+
+```"a
+   "b
+   "<<<<<
+   "print 4
+   "a
+   "b
+   "<<<<<
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4
+   "print 4
+   "a
+   "b
+   "c
+   "d
+
+.p|Unfortunately, usually these headers and footers are longer than three lines
+long. Can you find some way to insert an arbitrary length header or footer?
+
+.p|Here's a quine with a longer header, the method used to produce this quine
+can be generalized to a header of any length:
+
+```"a
+   "b
+   "c
+   "d
+   "<<<<<
+   "print 6
+   "a
+   "b
+   "c
+   "d
+   "<<<<<
+   "print 6
+   "repeat 6 6
+   "print 0
+   "print 0
+   "print 4
+   "repeat 6 6
+   "print 0
+   "print 0
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4
+   "print 4
+   "a
+   "b
+   "c
+   "d
+
+.p|We start off with this sequence:
+
+```"a
+   "b
+   "c
+   "d
+   "<<<<<
+   "print 6
+   "a
+   "b
+   "c
+   "d
+   "<<<<<
+   "print 6
+   "repeat 6 6
+
+.p|which expands to this:
+
+```"a
+   "b
+   "c
+   "d
+   "<<<<<
+   "print 6
+   "a
+   "b
+   "c
+   "d
+   "<<<<<
+   "print 6
+
+.p|Now the input matches the output except that we have an extra `repeat 6 6`
+line. We then append two `print 0` lines and treat that sequence as a length
+three header.
+
+.p|To get an arbitrary footer, we start by creating arbitrary junk:
+
+```"print 0
+   "print 0
+   "print 0
+   "print 4
+   "print 0
+   "print 0
+   "print 0
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4
+   "print 0
+   "print 0
+   "print 6
+   "repeat 4 4
+   "print 0
+   "print 0
+   "print 6
+   "a
+   "b
+   "c
+   "d
+   "e
+   "f
+
+.p|We start off with our initial quine, then use these four lines of junk:
+
+```"[junk 4]
+   "repeat 4 4
+   "print 0
+   "print 0
+   "print 6
+
+.p|We then copy that junk and run its corresponding code:
+
+```"[junk 4]
+   "repeat 4 4
+   "print 0
+   "print 0
+   "print 6
+   "repeat 4 4
+   "print 0
+   "print 0
+   "print 6
+   "a
+   "b
+   "c
+   "d
+   "e
+   "f
+
+.p|The corresponding code then prints out 6 lines of junk. We can convert this
+junk into an arbitrary length footer like this:
+
+```"[junk 6]
+   "repeat 6 6
+   ">>>>>
+   "a
+   "b
+   "c
+   "d
+   "repeat 6 6
+   ">>>>>
+   "a
+   "b
+   "c
+   "d
+
+.p|In the junk we add a `repeat` line along with the footer we want, then we
+repeat the footer from the junk to get the actual footer. Here's our final
+quine, with an arbitrary header and footer:
+
+```"a
+   "b
+   "c
+   "d
+   "<<<<<
+   "print 6
+   "a
+   "b
+   "c
+   "d
+   "<<<<<
+   "print 6
+   "repeat 6 6
+   "print 0
+   "print 0
+   "print 4
+   "repeat 6 6
+   "print 0
+   "print 0
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4
+   "print 4
+   "repeat 4 4
+   "print 0
+   "print 0
+   "print 6
+   "repeat 4 4
+   "print 0
+   "print 0
+   "print 6
+   "repeat 6 6
+   ">>>>>
+   "a
+   "b
+   "c
+   "d
+   "repeat 6 6
+   ">>>>>
+   "a
+   "b
+   "c
+   "d
+
+.p|All of these solutions are built in to the toy model under the hidden
+`COMPILE_MODE`.
+
+```"COMPILE_MODE
+   "compile_print 5
+   "a
+   "b
+   "c
+   "d
+   "<<<<<
+   "quine 5 5
+   "a
+   "b
+   "c
+   "d
+   "<<<<<
+   ">>>>>
+   "a
+   "b
+   "c
+   "d
+   "compile_print 5
+   ">>>>>
+   "a
+   "b
+   "c
+   "d
+
+.p|The `quine` directive takes in two arguments: the header length and the
+footer length. It expands into itself, plus the given header and footer. I also
+added in a `junk` directive.
+
+```"junk 4
+   "a
+   "b
+   "c
+   "d
+
+#2|Quine loops
+
+.p|In the most basic quine loop, as used in Van Mello's generator, we simply
+alternate between some set of headers and footers.
+
+```"H1
+   "...
+   "F1
+   "
+   "  ==>
+   "
+   "H2
+   "...
+   "F2
+   "
+   "  ==>
+   "
+   "H3
+   "...
+   "F3
+   "
+   "  ==>
+   "
+   "H1
+   "...
+   "F1
+
+.p|Let's start with the headers. Here's a simple three level quine loop:
+
+```"COMPILE_MODE
+   "compile_print 2
+   "H1
+   "<<<<<
+   "print 2
+   "H2
+   "<<<<<
+   "print 3
+   "print 2
+   "H3
+   "<<<<<
+   "print 4
+   "print 3
+   "print 2
+   "H1
+   "<<<<<
+   "print 3
+   "print 4
+   "print 3
+   "print 2
+   "repeat 2 12
+   "quine 5 0
+   "print 3
+   "print 4
+   "print 3
+   "print 2
+   "repeat 2 12
+
+.p|The first few lines just print out alternating headers for three levels of
+decompression.
+
+```"H1
+   "<<<<<
+   "print 2
+   "H2
+   "<<<<<
+   "print 3
+   "print 2
+   "H3
+   "<<<<<
+   "print 4
+   "print 3
+   "print 2
+   "H1
+   "<<<<<
+
+```"H2
+   "<<<<<
+   "print 2
+   "H3
+   "<<<<<
+   "print 3
+   "print 2
+   "H1
+   "<<<<<
+
+.p|Now we have to replenish the next layer in some quineish way. We start by
+printing the print lines.
+
+```"H1
+   "<<<<<
+   "print 2
+   "H2
+   "<<<<<
+   "print 3
+   "print 2
+   "H3
+   "<<<<<
+   "print 4
+   "print 3
+   "print 2
+   "H1
+   "<<<<<
+   "print 3
+   "print 4
+   "print 3
+   "print 2
+
+```"H2
+   "<<<<<
+   "print 2
+   "H3
+   "<<<<<
+   "print 3
+   "print 2
+   "H1
+   "<<<<<
+   "print 4
+   "print 3
+   "print 2
+
+.p|Now we print the actual header data using a repeat block:
+
+```"H1
+   "<<<<<
+   "print 2
+   "H2
+   "<<<<<
+   "print 3
+   "print 2
+   "H3
+   "<<<<<
+   "print 4
+   "print 3
+   "print 2
+   "H1
+   "<<<<<
+   "print 3
+   "print 4
+   "print 3
+   "print 2
+   "repeat 2 12
+
+```"H2
+   "<<<<<
+   "print 2
+   "H3
+   "<<<<<
+   "print 3
+   "print 2
+   "H1
+   "<<<<<
+   "print 4
+   "print 3
+   "print 2
+   "H2
+   "<<<<<
+
+.p|We end it off with a quine to catch up with the rest of our data:
+
+```"COMPILE_MODE
+   "compile_print 2
+   "H1
+   "<<<<<
+   "print 2
+   "H2
+   "<<<<<
+   "print 3
+   "print 2
+   "H3
+   "<<<<<
+   "print 4
+   "print 3
+   "print 2
+   "H1
+   "<<<<<
+   "print 3
+   "print 4
+   "print 3
+   "print 2
+   "repeat 2 12
+   "quine 5 0
+   "print 3
+   "print 4
+   "print 3
+   "print 2
+   "repeat 2 12
+
+.p|Alternating footers are simple too; we just put every tail into some junk
+with a repeat block and copy from it:
+
+```"COMPILE_MODE
+   "junk 9
+   "repeat 3 6
+   ">>>>>
+   "F1
+   "repeat 3 3
+   ">>>>>
+   "F2
+   "repeat 3 9
+   ">>>>>
+   "F3
+   "compile_print 3
+   "repeat 3 6
+   ">>>>>
+   "F1
